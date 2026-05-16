@@ -1,0 +1,122 @@
+<?php
+
+namespace App\Filament\Admin\Resources\EducationalLevels;
+
+use App\Filament\Admin\Resources\EducationalLevels\Pages\ManageEducationalLevels;
+use App\Models\EducationalLevel;
+use BackedEnum;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Forms\Components\TextInput;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
+
+class EducationalLevelResource extends Resource
+{
+    protected static ?string $model = EducationalLevel::class;
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('Education');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('Educational Level');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Educational Levels');
+    }
+
+    public static function canViewAny(): bool
+    {
+        return Auth::user()?->can('view_educational_levels') ?? false;
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                TextInput::make('name')
+                    ->label(__('Name'))
+                    ->required()
+                    ->maxLength(255),
+                TextInput::make('sort_order')
+                    ->label(__('Sort Order'))
+                    ->numeric()
+                    ->default(0),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('id')->label('#')->sortable(),
+                TextColumn::make('name')
+                    ->label(__('Name'))
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('sort_order')
+                    ->label(__('Sort Order'))
+                    ->sortable(),
+                TextColumn::make('students_count')
+                    ->counts('students')
+                    ->label(__('Students')),
+                TextColumn::make('subjects_count')
+                    ->counts('subjects')
+                    ->label(__('Subjects')),
+            ])
+            ->filters([
+                TrashedFilter::make(),
+            ])
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
+                ForceDeleteAction::make(),
+                RestoreAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
+                ]),
+            ])
+            ->defaultSort('sort_order');
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => ManageEducationalLevels::route('/'),
+        ];
+    }
+
+    public static function getRecordRouteBindingEloquentQuery(): Builder
+    {
+        return parent::getRecordRouteBindingEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+    }
+}

@@ -1,0 +1,112 @@
+<?php
+
+namespace App\Filament\Admin\Resources\Registrations\Schemas;
+
+use App\Models\Section;
+use App\Models\Student;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section as FormSection;
+use Filament\Schemas\Schema;
+
+class RegistrationForm
+{
+    public static function configure(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                FormSection::make(__('Enrollment'))
+                    ->schema([
+                        Select::make('student_id')
+                            ->label(__('Student'))
+                            ->relationship('student', 'name')
+                            ->searchable(['student_number', 'username', 'email', 'phone_number'])
+                            ->preload()
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                if ($state) {
+                                    $student = Student::find($state);
+                                    if ($student) {
+                                        $set('student_balance_display', number_format((float) $student->balanceFloat, 2));
+                                    }
+                                }
+                            }),
+                        TextInput::make('student_balance_display')
+                            ->label(__('Student Wallet Balance'))
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->prefix('$'),
+                        Select::make('section_id')
+                            ->label(__('Section'))
+                            ->relationship('section', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                if ($state) {
+                                    $section = Section::find($state);
+                                    if ($section) {
+                                        $set('amount_due', $section->price);
+                                        $set('amount_paid', $section->price);
+                                    }
+                                }
+                            }),
+                        Select::make('payment_type_id')
+                            ->label(__('Payment Type'))
+                            ->relationship('paymentType', 'name')
+                            ->searchable()
+                            ->preload(),
+                    ])
+                    ->columns(2),
+
+                FormSection::make(__('Amounts'))
+                    ->schema([
+                        TextInput::make('amount_due')
+                            ->label(__('Amount Due'))
+                            ->numeric()
+                            ->default(0)
+                            ->minValue(0)
+                            ->prefix('$')
+                            ->required()
+                            ->live(debounce: 500)
+                            ->afterStateUpdated(function (callable $get, callable $set) {
+                                $due = (float) ($get('amount_due') ?? 0);
+                                $exemption = (float) ($get('exemption_amount') ?? 0);
+                                $set('amount_paid', max(0, $due - $exemption));
+                            }),
+                        TextInput::make('exemption_amount')
+                            ->label(__('Exemption / Discount'))
+                            ->numeric()
+                            ->default(0)
+                            ->minValue(0)
+                            ->prefix('$')
+                            ->live(debounce: 500)
+                            ->afterStateUpdated(function (callable $get, callable $set) {
+                                $due = (float) ($get('amount_due') ?? 0);
+                                $exemption = (float) ($get('exemption_amount') ?? 0);
+                                $set('amount_paid', max(0, $due - $exemption));
+                            }),
+                        TextInput::make('amount_paid')
+                            ->label(__('Amount To Be Paid'))
+                            ->numeric()
+                            ->default(0)
+                            ->minValue(0)
+                            ->prefix('$')
+                            ->required()
+                            ->helperText(__('Will be auto-deducted from the student wallet on save.')),
+                    ])
+                    ->columns(3),
+
+                FormSection::make(__('Note'))
+                    ->schema([
+                        Textarea::make('note')
+                            ->label(__('Note'))
+                            ->rows(2)
+                            ->columnSpanFull(),
+                    ]),
+            ]);
+    }
+}

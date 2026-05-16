@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Filament\Admin\Resources\Trainers\Tables;
+
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Tables\Table;
+
+class TrainersTable
+{
+    public static function configure(Table $table): Table
+    {
+        return $table
+            ->columns([
+                SpatieMediaLibraryImageColumn::make('main')
+                    ->label(__('Image'))
+                    ->collection('main')
+                    ->circular(),
+                TextColumn::make('id')->label('#')->sortable(),
+                TextColumn::make('name')->label(__('Name'))->searchable()->sortable(),
+                TextColumn::make('trainer_number')->label(__('Trainer Number'))->searchable(),
+                TextColumn::make('username')->label(__('Username'))->searchable(),
+                TextColumn::make('ssn')->label(__('SSN'))->searchable()->toggleable(),
+                TextColumn::make('email')->label(__('Email'))->searchable()->toggleable(),
+                TextColumn::make('phone_number')->label(__('Phone'))->searchable(),
+                TextColumn::make('default_rate')->label(__('Default Rate'))->suffix(' %')->sortable(),
+                TextColumn::make('subjects_count')->counts('subjects')->label(__('Subjects')),
+                TextColumn::make('sections_count')->counts('sections')->label(__('Sections')),
+                TextColumn::make('balanceFloat')->label(__('Wallet Balance'))->money('USD')->getStateUsing(fn ($record) => $record->balanceFloat),
+                TextColumn::make('dob')->date()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                TrashedFilter::make(),
+            ])
+            ->recordActions([
+                ViewAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
+                ]),
+            ])
+            ->defaultSort('id', 'desc');
+    }
+}
