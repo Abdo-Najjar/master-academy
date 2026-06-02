@@ -15,12 +15,14 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Auth;
 
 class RegistrationResource extends Resource
 {
+    use HasHexaLite;
+
     protected static ?string $model = Registration::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
@@ -42,9 +44,20 @@ class RegistrationResource extends Resource
         return __('Registrations');
     }
 
-    public static function canViewAny(): bool
+    public static function canAccess(): bool
     {
-        return Auth::user()?->can('view_registrations') ?? false;
+        return hexa()->can('registration.index');
+    }
+
+    public function defineGates(): array
+    {
+        return [
+            'registration.index' => __('View'),
+            'registration.create' => __('Create'),
+            'registration.update' => __('Update'),
+            'registration.delete' => __('Delete'),
+            'registration.cancel' => __('Cancel & Refund'),
+        ];
     }
 
     public static function form(Schema $schema): Schema

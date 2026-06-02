@@ -14,6 +14,8 @@ return new class extends Migration
             $table->foreignId('student_id')->constrained()->cascadeOnDelete();
             $table->date('date');
             $table->string('status')->default('present');
+            $table->boolean('is_makeup')->default(false);
+            $table->date('makeup_for_date')->nullable();
             $table->string('note')->nullable();
             $table->timestamps();
 

@@ -8,13 +8,17 @@
     "require": {
         "php": "^8.3",
         "bavix/laravel-wallet": "^11.4",
+        "carlos-meneses/laravel-mpdf": "^2.1",
         "filament/filament": "^4.3",
         "filament/spatie-laravel-media-library-plugin": "^4.0",
+        "hexters/hexa-lite": "^3.0",
         "laravel/framework": "^13.8",
         "laravel/tinker": "^3.0",
+        "simplesoftwareio/simple-qrcode": "*",
         "spatie/laravel-activitylog": "^4.11",
+        "spatie/laravel-backup": "^10.2",
         "spatie/laravel-medialibrary": "^11.17",
-        "spatie/laravel-permission": "^6.24",
+        "spatie/laravel-settings": "^3.8",
         "spatie/laravel-translatable": "^6.12"
     },
     "require-dev": {

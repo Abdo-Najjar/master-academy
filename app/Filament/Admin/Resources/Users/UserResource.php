@@ -15,12 +15,14 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Auth;
 
 class UserResource extends Resource
 {
+    use HasHexaLite;
+
     protected static ?string $model = User::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
@@ -42,9 +44,19 @@ class UserResource extends Resource
         return __('Employees');
     }
 
-    public static function canViewAny(): bool
+    public static function canAccess(): bool
     {
-        return Auth::user()?->can('view_users') ?? false;
+        return hexa()->can('user.index');
+    }
+
+    public function defineGates(): array
+    {
+        return [
+            'user.index' => __('View'),
+            'user.create' => __('Create'),
+            'user.update' => __('Update'),
+            'user.delete' => __('Delete'),
+        ];
     }
 
     public static function form(Schema $schema): Schema
@@ -64,7 +76,9 @@ class UserResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Admin\Resources\Users\RelationManagers\LoginActivitiesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

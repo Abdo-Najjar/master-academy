@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Governorates;
 use App\Filament\Admin\Resources\Governorates\Pages\ManageGovernorates;
 use App\Models\Governorate;
 use BackedEnum;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -15,17 +16,20 @@ use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Auth;
 
 class GovernorateResource extends Resource
 {
+    use HasHexaLite;
+
     protected static ?string $model = Governorate::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMap;
@@ -47,19 +51,33 @@ class GovernorateResource extends Resource
         return __('Governorates');
     }
 
-    public static function canViewAny(): bool
+    public static function canAccess(): bool
     {
-        return Auth::user()?->can('view_governorates') ?? false;
+        return hexa()->can('governorate.index');
+    }
+
+    public function defineGates(): array
+    {
+        return [
+            'governorate.index' => __('View'),
+            'governorate.create' => __('Create'),
+            'governorate.update' => __('Update'),
+            'governorate.delete' => __('Delete'),
+        ];
     }
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                TextInput::make('name')
-                    ->label(__('Name'))
-                    ->required()
-                    ->maxLength(255),
+                Section::make('')
+                    ->schema([
+                        TextInput::make('name')
+                            ->label(__('Name'))
+                            ->required()
+                            ->maxLength(255),
+                    ])
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -85,10 +103,12 @@ class GovernorateResource extends Resource
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
-                ForceDeleteAction::make(),
-                RestoreAction::make(),
+                ActionGroup::make([
+                    EditAction::make(),
+                    DeleteAction::make(),
+                    ForceDeleteAction::make(),
+                    RestoreAction::make(),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

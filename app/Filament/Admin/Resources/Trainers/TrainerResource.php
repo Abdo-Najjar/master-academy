@@ -8,6 +8,7 @@ use App\Filament\Admin\Resources\Trainers\Pages\ListTrainers;
 use App\Filament\Admin\Resources\Trainers\Pages\ViewTrainer;
 use App\Filament\Admin\Resources\Trainers\RelationManagers\SectionsRelationManager;
 use App\Filament\Admin\Resources\Trainers\RelationManagers\SubjectsRelationManager;
+use App\Filament\Admin\Resources\Trainers\RelationManagers\TransactionsRelationManager;
 use App\Filament\Admin\Resources\Trainers\Schemas\TrainerForm;
 use App\Filament\Admin\Resources\Trainers\Schemas\TrainerInfolist;
 use App\Filament\Admin\Resources\Trainers\Tables\TrainersTable;
@@ -17,12 +18,14 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Auth;
 
 class TrainerResource extends Resource
 {
+    use HasHexaLite;
+
     protected static ?string $model = Trainer::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
@@ -44,9 +47,20 @@ class TrainerResource extends Resource
         return __('Trainers');
     }
 
-    public static function canViewAny(): bool
+    public static function canAccess(): bool
     {
-        return Auth::user()?->can('view_trainers') ?? false;
+        return hexa()->can('trainer.index');
+    }
+
+    public function defineGates(): array
+    {
+        return [
+            'trainer.index' => __('View'),
+            'trainer.create' => __('Create'),
+            'trainer.update' => __('Update'),
+            'trainer.delete' => __('Delete'),
+            'trainer.wallet' => __('Manage Wallet'),
+        ];
     }
 
     public static function form(Schema $schema): Schema
@@ -69,6 +83,7 @@ class TrainerResource extends Resource
         return [
             SubjectsRelationManager::class,
             SectionsRelationManager::class,
+            TransactionsRelationManager::class,
         ];
     }
 

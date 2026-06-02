@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\PaymentTypes;
 use App\Filament\Admin\Resources\PaymentTypes\Pages\ManagePaymentTypes;
 use App\Models\PaymentType;
 use BackedEnum;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -15,17 +16,20 @@ use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Auth;
 
 class PaymentTypeResource extends Resource
 {
+    use HasHexaLite;
+
     protected static ?string $model = PaymentType::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
@@ -47,19 +51,33 @@ class PaymentTypeResource extends Resource
         return __('Payment Types');
     }
 
-    public static function canViewAny(): bool
+    public static function canAccess(): bool
     {
-        return Auth::user()?->can('view_payment_types') ?? false;
+        return hexa()->can('payment_type.index');
+    }
+
+    public function defineGates(): array
+    {
+        return [
+            'payment_type.index' => __('View'),
+            'payment_type.create' => __('Create'),
+            'payment_type.update' => __('Update'),
+            'payment_type.delete' => __('Delete'),
+        ];
     }
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                TextInput::make('name')
-                    ->label(__('Name'))
-                    ->required()
-                    ->maxLength(255),
+                Section::make('')
+                    ->schema([
+                        TextInput::make('name')
+                            ->label(__('Name'))
+                            ->required()
+                            ->maxLength(255),
+                    ])
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -75,10 +93,12 @@ class PaymentTypeResource extends Resource
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
-                ForceDeleteAction::make(),
-                RestoreAction::make(),
+                ActionGroup::make([
+                    EditAction::make(),
+                    DeleteAction::make(),
+                    ForceDeleteAction::make(),
+                    RestoreAction::make(),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

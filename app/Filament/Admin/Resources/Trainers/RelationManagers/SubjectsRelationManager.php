@@ -13,9 +13,12 @@ use Filament\Tables\Table;
 
 class SubjectsRelationManager extends RelationManager
 {
-    protected static string $relationship = 'subjects';
+    public static function getTitle(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): string
+    {
+        return __('Subjects');
+    }
 
-    protected static ?string $title = 'Subjects';
+    protected static string $relationship = 'subjects';
 
     public function form(Schema $schema): Schema
     {
@@ -27,8 +30,11 @@ class SubjectsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('name')
             ->columns([
-                TextColumn::make('name')->label(__('Name'))->searchable(),
-                TextColumn::make('educationalLevel.name')->label(__('Level')),
+                TextColumn::make('name')
+                    ->label(__('Name'))
+                    ->badge()
+                    ->color(fn ($record) => $record->color ? \Filament\Support\Colors\Color::hex($record->color) : 'gray')
+                    ->searchable(),
             ])
             ->headerActions([
                 AttachAction::make()->preloadRecordSelect(),

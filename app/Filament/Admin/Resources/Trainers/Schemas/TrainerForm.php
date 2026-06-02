@@ -9,6 +9,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Hash;
@@ -20,7 +21,7 @@ class TrainerForm
     {
         return $schema
             ->components([
-                Section::make(__('Personal Information'))
+                Section::make('')
                     ->schema([
                         SpatieMediaLibraryFileUpload::make('main')
                             ->label(__('Image'))
@@ -45,7 +46,7 @@ class TrainerForm
                     ])
                     ->columns(2),
 
-                Section::make(__('Account'))
+                Section::make('')
                     ->schema([
                         TextInput::make('username')
                             ->label(__('Username'))
@@ -72,7 +73,7 @@ class TrainerForm
                     ])
                     ->columns(2),
 
-                Section::make(__('Contact'))
+                Section::make('')
                     ->schema([
                         TextInput::make('phone_number')
                             ->label(__('Phone Number'))
@@ -94,11 +95,11 @@ class TrainerForm
                             ->relationship('city', 'name', fn ($query, callable $get) => $query->where('governorate_id', $get('governorate_id')))
                             ->searchable()
                             ->preload()
-                            ->visible(fn (callable $get) => filled($get('governorate_id'))),
+                            ->disabled(fn (callable $get) => empty($get('governorate_id'))),
                     ])
                     ->columns(2),
 
-                Section::make(__('Training Details'))
+                Section::make('')
                     ->schema([
                         Select::make('subjects')
                             ->label(__('Subjects'))
@@ -112,11 +113,17 @@ class TrainerForm
                             ->suffix('%')
                             ->minValue(0)
                             ->maxValue(100)
-                            ->default(0)
+                            ->default(40)
                             ->step(0.01),
                         Textarea::make('bio')
                             ->label(__('Bio'))
                             ->rows(3)
+                            ->columnSpanFull(),
+                        Toggle::make('is_active')
+                            ->label(__('Active'))
+                            ->helperText(__('Disabled trainers cannot sign in and are logged out on next request.'))
+                            ->default(true)
+                            ->inline(false)
                             ->columnSpanFull(),
                     ])
                     ->columns(2),

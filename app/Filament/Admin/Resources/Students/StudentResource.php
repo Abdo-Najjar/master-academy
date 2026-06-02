@@ -7,6 +7,7 @@ use App\Filament\Admin\Resources\Students\Pages\EditStudent;
 use App\Filament\Admin\Resources\Students\Pages\ListStudents;
 use App\Filament\Admin\Resources\Students\Pages\ViewStudent;
 use App\Filament\Admin\Resources\Students\RelationManagers\RegistrationsRelationManager;
+use App\Filament\Admin\Resources\Students\RelationManagers\TransactionsRelationManager;
 use App\Filament\Admin\Resources\Students\Schemas\StudentForm;
 use App\Filament\Admin\Resources\Students\Schemas\StudentInfolist;
 use App\Filament\Admin\Resources\Students\Tables\StudentsTable;
@@ -16,12 +17,14 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Auth;
 
 class StudentResource extends Resource
 {
+    use HasHexaLite;
+
     protected static ?string $model = Student::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
@@ -43,9 +46,20 @@ class StudentResource extends Resource
         return __('Students');
     }
 
-    public static function canViewAny(): bool
+    public static function canAccess(): bool
     {
-        return Auth::user()?->can('view_students') ?? false;
+        return hexa()->can('student.index');
+    }
+
+    public function defineGates(): array
+    {
+        return [
+            'student.index' => __('View'),
+            'student.create' => __('Create'),
+            'student.update' => __('Update'),
+            'student.delete' => __('Delete'),
+            'student.wallet' => __('Manage Wallet'),
+        ];
     }
 
     public static function form(Schema $schema): Schema
@@ -67,6 +81,7 @@ class StudentResource extends Resource
     {
         return [
             RegistrationsRelationManager::class,
+            TransactionsRelationManager::class,
         ];
     }
 

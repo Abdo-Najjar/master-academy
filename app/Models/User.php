@@ -7,18 +7,19 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
+use Hexters\HexaLite\HexaLiteRolePermission;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
-use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser, HasAvatar
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, LogsActivity, Notifiable, SoftDeletes;
+    use HasFactory, HexaLiteRolePermission, LogsActivity, Notifiable, SoftDeletes;
 
     /** @var list<string> */
     protected $fillable = [
@@ -29,6 +30,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         'whatsapp_number',
         'ssn',
         'avatar_url',
+        'is_active',
     ];
 
     /** @var list<string> */
@@ -40,12 +42,13 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $panel->getId() === 'admin';
+        return $panel->getId() === 'admin' && $this->is_active;
     }
 
     public function isSuperAdmin(): bool
@@ -68,5 +71,10 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         return LogOptions::defaults()
             ->logOnly(['name', 'email', 'phone_number', 'whatsapp_number', 'ssn', 'avatar_url'])
             ->logOnlyDirty();
+    }
+
+    public function loginActivities(): MorphMany
+    {
+        return $this->morphMany(LoginActivity::class, 'auth');
     }
 }

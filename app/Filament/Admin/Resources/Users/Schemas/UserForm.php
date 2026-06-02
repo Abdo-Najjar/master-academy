@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Users\Schemas;
 use App\Filament\Admin\Resources\Users\Pages\CreateUser;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Hash;
@@ -16,7 +17,7 @@ class UserForm
     {
         return $schema
             ->components([
-                Section::make(__('Account'))
+                Section::make('')
                     ->schema([
                         TextInput::make('name')
                             ->label(__('Name'))
@@ -39,18 +40,22 @@ class UserForm
                         TextInput::make('ssn')->label(__('SSN'))->maxLength(255),
                         TextInput::make('phone_number')->label(__('Phone'))->tel()->maxLength(255),
                         TextInput::make('whatsapp_number')->label(__('WhatsApp'))->tel()->maxLength(255),
-                    ])
-                    ->columns(2),
-
-                Section::make(__('Roles & Permissions'))
-                    ->schema([
                         Select::make('roles')
                             ->label(__('Roles'))
                             ->multiple()
                             ->relationship('roles', 'name')
                             ->searchable()
-                            ->preload(),
-                    ]),
+                            ->preload()
+                            ->columnSpanFull(),
+                        Toggle::make('is_active')
+                            ->label(__('Active'))
+                            ->helperText(__('Disabled users cannot sign in and are logged out on next request.'))
+                            ->default(true)
+                            ->inline(false)
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2)
+                    ->columnSpanFull(),
             ]);
     }
 }

@@ -17,9 +17,12 @@ use Filament\Tables\Table;
 
 class TimesRelationManager extends RelationManager
 {
-    protected static string $relationship = 'times';
+    public static function getTitle(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): string
+    {
+        return __('Times');
+    }
 
-    protected static ?string $title = 'Times';
+    protected static string $relationship = 'times';
 
     public function form(Schema $schema): Schema
     {

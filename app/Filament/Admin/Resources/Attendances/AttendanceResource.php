@@ -13,10 +13,12 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Auth;
+use Hexters\HexaLite\HasHexaLite;
 
 class AttendanceResource extends Resource
 {
+    use HasHexaLite;
+
     protected static ?string $model = Attendance::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
@@ -36,9 +38,18 @@ class AttendanceResource extends Resource
         return __('Attendances');
     }
 
-    public static function canViewAny(): bool
+    public static function canAccess(): bool
     {
-        return Auth::user()?->can('view_attendances') ?? false;
+        return hexa()->can('attendance.index');
+    }
+
+    public function defineGates(): array
+    {
+        return [
+            'attendance.index' => __('View'),
+            'attendance.update' => __('Update'),
+            'attendance.delete' => __('Delete'),
+        ];
     }
 
     public static function form(Schema $schema): Schema

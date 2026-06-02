@@ -9,9 +9,12 @@ use Filament\Tables\Table;
 
 class SectionsRelationManager extends RelationManager
 {
-    protected static string $relationship = 'sections';
+    public static function getTitle(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): string
+    {
+        return __('Sections');
+    }
 
-    protected static ?string $title = 'Sections';
+    protected static string $relationship = 'sections';
 
     public function form(Schema $schema): Schema
     {

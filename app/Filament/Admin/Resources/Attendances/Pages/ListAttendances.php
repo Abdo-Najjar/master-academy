@@ -2,8 +2,9 @@
 
 namespace App\Filament\Admin\Resources\Attendances\Pages;
 
+use App\Filament\Admin\Pages\TakeAttendance;
 use App\Filament\Admin\Resources\Attendances\AttendanceResource;
-use Filament\Actions\CreateAction;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
 
 class ListAttendances extends ListRecords
@@ -13,7 +14,11 @@ class ListAttendances extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            Action::make('takeAttendance')
+                ->label(__('Take Attendance'))
+                ->icon('heroicon-o-check-badge')
+                ->color('primary')
+                ->url(fn (): string => TakeAttendance::getUrl()),
         ];
     }
 }

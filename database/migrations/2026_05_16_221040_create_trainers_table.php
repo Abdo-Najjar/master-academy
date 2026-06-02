@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('trainers', function (Blueprint $table): void {
             $table->id();
+            $table->boolean('is_active')->default(true);
             $table->json('name');
             $table->date('dob')->nullable();
             $table->string('ssn')->nullable();

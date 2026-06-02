@@ -7,6 +7,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Hash;
@@ -18,7 +19,7 @@ class StudentForm
     {
         return $schema
             ->components([
-                Section::make(__('Personal Information'))
+                Section::make('')
                     ->schema([
                         SpatieMediaLibraryFileUpload::make('main')
                             ->label(__('Image'))
@@ -43,7 +44,7 @@ class StudentForm
                     ])
                     ->columns(2),
 
-                Section::make(__('Account'))
+                Section::make('')
                     ->schema([
                         TextInput::make('username')
                             ->label(__('Username'))
@@ -52,8 +53,10 @@ class StudentForm
                             ->maxLength(255),
                         TextInput::make('student_number')
                             ->label(__('Student Number'))
-                            ->unique(table: 'students', column: 'student_number', ignoreRecord: true, modifyRuleUsing: fn (Unique $rule) => $rule->whereNull('deleted_at'))
-                            ->maxLength(255),
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->placeholder(__('Auto-generated'))
+                            ->visibleOn('edit'),
                         TextInput::make('email')
                             ->label(__('Email'))
                             ->email()
@@ -70,7 +73,7 @@ class StudentForm
                     ])
                     ->columns(2),
 
-                Section::make(__('Contact & Location'))
+                Section::make('')
                     ->schema([
                         TextInput::make('phone_number')
                             ->label(__('Phone Number'))
@@ -78,6 +81,17 @@ class StudentForm
                             ->maxLength(255),
                         TextInput::make('whatsapp_number')
                             ->label(__('WhatsApp Number'))
+                            ->tel()
+                            ->maxLength(255),
+                        TextInput::make('parent_name')
+                            ->label(__('Parent Name'))
+                            ->maxLength(255),
+                        TextInput::make('parent_phone')
+                            ->label(__('Parent Phone'))
+                            ->tel()
+                            ->maxLength(255),
+                        TextInput::make('parent_whatsapp')
+                            ->label(__('Parent WhatsApp'))
                             ->tel()
                             ->maxLength(255),
                         Select::make('governorate_id')
@@ -92,18 +106,15 @@ class StudentForm
                             ->relationship('city', 'name', fn ($query, callable $get) => $query->where('governorate_id', $get('governorate_id')))
                             ->searchable()
                             ->preload()
-                            ->visible(fn (callable $get) => filled($get('governorate_id'))),
+                            ->disabled(fn (callable $get) => empty($get('governorate_id'))),
+                        Toggle::make('is_active')
+                            ->label(__('Active'))
+                            ->helperText(__('Disabled students cannot sign in and are logged out on next request.'))
+                            ->default(true)
+                            ->inline(false)
+                            ->columnSpanFull(),
                     ])
                     ->columns(2),
-
-                Section::make(__('Academic'))
-                    ->schema([
-                        Select::make('educational_level_id')
-                            ->label(__('Educational Level'))
-                            ->relationship('educationalLevel', 'name')
-                            ->searchable()
-                            ->preload(),
-                    ]),
             ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Trainers\Tables;
 
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -9,8 +10,10 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
@@ -34,17 +37,21 @@ class TrainersTable
                 TextColumn::make('default_rate')->label(__('Default Rate'))->suffix(' %')->sortable(),
                 TextColumn::make('subjects_count')->counts('subjects')->label(__('Subjects')),
                 TextColumn::make('sections_count')->counts('sections')->label(__('Sections')),
-                TextColumn::make('balanceFloat')->label(__('Wallet Balance'))->money('USD')->getStateUsing(fn ($record) => $record->balanceFloat),
+                TextColumn::make('balanceFloat')->label(__('Wallet Balance'))->money('ILS')->getStateUsing(fn ($record) => $record->balanceFloat),
+                IconColumn::make('is_active')->label(__('Active'))->boolean()->sortable(),
                 TextColumn::make('dob')->date()->sortable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                TernaryFilter::make('is_active')->label(__('Active')),
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make(),
+                ActionGroup::make([
+                    ViewAction::make(),
+                    EditAction::make(),
+                    DeleteAction::make(),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

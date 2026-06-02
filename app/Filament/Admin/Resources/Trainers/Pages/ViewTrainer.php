@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Trainers\Pages;
 
+use App\Filament\Admin\Resources\Trainers\Actions\WalletActions;
 use App\Filament\Admin\Resources\Trainers\TrainerResource;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -13,6 +14,8 @@ class ViewTrainer extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            WalletActions::deposit(),
+            WalletActions::withdraw(),
             EditAction::make(),
         ];
     }

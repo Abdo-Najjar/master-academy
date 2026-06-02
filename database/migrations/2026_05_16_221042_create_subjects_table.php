@@ -11,7 +11,6 @@ return new class extends Migration
         Schema::create('subjects', function (Blueprint $table): void {
             $table->id();
             $table->json('name');
-            $table->foreignId('educational_level_id')->nullable()->constrained()->nullOnDelete();
             $table->string('color', 16)->nullable();
             $table->integer('sort_order')->default(0);
             $table->timestamps();

@@ -5,13 +5,12 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::query()->firstOrCreate(
+        User::query()->firstOrCreate(
             ['email' => 'admin@ma.test'],
             [
                 'name' => 'Super Admin',
@@ -20,9 +19,6 @@ class UserSeeder extends Seeder
             ]
         );
 
-        $adminRole = Role::query()->where('name', 'admin')->first();
-        if ($adminRole) {
-            $admin->syncRoles([$adminRole]);
-        }
+        // Role assignment is handled by PermissionSeeder (HexaLite).
     }
 }

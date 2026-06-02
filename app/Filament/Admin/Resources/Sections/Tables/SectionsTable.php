@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Sections\Tables;
 
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -22,11 +23,16 @@ class SectionsTable
             ->columns([
                 TextColumn::make('id')->label('#')->sortable(),
                 TextColumn::make('name')->label(__('Name'))->searchable()->sortable(),
-                TextColumn::make('subject.name')->label(__('Subject'))->searchable()->sortable(),
+                TextColumn::make('subject.name')
+                    ->label(__('Subject'))
+                    ->badge()
+                    ->color(fn ($record) => $record->subject?->color ? \Filament\Support\Colors\Color::hex($record->subject->color) : 'gray')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('trainer.name')->label(__('Trainer'))->searchable()->sortable(),
                 TextColumn::make('start_date')->label(__('Start'))->date()->sortable(),
                 TextColumn::make('end_date')->label(__('End'))->date()->sortable(),
-                TextColumn::make('price')->label(__('Price'))->money('USD')->sortable(),
+                TextColumn::make('price')->label(__('Price'))->money('ILS')->sortable(),
                 TextColumn::make('trainer_rate')->label(__('Trainer Rate'))->suffix(' %')->sortable(),
                 TextColumn::make('capacity')->label(__('Capacity'))->sortable(),
                 TextColumn::make('registrations_count')->counts('registrations')->label(__('Enrolled')),
@@ -54,9 +60,11 @@ class SectionsTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make(),
+                ActionGroup::make([
+                    ViewAction::make(),
+                    EditAction::make(),
+                    DeleteAction::make(),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

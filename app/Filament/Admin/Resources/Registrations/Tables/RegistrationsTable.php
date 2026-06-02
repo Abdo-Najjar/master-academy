@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\Registrations\Tables;
 
 use App\Models\Registration;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -26,12 +27,16 @@ class RegistrationsTable
                 TextColumn::make('id')->label('#')->sortable(),
                 TextColumn::make('student.name')->label(__('Student'))->searchable()->sortable(),
                 TextColumn::make('section.name')->label(__('Section'))->searchable()->sortable(),
-                TextColumn::make('section.subject.name')->label(__('Subject'))->toggleable(),
+                TextColumn::make('section.subject.name')
+                    ->label(__('Subject'))
+                    ->badge()
+                    ->color(fn ($record) => $record->section?->subject?->color ? \Filament\Support\Colors\Color::hex($record->section->subject->color) : 'gray')
+                    ->toggleable(),
                 TextColumn::make('paymentType.name')->label(__('Payment'))->toggleable(),
-                TextColumn::make('amount_due')->label(__('Due'))->money('USD')->sortable(),
-                TextColumn::make('exemption_amount')->label(__('Exemption'))->money('USD')->sortable(),
-                TextColumn::make('amount_paid')->label(__('Paid'))->money('USD')->sortable(),
-                TextColumn::make('trainer_amount')->label(__('Trainer Share'))->money('USD')->sortable(),
+                TextColumn::make('amount_due')->label(__('Due'))->money('ILS')->sortable(),
+                TextColumn::make('exemption_amount')->label(__('Exemption'))->money('ILS')->sortable(),
+                TextColumn::make('amount_paid')->label(__('Paid'))->money('ILS')->sortable(),
+                TextColumn::make('trainer_amount')->label(__('Trainer Share'))->money('ILS')->sortable(),
                 TextColumn::make('created_at')->label(__('Date'))->dateTime()->sortable(),
             ])
             ->filters([
@@ -47,20 +52,27 @@ class RegistrationsTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-                Action::make('cancel')
-                    ->label(__('Cancel & Refund'))
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading(__('Cancel Registration'))
-                    ->modalDescription(__('This will refund the student wallet and revert the trainer commission, then soft-delete the registration.'))
-                    ->action(function (Registration $record): void {
-                        $record->deleteWithWalletAdjustments();
-                        Notification::make()->title(__('Registration cancelled'))->success()->send();
-                    }),
-                DeleteAction::make(),
+                ActionGroup::make([
+                    ViewAction::make(),
+                    EditAction::make(),
+                    Action::make('receipt')
+                        ->label(__('Print Receipt'))
+                        ->icon('heroicon-o-printer')
+                        ->color('info')
+                        ->url(fn (Registration $record): string => route('admin.pdf.receipt', $record), shouldOpenInNewTab: true),
+                    Action::make('cancel')
+                        ->label(__('Cancel & Refund'))
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading(__('Cancel Registration'))
+                        ->modalDescription(__('This will refund the student wallet and revert the trainer commission, then soft-delete the registration.'))
+                        ->action(function (Registration $record): void {
+                            $record->deleteWithWalletAdjustments();
+                            Notification::make()->title(__('Registration cancelled'))->success()->send();
+                        }),
+                    DeleteAction::make(),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

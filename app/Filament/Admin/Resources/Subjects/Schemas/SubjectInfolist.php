@@ -3,7 +3,9 @@
 namespace App\Filament\Admin\Resources\Subjects\Schemas;
 
 use App\Models\Subject;
+use Filament\Infolists\Components\ColorEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class SubjectInfolist
@@ -12,24 +14,23 @@ class SubjectInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('name')
+                Section::make('')
+                    ->schema([
+                        TextEntry::make('name')
+                            ->label(__('Subject'))
+                            ->badge()
+                            ->color(fn (Subject $record) => $record->color ? \Filament\Support\Colors\Color::hex($record->color) : 'gray')
+                            ->columnSpanFull(),
+                        ColorEntry::make('color')->label(__('Color'))->placeholder('—'),
+                        TextEntry::make('sort_order')->label(__('Sort Order'))->numeric(),
+                        TextEntry::make('created_at')->label(__('Created'))->dateTime()->placeholder('—'),
+                        TextEntry::make('deleted_at')
+                            ->label(__('Deleted'))
+                            ->dateTime()
+                            ->visible(fn (Subject $record): bool => $record->trashed()),
+                    ])
+                    ->columns(2)
                     ->columnSpanFull(),
-                TextEntry::make('educationalLevel.name')
-                    ->label('Educational level')
-                    ->placeholder('-'),
-                TextEntry::make('color')
-                    ->placeholder('-'),
-                TextEntry::make('sort_order')
-                    ->numeric(),
-                TextEntry::make('created_at')
-                    ->dateTime()
-                    ->placeholder('-'),
-                TextEntry::make('updated_at')
-                    ->dateTime()
-                    ->placeholder('-'),
-                TextEntry::make('deleted_at')
-                    ->dateTime()
-                    ->visible(fn (Subject $record): bool => $record->trashed()),
             ]);
     }
 }

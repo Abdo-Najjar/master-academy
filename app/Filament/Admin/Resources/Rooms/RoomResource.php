@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Rooms;
 use App\Filament\Admin\Resources\Rooms\Pages\ManageRooms;
 use App\Models\Room;
 use BackedEnum;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -15,17 +16,20 @@ use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Auth;
 
 class RoomResource extends Resource
 {
+    use HasHexaLite;
+
     protected static ?string $model = Room::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHomeModern;
@@ -47,26 +51,42 @@ class RoomResource extends Resource
         return __('Rooms');
     }
 
-    public static function canViewAny(): bool
+    public static function canAccess(): bool
     {
-        return Auth::user()?->can('view_rooms') ?? false;
+        return hexa()->can('room.index');
+    }
+
+    public function defineGates(): array
+    {
+        return [
+            'room.index' => __('View'),
+            'room.create' => __('Create'),
+            'room.update' => __('Update'),
+            'room.delete' => __('Delete'),
+        ];
     }
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                TextInput::make('number')
-                    ->label(__('Number'))
-                    ->required()
-                    ->maxLength(255),
-                TextInput::make('capacity')
-                    ->label(__('Capacity'))
-                    ->numeric()
-                    ->minValue(1),
-                TextInput::make('description')
-                    ->label(__('Description'))
-                    ->maxLength(255),
+                Section::make('')
+                    ->schema([
+                        TextInput::make('number')
+                            ->label(__('Number'))
+                            ->required()
+                            ->maxLength(255),
+                        TextInput::make('capacity')
+                            ->label(__('Capacity'))
+                            ->numeric()
+                            ->minValue(1),
+                        TextInput::make('description')
+                            ->label(__('Description'))
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2)
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -83,10 +103,12 @@ class RoomResource extends Resource
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
-                ForceDeleteAction::make(),
-                RestoreAction::make(),
+                ActionGroup::make([
+                    EditAction::make(),
+                    DeleteAction::make(),
+                    ForceDeleteAction::make(),
+                    RestoreAction::make(),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

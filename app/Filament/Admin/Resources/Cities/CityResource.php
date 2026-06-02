@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Cities;
 use App\Filament\Admin\Resources\Cities\Pages\ManageCities;
 use App\Models\City;
 use BackedEnum;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -16,18 +17,21 @@ use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Auth;
 
 class CityResource extends Resource
 {
+    use HasHexaLite;
+
     protected static ?string $model = City::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
@@ -49,25 +53,40 @@ class CityResource extends Resource
         return __('Cities');
     }
 
-    public static function canViewAny(): bool
+    public static function canAccess(): bool
     {
-        return Auth::user()?->can('view_cities') ?? false;
+        return hexa()->can('city.index');
+    }
+
+    public function defineGates(): array
+    {
+        return [
+            'city.index' => __('View'),
+            'city.create' => __('Create'),
+            'city.update' => __('Update'),
+            'city.delete' => __('Delete'),
+        ];
     }
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                TextInput::make('name')
-                    ->label(__('Name'))
-                    ->required()
-                    ->maxLength(255),
-                Select::make('governorate_id')
-                    ->label(__('Governorate'))
-                    ->relationship('governorate', 'name')
-                    ->searchable()
-                    ->preload()
-                    ->required(),
+                Section::make('')
+                    ->schema([
+                        TextInput::make('name')
+                            ->label(__('Name'))
+                            ->required()
+                            ->maxLength(255),
+                        Select::make('governorate_id')
+                            ->label(__('Governorate'))
+                            ->relationship('governorate', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                    ])
+                    ->columns(2)
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -98,10 +117,12 @@ class CityResource extends Resource
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
-                ForceDeleteAction::make(),
-                RestoreAction::make(),
+                ActionGroup::make([
+                    EditAction::make(),
+                    DeleteAction::make(),
+                    ForceDeleteAction::make(),
+                    RestoreAction::make(),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

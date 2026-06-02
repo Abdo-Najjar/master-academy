@@ -5,12 +5,11 @@ namespace App\Models;
 use Bavix\Wallet\Interfaces\Wallet;
 use Bavix\Wallet\Interfaces\WalletFloat;
 use Bavix\Wallet\Traits\HasWalletFloat;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Models\Contracts\HasAvatar;
-use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -18,10 +17,9 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Translatable\HasTranslations;
 
-class Student extends Authenticatable implements FilamentUser, HasAvatar, HasMedia, Wallet, WalletFloat
+class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
 {
     use HasFactory, HasTranslations, HasWalletFloat, InteractsWithMedia, LogsActivity, Notifiable, SoftDeletes;
 
@@ -36,9 +34,12 @@ class Student extends Authenticatable implements FilamentUser, HasAvatar, HasMed
         'password',
         'phone_number',
         'whatsapp_number',
+        'parent_name',
+        'parent_phone',
+        'parent_whatsapp',
         'governorate_id',
         'city_id',
-        'educational_level_id',
+        'is_active',
     ];
 
     /** @var list<string> */
@@ -53,6 +54,7 @@ class Student extends Authenticatable implements FilamentUser, HasAvatar, HasMed
         return [
             'password' => 'hashed',
             'dob' => 'date',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -61,25 +63,20 @@ class Student extends Authenticatable implements FilamentUser, HasAvatar, HasMed
         return 'username';
     }
 
-    public function canAccessPanel(Panel $panel): bool
+    protected static function booted(): void
     {
-        return $panel->getId() === 'student';
-    }
-
-    public function getFilamentAvatarUrl(): ?string
-    {
-        return $this->getFirstMediaUrl('main') ?: null;
-    }
-
-    public function getFilamentName(): string
-    {
-        return $this->getTranslation('name', app()->getLocale(), false) ?? '';
+        static::creating(function (self $student) {
+            if (empty($student->student_number)) {
+                $next = (int) static::query()->withTrashed()->max('id') + 1;
+                $student->student_number = 'STU-'.str_pad((string) $next, 5, '0', STR_PAD_LEFT);
+            }
+        });
     }
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'dob', 'ssn', 'username', 'email', 'phone_number', 'whatsapp_number', 'governorate_id', 'city_id', 'student_number', 'educational_level_id'])
+            ->logOnly(['name', 'dob', 'ssn', 'username', 'email', 'phone_number', 'whatsapp_number', 'parent_name', 'parent_phone', 'parent_whatsapp', 'governorate_id', 'city_id', 'student_number'])
             ->logOnlyDirty();
     }
 
@@ -100,11 +97,6 @@ class Student extends Authenticatable implements FilamentUser, HasAvatar, HasMed
         return $this->belongsTo(City::class);
     }
 
-    public function educationalLevel(): BelongsTo
-    {
-        return $this->belongsTo(EducationalLevel::class);
-    }
-
     public function registrations(): HasMany
     {
         return $this->hasMany(Registration::class);
@@ -113,5 +105,26 @@ class Student extends Authenticatable implements FilamentUser, HasAvatar, HasMed
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class);
+    }
+
+    public function examGrades(): HasMany
+    {
+        return $this->hasMany(ExamGrade::class);
+    }
+
+    public function complaints(): MorphMany
+    {
+        return $this->morphMany(Complaint::class, 'complainable');
+    }
+
+    public function loginActivities(): MorphMany
+    {
+        return $this->morphMany(LoginActivity::class, 'auth');
+    }
+
+    public function dismissedAnnouncements(): BelongsToMany
+    {
+        return $this->belongsToMany(Announcement::class, 'announcement_dismissals')
+            ->withPivot('dismissed_at');
     }
 }

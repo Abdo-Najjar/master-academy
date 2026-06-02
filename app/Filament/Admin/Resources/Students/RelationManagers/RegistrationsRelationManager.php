@@ -10,9 +10,12 @@ use Filament\Tables\Table;
 
 class RegistrationsRelationManager extends RelationManager
 {
-    protected static string $relationship = 'registrations';
+    public static function getTitle(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): string
+    {
+        return __('Registrations');
+    }
 
-    protected static ?string $title = 'Registrations';
+    protected static string $relationship = 'registrations';
 
     public function form(Schema $schema): Schema
     {

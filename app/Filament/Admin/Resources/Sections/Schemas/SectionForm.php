@@ -18,7 +18,7 @@ class SectionForm
     {
         return $schema
             ->components([
-                Section::make(__('Section Details'))
+                Section::make('')
                     ->schema([
                         TextInput::make('name')
                             ->label(__('Section Name'))
@@ -60,7 +60,7 @@ class SectionForm
                     ])
                     ->columns(2),
 
-                Section::make(__('Schedule'))
+                Section::make('')
                     ->schema([
                         DatePicker::make('start_date')
                             ->label(__('Start Date'))
@@ -72,7 +72,7 @@ class SectionForm
                     ])
                     ->columns(2),
 
-                Section::make(__('Pricing & Capacity'))
+                Section::make('')
                     ->schema([
                         TextInput::make('price')
                             ->label(__('Price'))
@@ -81,13 +81,14 @@ class SectionForm
                             ->default(0)
                             ->minValue(0)
                             ->step(0.01)
-                            ->prefix('$'),
+                            ->prefix('₪'),
                         TextInput::make('trainer_rate')
                             ->label(__('Trainer Rate (%)'))
                             ->numeric()
                             ->minValue(0)
                             ->maxValue(100)
                             ->step(0.01)
+                            ->default(40)
                             ->suffix('%')
                             ->helperText(__('Leave empty to use trainer default rate')),
                         TextInput::make('capacity')
@@ -97,15 +98,14 @@ class SectionForm
                     ])
                     ->columns(3),
 
-                Section::make(__('Online Access'))
+                Section::make('')
                     ->schema([
                         TextInput::make('google_meet_url')->label(__('Google Meet URL'))->url(),
                         TextInput::make('google_classroom_url')->label(__('Google Classroom URL'))->url(),
                     ])
-                    ->columns(2)
-                    ->collapsed(),
+                    ->columns(2),
 
-                Section::make(__('Times'))
+                Section::make('')
                     ->schema([
                         Repeater::make('times')
                             ->label(__('Lecture Times'))

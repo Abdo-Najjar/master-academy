@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('students', function (Blueprint $table): void {
             $table->id();
+            $table->boolean('is_active')->default(true);
             $table->json('name');
             $table->date('dob')->nullable();
             $table->string('ssn')->nullable();
@@ -20,9 +21,11 @@ return new class extends Migration
             $table->rememberToken();
             $table->string('phone_number')->nullable();
             $table->string('whatsapp_number')->nullable();
+            $table->string('parent_name')->nullable();
+            $table->string('parent_phone')->nullable();
+            $table->string('parent_whatsapp')->nullable();
             $table->foreignId('governorate_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('city_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('educational_level_id')->nullable()->constrained()->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
 

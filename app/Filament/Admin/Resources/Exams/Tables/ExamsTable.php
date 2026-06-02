@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Filament\Admin\Resources\Exams\Tables;
+
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Tables\Table;
+
+class ExamsTable
+{
+    public static function configure(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('id')->label('#')->sortable(),
+                TextColumn::make('name')->label(__('Exam Name'))->searchable()->sortable(),
+                TextColumn::make('section.name')->label(__('Section'))->searchable()->sortable(),
+                TextColumn::make('section.subject.name')->label(__('Subject'))->toggleable(),
+                TextColumn::make('date')->label(__('Date'))->date()->sortable(),
+                TextColumn::make('max_score')->label(__('Max Score'))->sortable(),
+                TextColumn::make('grades_count')->counts('grades')->label(__('Graded')),
+            ])
+            ->filters([
+                SelectFilter::make('section_id')
+                    ->label(__('Section'))
+                    ->relationship('section', 'name')
+                    ->searchable()
+                    ->preload(),
+                TrashedFilter::make(),
+            ])
+            ->recordActions([
+                ActionGroup::make([
+                    ViewAction::make(),
+                    EditAction::make(),
+                    DeleteAction::make(),
+                ]),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ])
+            ->defaultSort('date', 'desc');
+    }
+}
