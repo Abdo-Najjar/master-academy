@@ -10,6 +10,11 @@ class EditExam extends EditRecord
 {
     protected static string $resource = ExamResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
     public static function canAccess(array $parameters = []): bool
     {
         return hexa()->can('exam.update');

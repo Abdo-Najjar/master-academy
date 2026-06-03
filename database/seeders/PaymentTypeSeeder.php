@@ -9,7 +9,7 @@ class PaymentTypeSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (['Cash', 'Bank Transfer', 'Credit Card', 'Mobile Wallet'] as $name) {
+        foreach (['نقداً', 'تحويل بنكي', 'بطاقة ائتمانية', 'محفظة إلكترونية'] as $name) {
             PaymentType::query()->firstOrCreate(['name' => $name]);
         }
     }

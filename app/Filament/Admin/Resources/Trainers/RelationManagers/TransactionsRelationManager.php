@@ -19,6 +19,11 @@ class TransactionsRelationManager extends RelationManager
 
     protected static string $relationship = 'transactions';
 
+    public static function canViewForRecord(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): bool
+    {
+        return is_subclass_of($pageClass, \Filament\Resources\Pages\ViewRecord::class);
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema;

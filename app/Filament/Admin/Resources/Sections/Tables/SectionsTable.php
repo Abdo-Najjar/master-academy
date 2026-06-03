@@ -39,6 +39,7 @@ class SectionsTable
                 TextColumn::make('status')
                     ->label(__('Status'))
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => __(ucfirst($state)))
                     ->color(fn (string $state): string => match ($state) {
                         'upcoming' => 'info',
                         'active' => 'success',

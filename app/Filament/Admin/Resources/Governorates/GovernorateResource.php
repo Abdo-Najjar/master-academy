@@ -72,10 +72,7 @@ class GovernorateResource extends Resource
             ->components([
                 Section::make('')
                     ->schema([
-                        TextInput::make('name')
-                            ->label(__('Name'))
-                            ->required()
-                            ->maxLength(255),
+                        \App\Filament\Support\TranslatableInput::make('name', __('Name')),
                     ])
                     ->columnSpanFull(),
             ]);
@@ -94,7 +91,7 @@ class GovernorateResource extends Resource
                     ->counts('cities')
                     ->label(__('Cities'))
                     ->sortable(),
-                TextColumn::make('created_at')
+                TextColumn::make('created_at')->label(__('Created'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

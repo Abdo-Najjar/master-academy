@@ -20,6 +20,11 @@ class SubjectsRelationManager extends RelationManager
 
     protected static string $relationship = 'subjects';
 
+    public static function canViewForRecord(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): bool
+    {
+        return is_subclass_of($pageClass, \Filament\Resources\Pages\ViewRecord::class);
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema->components([]);
@@ -29,6 +34,7 @@ class SubjectsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('name')
+            ->emptyStateHeading(__('No records found'))
             ->columns([
                 TextColumn::make('name')
                     ->label(__('Name'))

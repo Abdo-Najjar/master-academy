@@ -30,11 +30,7 @@ class TrainerForm
                             ->imageEditor()
                             ->avatar()
                             ->columnSpanFull(),
-                        TextInput::make('name')
-                            ->label(__('Full Name'))
-                            ->required()
-                            ->maxLength(255)
-                            ->columnSpan(2),
+                        \App\Filament\Support\TranslatableInput::make('name', __('Full Name')),
                         DatePicker::make('dob')
                             ->label(__('Date of Birth'))
                             ->native(false)

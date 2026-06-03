@@ -33,7 +33,11 @@ class OverviewStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-user-group')
                 ->color('success'),
 
-            Stat::make(__('Active Sections'), Section::whereIn('status', ['upcoming', 'active'])->count())
+            Stat::make(__('Active Sections'), Section::query()
+                ->whereNotNull('start_date')
+                ->whereNotNull('end_date')
+                ->whereDate('end_date', '>=', now()->toDateString())
+                ->count())
                 ->description(__('Currently running or upcoming'))
                 ->descriptionIcon('heroicon-m-rectangle-group')
                 ->color('info'),

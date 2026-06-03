@@ -10,6 +10,11 @@ class CreateAnnouncement extends CreateRecord
 {
     protected static string $resource = AnnouncementResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
     public static function canAccess(array $parameters = []): bool
     {
         return hexa()->can('announcement.create');

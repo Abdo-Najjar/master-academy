@@ -17,6 +17,11 @@ class RegistrationsRelationManager extends RelationManager
 
     protected static string $relationship = 'registrations';
 
+    public static function canViewForRecord(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): bool
+    {
+        return is_subclass_of($pageClass, \Filament\Resources\Pages\ViewRecord::class);
+    }
+
     public function form(Schema $schema): Schema
     {
         return RegistrationForm::configure($schema);
@@ -24,6 +29,6 @@ class RegistrationsRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
-        return RegistrationsTable::configure($table)->recordTitleAttribute('id');
+        return RegistrationsTable::configure($table)->recordTitleAttribute('id')->emptyStateHeading(__('No records found'));
     }
 }

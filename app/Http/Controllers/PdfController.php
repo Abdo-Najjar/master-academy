@@ -19,7 +19,7 @@ class PdfController extends Controller
      */
     public function receipt(Request $request, Registration $registration): Response
     {
-        abort_unless(hexa()->can('registration.index'), 403);
+        $this->authorizeHexaGate($request, 'registration.index');
 
         $registration->loadMissing(['student', 'section.subject', 'section.trainer', 'paymentType']);
 
@@ -47,7 +47,7 @@ class PdfController extends Controller
      */
     public function studentCard(Request $request, Student $student): Response
     {
-        abort_unless(hexa()->can('student.index'), 403);
+        $this->authorizeHexaGate($request, 'student.index');
 
         $qr = base64_encode(
             QrCode::format('png')->size(200)->margin(1)->generate($student->student_number ?? (string) $student->id)

@@ -62,6 +62,15 @@ class TakeAttendance extends Page implements HasForms
         return hexa()->can('attendance.update');
     }
 
+    public function defineGates(): array
+    {
+        return [
+            'attendance.index' => __('View'),
+            'attendance.update' => __('Update'),
+            'attendance.delete' => __('Delete'),
+        ];
+    }
+
     public function mount(): void
     {
         $this->date = now()->toDateString();

@@ -14,6 +14,7 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -80,8 +81,9 @@ class RoomResource extends Resource
                             ->label(__('Capacity'))
                             ->numeric()
                             ->minValue(1),
-                        TextInput::make('description')
+                        Textarea::make('description')
                             ->label(__('Description'))
+                            ->rows(3)
                             ->maxLength(255)
                             ->columnSpanFull(),
                     ])

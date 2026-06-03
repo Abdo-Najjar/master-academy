@@ -65,7 +65,7 @@ class LoginActivities extends Page implements HasTable
                 TextColumn::make('auth_type')
                     ->label(__('User Type'))
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => class_basename($state))
+                    ->formatStateUsing(fn (string $state): string => __(class_basename($state)))
                     ->color(fn (string $state): string => match (class_basename($state)) {
                         'User' => 'danger',
                         'Student' => 'info',
@@ -75,7 +75,6 @@ class LoginActivities extends Page implements HasTable
                 TextColumn::make('auth.name')
                     ->label(__('Name'))
                     ->searchable(),
-                TextColumn::make('guard')->label(__('Guard'))->toggleable(),
                 TextColumn::make('ip')->label(__('IP'))->searchable(),
                 TextColumn::make('browser')->label(__('Browser'))->sortable(),
                 TextColumn::make('platform')->label(__('Platform'))->toggleable(),
@@ -93,8 +92,6 @@ class LoginActivities extends Page implements HasTable
                         \App\Models\Student::class => __('Student'),
                         \App\Models\Trainer::class => __('Trainer'),
                     ]),
-                SelectFilter::make('guard')
-                    ->options(['web' => 'web', 'student' => 'student', 'trainer' => 'trainer']),
             ])
             ->defaultSort('logged_in_at', 'desc');
     }

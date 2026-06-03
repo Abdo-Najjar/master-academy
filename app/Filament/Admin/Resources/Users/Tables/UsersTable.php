@@ -33,7 +33,7 @@ class UsersTable
                 TextColumn::make('phone_number')->label(__('Phone'))->searchable(),
                 TextColumn::make('ssn')->label(__('SSN'))->toggleable(),
                 IconColumn::make('is_active')->label(__('Active'))->boolean()->sortable(),
-                TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('created_at')->label(__('Created'))->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 TernaryFilter::make('is_active')->label(__('Active')),

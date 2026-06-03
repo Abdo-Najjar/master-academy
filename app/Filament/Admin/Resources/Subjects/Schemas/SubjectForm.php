@@ -16,10 +16,7 @@ class SubjectForm
             ->components([
                 Section::make('')
                     ->schema([
-                        TextInput::make('name')
-                            ->label(__('Name'))
-                            ->required()
-                            ->maxLength(255),
+                        \App\Filament\Support\TranslatableInput::make('name', __('Name')),
                         Select::make('trainers')
                             ->label(__('Trainers'))
                             ->multiple()
@@ -28,10 +25,6 @@ class SubjectForm
                             ->preload(),
                         ColorPicker::make('color')
                             ->label(__('Color')),
-                        TextInput::make('sort_order')
-                            ->label(__('Sort Order'))
-                            ->numeric()
-                            ->default(0),
                     ])
                     ->columns(2)
                     ->columnSpanFull(),

@@ -18,6 +18,8 @@ class ListStudents extends ListRecords
             ImportAction::make()
                 ->importer(StudentImporter::class)
                 ->label(__('Import Students'))
+                ->modelLabel(__('Student'))
+                ->pluralModelLabel(__('Students'))
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('gray'),
             CreateAction::make(),

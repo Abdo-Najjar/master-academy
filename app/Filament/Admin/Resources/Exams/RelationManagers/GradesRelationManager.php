@@ -17,6 +17,11 @@ class GradesRelationManager extends RelationManager
 
     protected static string $relationship = 'grades';
 
+    public static function canViewForRecord(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): bool
+    {
+        return is_subclass_of($pageClass, \Filament\Resources\Pages\ViewRecord::class);
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema->components([
@@ -34,6 +39,7 @@ class GradesRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('id')
+            ->emptyStateHeading(__('No records found'))
             ->columns([
                 TextColumn::make('student.name')->label(__('Student'))->searchable(),
                 TextColumn::make('student.student_number')->label(__('Student Number')),

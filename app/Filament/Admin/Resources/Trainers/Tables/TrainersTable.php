@@ -40,7 +40,7 @@ class TrainersTable
                 TextColumn::make('balanceFloat')->label(__('Wallet Balance'))->money('ILS')->getStateUsing(fn ($record) => $record->balanceFloat),
                 IconColumn::make('is_active')->label(__('Active'))->boolean()->sortable(),
                 TextColumn::make('dob')->date()->sortable()->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('created_at')->label(__('Created'))->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 TernaryFilter::make('is_active')->label(__('Active')),

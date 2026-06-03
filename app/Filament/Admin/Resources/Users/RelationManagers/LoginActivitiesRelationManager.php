@@ -16,6 +16,11 @@ class LoginActivitiesRelationManager extends RelationManager
 
     protected static string $relationship = 'loginActivities';
 
+    public static function canViewForRecord(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): bool
+    {
+        return is_subclass_of($pageClass, \Filament\Resources\Pages\ViewRecord::class);
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema;
@@ -35,7 +40,6 @@ class LoginActivitiesRelationManager extends RelationManager
                 TextColumn::make('browser')->label(__('Browser')),
                 TextColumn::make('platform')->label(__('Platform'))->toggleable(),
                 TextColumn::make('device')->label(__('Device'))->toggleable(),
-                TextColumn::make('guard')->label(__('Guard'))->toggleable(),
             ])
             ->defaultSort('logged_in_at', 'desc')
             ->emptyStateHeading(__('No records found'));

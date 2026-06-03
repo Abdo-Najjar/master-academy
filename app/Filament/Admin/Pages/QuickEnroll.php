@@ -76,11 +76,7 @@ class QuickEnroll extends Page implements HasForms
                     ->description(__('Personal and account details for the new student.'))
                     ->icon('heroicon-o-academic-cap')
                     ->schema([
-                        TextInput::make('name')
-                            ->label(__('Full Name'))
-                            ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
+                        \App\Filament\Support\TranslatableInput::make('name', __('Full Name')),
                         TextInput::make('username')
                             ->label(__('Username'))
                             ->required()
@@ -153,7 +149,6 @@ class QuickEnroll extends Page implements HasForms
                             ->maxLength(255),
                         Select::make('governorate_id')
                             ->label(__('Governorate'))
-                            ->relationship('governorate', 'name')
                             ->options(\App\Models\Governorate::pluck('name', 'id'))
                             ->searchable()
                             ->preload()

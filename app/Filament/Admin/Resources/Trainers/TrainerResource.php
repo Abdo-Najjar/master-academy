@@ -84,6 +84,7 @@ class TrainerResource extends Resource
             SubjectsRelationManager::class,
             SectionsRelationManager::class,
             TransactionsRelationManager::class,
+            \App\Filament\Admin\Resources\Users\RelationManagers\LoginActivitiesRelationManager::class,
         ];
     }
 

@@ -24,6 +24,11 @@ class TimesRelationManager extends RelationManager
 
     protected static string $relationship = 'times';
 
+    public static function canViewForRecord(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): bool
+    {
+        return is_subclass_of($pageClass, \Filament\Resources\Pages\ViewRecord::class);
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema
@@ -54,6 +59,7 @@ class TimesRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('day')
+            ->emptyStateHeading(__('No records found'))
             ->columns([
                 TextColumn::make('day')->label(__('Day')),
                 TextColumn::make('start_time')->label(__('Start')),

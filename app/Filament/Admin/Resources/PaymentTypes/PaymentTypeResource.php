@@ -87,7 +87,7 @@ class PaymentTypeResource extends Resource
             ->columns([
                 TextColumn::make('id')->label('#')->sortable(),
                 TextColumn::make('name')->label(__('Name'))->searchable()->sortable(),
-                TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('created_at')->label(__('Created'))->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 TrashedFilter::make(),

@@ -20,13 +20,14 @@ class RegistrationObserver
 
             $amountPaid = (float) $registration->amount_paid;
             $trainerAmount = (float) $registration->trainer_amount;
+            $studentName = $student?->getTranslation('name', app()->getLocale(), false) ?? '#'.$registration->student_id;
 
             if ($student && $amountPaid > 0) {
                 $student->forceWithdrawFloat($amountPaid, [
                     'description' => __('Charge for registration: :name', [
                         'name' => $registration->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$registration->section_id,
                     ]),
-                    'note' => __('Registration #:id', ['id' => $registration->id]),
+                    'note' => __('Registration #:id — :student', ['id' => $registration->id, 'student' => $studentName]),
                     'payment_type_id' => $registration->payment_type_id,
                 ]);
             }
@@ -36,7 +37,7 @@ class RegistrationObserver
                     'description' => __('Trainer share for registration: :name', [
                         'name' => $registration->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$registration->section_id,
                     ]),
-                    'note' => __('Registration #:id', ['id' => $registration->id]),
+                    'note' => __('Registration #:id — :student', ['id' => $registration->id, 'student' => $studentName]),
                 ]);
             }
         });

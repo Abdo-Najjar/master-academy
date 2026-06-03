@@ -16,6 +16,11 @@ class SectionsRelationManager extends RelationManager
 
     protected static string $relationship = 'sections';
 
+    public static function canViewForRecord(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): bool
+    {
+        return is_subclass_of($pageClass, \Filament\Resources\Pages\ViewRecord::class);
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema->components([]);
@@ -23,6 +28,6 @@ class SectionsRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
-        return SectionsTable::configure($table)->recordTitleAttribute('name');
+        return SectionsTable::configure($table)->recordTitleAttribute('name')->emptyStateHeading(__('No records found'));
     }
 }

@@ -13,6 +13,11 @@ class EditSubject extends EditRecord
 {
     protected static string $resource = SubjectResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

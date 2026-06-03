@@ -13,6 +13,11 @@ class EditRegistration extends EditRecord
 {
     protected static string $resource = RegistrationResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

@@ -82,6 +82,7 @@ class StudentResource extends Resource
         return [
             RegistrationsRelationManager::class,
             TransactionsRelationManager::class,
+            \App\Filament\Admin\Resources\Users\RelationManagers\LoginActivitiesRelationManager::class,
         ];
     }
 
