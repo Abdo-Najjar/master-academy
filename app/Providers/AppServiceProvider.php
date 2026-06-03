@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Listeners\RecordLoginActivity;
 use App\Models\User;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -27,5 +29,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function ($user) {
             return ($user instanceof User && (int) $user->getKey() === 1) ? true : null;
         });
+
+        // Project-wide default: show an em dash for empty table cells / detail
+        // entries. Columns that set their own placeholder keep it.
+        TextColumn::configureUsing(fn (TextColumn $column) => $column->placeholder('—'));
+        TextEntry::configureUsing(fn (TextEntry $entry) => $entry->placeholder('—'));
     }
 }
