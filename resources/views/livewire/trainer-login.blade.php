@@ -1,7 +1,7 @@
 <div class="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-900 dark:to-gray-800">
     <div class="max-w-md w-full bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-gray-200 dark:border-gray-700">
         <div class="text-center mb-6">
-            <img src="{{ asset('logo/logo.png') }}" alt="" class="mx-auto h-20 mb-3" onerror="this.style.display='none'">
+            <img src="{{ \App\Support\AppBranding::logoUrl() }}" alt="" class="mx-auto h-20 mb-3" onerror="this.style.display='none'">
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ __('Trainer Login') }}</h1>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ __('Sign in to your trainer account') }}</p>
         </div>

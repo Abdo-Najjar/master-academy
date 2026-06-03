@@ -1,7 +1,7 @@
 <div class="min-h-screen flex items-center justify-center p-6 bg-gray-50 dark:bg-gray-900">
     <div class="max-w-6xl w-full">
         <div class="text-center mb-12">
-            <img src="{{ asset('logo/logo.png') }}" alt="{{ __('Logo') }}" class="mx-auto mb-4 h-40 md:h-52 w-auto" onerror="this.style.display='none'">
+            <img src="{{ \App\Support\AppBranding::logoUrl() }}" alt="{{ __('Logo') }}" class="mx-auto mb-4 h-40 md:h-52 w-auto" onerror="this.style.display='none'">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">منبع التميز</h1>
             <p class="text-gray-600 dark:text-gray-400 text-lg">{{ __('Training Center Management System') }}</p>
         </div>
