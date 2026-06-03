@@ -35,7 +35,8 @@ class AnnouncementForm
                         Toggle::make('all_sections')
                             ->label(__('Send to all sections'))
                             ->live()
-                            ->inline(false),
+                            ->inline(false)
+                            ->columnSpanFull(),
 
                         Select::make('sections')
                             ->label(__('Target Sections'))
