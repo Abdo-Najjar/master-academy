@@ -10,7 +10,7 @@ class RegistrationsChartWidget extends ChartWidget
 {
     protected ?string $heading = null;
 
-    protected static ?int $sort = 1;
+    protected static ?int $sort = 4;
 
     protected int|string|array $columnSpan = ['md' => 1, 'xl' => 1];
 
