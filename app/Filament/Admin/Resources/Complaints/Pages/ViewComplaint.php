@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\Complaints\Pages;
 
 use App\Filament\Admin\Resources\Complaints\ComplaintResource;
 use App\Models\Complaint;
+use App\Notifications\ComplaintReplied;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -41,6 +42,12 @@ class ViewComplaint extends ViewRecord
                         'handled_by' => Auth::id(),
                         'resolved_at' => $data['status'] === Complaint::STATUS_RESOLVED ? now() : null,
                     ]);
+
+                    // Notify the student/trainer who filed it, when there is a reply.
+                    if (filled($data['admin_reply'] ?? null)) {
+                        $record->loadMissing('complainable');
+                        $record->complainable?->notify(new ComplaintReplied($record));
+                    }
 
                     Notification::make()
                         ->success()

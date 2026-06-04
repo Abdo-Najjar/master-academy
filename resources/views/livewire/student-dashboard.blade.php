@@ -172,7 +172,7 @@
             @endif
 
             @if ($activeTab === 'complaints')
-                <div class="max-w-2xl">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold mb-4">{{ __('Submit a Complaint') }}</h3>
                         <form wire:submit="submitComplaint" class="space-y-3">
@@ -184,6 +184,32 @@
                             @error('complaintBody') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                             <button class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm">{{ __('Send Complaint') }}</button>
                         </form>
+                    </div>
+
+                    <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold mb-4">{{ __('Admin Replies') }}</h3>
+                        <div class="space-y-3 max-h-[28rem] overflow-y-auto">
+                            @forelse ($complaints->filter(fn ($c) => filled($c->admin_reply)) as $complaint)
+                                <div class="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                                    <div class="flex items-center justify-between gap-2 mb-1">
+                                        <span class="font-semibold text-sm truncate">{{ $complaint->subject }}</span>
+                                        <span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap
+                                            @class([
+                                                'bg-amber-100 text-amber-700' => $complaint->status === 'open',
+                                                'bg-blue-100 text-blue-700' => $complaint->status === 'in_progress',
+                                                'bg-green-100 text-green-700' => $complaint->status === 'resolved',
+                                            ])">{{ $complaint->status_label }}</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mb-2">{{ $complaint->created_at->diffForHumans() }}</p>
+                                    <div class="mt-1 p-2 rounded bg-purple-50 dark:bg-purple-900/20 text-sm">
+                                        <span class="font-semibold">{{ __('Admin Reply') }}:</span>
+                                        <p class="mt-1">{{ $complaint->admin_reply }}</p>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-gray-500 text-sm">{{ __('No replies yet') }}</p>
+                            @endforelse
+                        </div>
                     </div>
                 </div>
             @endif
@@ -224,10 +250,31 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold mb-4">{{ __('Profile Picture') }}</h3>
-                        <form wire:submit="updateProfile" class="space-y-3">
-                            <input type="file" wire:model="newAvatar" accept="image/*" class="block w-full text-sm">
+                        <form wire:submit="updateProfile" class="space-y-4">
+                            @php $avatarUrl = $student->getFirstMediaUrl('main'); @endphp
+                            <div class="flex items-center gap-4">
+                                <label class="relative cursor-pointer">
+                                    <span class="flex items-center justify-center w-24 h-24 rounded-full overflow-hidden ring-2 ring-purple-500 bg-gray-100 dark:bg-gray-700">
+                                        @if ($newAvatar)
+                                            <img src="{{ $newAvatar->temporaryUrl() }}" class="w-24 h-24 object-cover" alt="">
+                                        @elseif ($avatarUrl)
+                                            <img src="{{ $avatarUrl }}" class="w-24 h-24 object-cover" alt="">
+                                        @else
+                                            <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                                        @endif
+                                    </span>
+                                    <span class="absolute bottom-0 left-0 flex items-center justify-center w-7 h-7 rounded-full bg-purple-600 text-white ring-2 ring-white dark:ring-gray-800">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    </span>
+                                    <input type="file" wire:model="newAvatar" accept="image/*" class="hidden">
+                                </label>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Click the photo to choose a new image') }}</p>
+                            </div>
                             @error('newAvatar') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
-                            <button class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm">{{ __('Upload') }}</button>
+                            <div wire:loading wire:target="newAvatar" class="text-sm text-gray-500">{{ __('Uploading...') }}</div>
+                            @if ($newAvatar)
+                                <button class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm">{{ __('Upload') }}</button>
+                            @endif
                         </form>
                     </div>
                     <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">

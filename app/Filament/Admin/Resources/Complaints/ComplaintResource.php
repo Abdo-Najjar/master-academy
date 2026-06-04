@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Complaints;
 use App\Filament\Admin\Resources\Complaints\Pages\ListComplaints;
 use App\Filament\Admin\Resources\Complaints\Pages\ViewComplaint;
 use App\Filament\Admin\Resources\Complaints\Schemas\ComplaintForm;
+use App\Filament\Admin\Resources\Complaints\Schemas\ComplaintInfolist;
 use App\Filament\Admin\Resources\Complaints\Tables\ComplaintsTable;
 use App\Models\Complaint;
 use BackedEnum;
@@ -75,6 +76,11 @@ class ComplaintResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return ComplaintForm::configure($schema);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return ComplaintInfolist::configure($schema);
     }
 
     public static function table(Table $table): Table

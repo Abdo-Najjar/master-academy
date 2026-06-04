@@ -184,7 +184,7 @@
             @endif
 
             @if ($activeTab === 'complaints')
-                <div class="max-w-2xl">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold mb-4">{{ __('Submit a Complaint') }}</h3>
                         <form wire:submit="submitComplaint" class="space-y-3">
@@ -196,6 +196,32 @@
                             @error('complaintBody') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                             <button class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm">{{ __('Send Complaint') }}</button>
                         </form>
+                    </div>
+
+                    <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold mb-4">{{ __('Admin Replies') }}</h3>
+                        <div class="space-y-3 max-h-[28rem] overflow-y-auto">
+                            @forelse ($complaints->filter(fn ($c) => filled($c->admin_reply)) as $complaint)
+                                <div class="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                                    <div class="flex items-center justify-between gap-2 mb-1">
+                                        <span class="font-semibold text-sm truncate">{{ $complaint->subject }}</span>
+                                        <span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap
+                                            @class([
+                                                'bg-amber-100 text-amber-700' => $complaint->status === 'open',
+                                                'bg-blue-100 text-blue-700' => $complaint->status === 'in_progress',
+                                                'bg-green-100 text-green-700' => $complaint->status === 'resolved',
+                                            ])">{{ $complaint->status_label }}</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mb-2">{{ $complaint->created_at->diffForHumans() }}</p>
+                                    <div class="mt-1 p-2 rounded bg-emerald-50 dark:bg-emerald-900/20 text-sm">
+                                        <span class="font-semibold">{{ __('Admin Reply') }}:</span>
+                                        <p class="mt-1">{{ $complaint->admin_reply }}</p>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-gray-500 text-sm">{{ __('No replies yet') }}</p>
+                            @endforelse
+                        </div>
                     </div>
                 </div>
             @endif
