@@ -6,6 +6,7 @@ use App\Listeners\RecordLoginActivity;
 use App\Models\User;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -34,5 +35,10 @@ class AppServiceProvider extends ServiceProvider
         // entries. Columns that set their own placeholder keep it.
         TextColumn::configureUsing(fn (TextColumn $column) => $column->placeholder('—'));
         TextEntry::configureUsing(fn (TextEntry $entry) => $entry->placeholder('—'));
+
+        // Render all table numbers/money with Western (English) digits and a
+        // comma grouping instead of the Arabic-Indic numerals the `ar` locale
+        // would produce. Money decimals are dropped per-column via decimalPlaces.
+        Table::configureUsing(fn (Table $table) => $table->defaultNumberLocale('en'));
     }
 }

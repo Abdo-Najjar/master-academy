@@ -21,14 +21,13 @@ use Illuminate\Support\Facades\Storage;
 
 class ManageAppSettings extends Page implements HasForms
 {
-    use HasHexaLite;
-    use InteractsWithForms;
+    use HasHexaLite, InteractsWithForms;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
     protected string $view = 'filament.admin.pages.manage-app-settings';
 
-    protected static ?int $navigationSort = 997;
+    protected static ?int $navigationSort = 1;
 
     public ?array $data = [];
 

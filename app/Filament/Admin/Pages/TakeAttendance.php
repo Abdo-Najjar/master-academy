@@ -21,14 +21,13 @@ use Livewire\Attributes\Computed;
 
 class TakeAttendance extends Page implements HasForms
 {
-    use HasHexaLite;
-    use InteractsWithForms;
+    use HasHexaLite, InteractsWithForms;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCheckBadge;
 
     protected string $view = 'filament.admin.pages.take-attendance';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 3;
 
     public ?array $data = [];
 
@@ -44,7 +43,7 @@ class TakeAttendance extends Page implements HasForms
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Education');
+        return __('Operations');
     }
 
     public static function getNavigationLabel(): string
@@ -60,6 +59,11 @@ class TakeAttendance extends Page implements HasForms
     public static function canAccess(): bool
     {
         return hexa()->can('attendance.update');
+    }
+
+    public function roleName(): string
+    {
+        return __('Take Attendance');
     }
 
     public function defineGates(): array

@@ -15,14 +15,13 @@ use Hexters\HexaLite\HasHexaLite;
 
 class LoginActivities extends Page implements HasTable
 {
-    use HasHexaLite;
-    use InteractsWithTable;
+    use HasHexaLite, InteractsWithTable;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShieldCheck;
 
     protected string $view = 'filament.admin.pages.login-activities';
 
-    protected static ?int $navigationSort = 996;
+    protected static ?int $navigationSort = 3;
 
     public static function getNavigationGroup(): ?string
     {

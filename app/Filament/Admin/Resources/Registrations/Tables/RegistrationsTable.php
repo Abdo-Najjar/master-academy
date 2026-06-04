@@ -33,10 +33,10 @@ class RegistrationsTable
                     ->color(fn ($record) => $record->section?->subject?->color ? \Filament\Support\Colors\Color::hex($record->section->subject->color) : 'gray')
                     ->toggleable(),
                 TextColumn::make('paymentType.name')->label(__('Payment'))->toggleable(),
-                TextColumn::make('amount_due')->label(__('Due'))->money('ILS')->sortable(),
-                TextColumn::make('exemption_amount')->label(__('Exemption'))->money('ILS')->sortable(),
-                TextColumn::make('amount_paid')->label(__('Paid'))->money('ILS')->sortable(),
-                TextColumn::make('trainer_amount')->label(__('Trainer Share'))->money('ILS')->sortable(),
+                TextColumn::make('amount_due')->label(__('Due'))->money('ILS', decimalPlaces: 0)->sortable(),
+                TextColumn::make('exemption_amount')->label(__('Exemption'))->money('ILS', decimalPlaces: 0)->sortable(),
+                TextColumn::make('amount_paid')->label(__('Paid'))->money('ILS', decimalPlaces: 0)->sortable(),
+                TextColumn::make('trainer_amount')->label(__('Trainer Share'))->money('ILS', decimalPlaces: 0)->sortable(),
                 TextColumn::make('created_at')->label(__('Date'))->dateTime()->sortable(),
             ])
             ->filters([

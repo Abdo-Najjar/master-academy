@@ -32,7 +32,7 @@ class SectionsTable
                 TextColumn::make('trainer.name')->label(__('Trainer'))->searchable()->sortable(),
                 TextColumn::make('start_date')->label(__('Start'))->date()->sortable(),
                 TextColumn::make('end_date')->label(__('End'))->date()->sortable(),
-                TextColumn::make('price')->label(__('Price'))->money('ILS')->sortable(),
+                TextColumn::make('price')->label(__('Price'))->money('ILS', decimalPlaces: 0)->sortable(),
                 TextColumn::make('trainer_rate')->label(__('Trainer Rate'))->suffix(' %')->sortable(),
                 TextColumn::make('capacity')->label(__('Capacity'))->sortable(),
                 TextColumn::make('registrations_count')->counts('registrations')->label(__('Enrolled')),

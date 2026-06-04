@@ -20,22 +20,20 @@ use Hexters\HexaLite\HasHexaLite;
 
 class Reports extends Page implements HasForms
 {
-    use HasHexaLite;
-    use InteractsWithForms;
+    use HasHexaLite, InteractsWithForms;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
 
     protected string $view = 'filament.admin.pages.reports';
 
     /** High sort value so it lands near the bottom of the standalone (un-grouped) items. */
-    protected static ?int $navigationSort = 90;
+    protected static ?int $navigationSort = 2;
 
     public ?array $filters = [];
 
     public static function getNavigationGroup(): ?string
     {
-        // Ungrouped — appears as a standalone top-level entry in the sidebar.
-        return null;
+        return __('Finance');
     }
 
     public static function getNavigationLabel(): string

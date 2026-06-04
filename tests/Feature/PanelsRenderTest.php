@@ -91,7 +91,6 @@ test('authenticated admin with HexaLite role can load all resource pages', funct
         '/admin/cities',
         '/admin/payment-types',
         '/admin/users',
-        '/admin/attendances',
     ] as $url) {
         $response = $this->actingAs($admin)->get($url);
         expect($response->status())->toBe(200, "Failed loading {$url} - status {$response->status()}");

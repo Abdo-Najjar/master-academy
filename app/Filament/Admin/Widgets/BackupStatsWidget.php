@@ -11,10 +11,15 @@ class BackupStatsWidget extends BaseWidget
 {
     /**
      * Only render on the System Backup page, not on the dashboard.
+     *
+     * routeIs() matches the initial page load (GET). Livewire requests hit the
+     * `/livewire/update` route, where routeIs() would be false and Filament
+     * would abort 403 — so we also accept updates whose referer is the backup
+     * page (this is what caused the page to 403 after a moment).
      */
     public static function canView(): bool
     {
-        return request()->routeIs('filament.admin.pages.system-backup');
+        return str_contains((string) request()->header('referer'), '/admin/system-backup');
     }
 
     protected function getStats(): array

@@ -22,11 +22,13 @@ class ComplaintResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedExclamationTriangle;
 
+    protected static ?int $navigationSort = 2;
+
     protected static ?string $recordTitleAttribute = 'subject';
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Administration');
+        return __('Communication');
     }
 
     public static function getModelLabel(): string

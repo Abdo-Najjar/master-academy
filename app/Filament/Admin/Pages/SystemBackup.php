@@ -22,7 +22,7 @@ class SystemBackup extends Page
 
     protected string $view = 'filament.pages.system-backup';
 
-    protected static ?int $navigationSort = 998;
+    protected static ?int $navigationSort = 4;
 
     public static function getNavigationGroup(): ?string
     {

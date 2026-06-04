@@ -24,7 +24,8 @@ class EditProfile extends Page implements HasForms
 
     protected string $view = 'filament.admin.pages.edit-profile';
 
-    protected static ?int $navigationSort = 999;
+    // Reachable from the user menu ("My Profile"); hidden from the sidebar.
+    protected static bool $shouldRegisterNavigation = false;
 
     public ?array $profileData = [];
 

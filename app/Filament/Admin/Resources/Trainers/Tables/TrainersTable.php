@@ -37,7 +37,7 @@ class TrainersTable
                 TextColumn::make('default_rate')->label(__('Default Rate'))->suffix(' %')->sortable(),
                 TextColumn::make('subjects_count')->counts('subjects')->label(__('Subjects')),
                 TextColumn::make('sections_count')->counts('sections')->label(__('Sections')),
-                TextColumn::make('balanceFloat')->label(__('Wallet Balance'))->money('ILS')->getStateUsing(fn ($record) => $record->balanceFloat),
+                TextColumn::make('balanceFloat')->label(__('Wallet Balance'))->money('ILS', decimalPlaces: 0)->getStateUsing(fn ($record) => $record->balanceFloat),
                 IconColumn::make('is_active')->label(__('Active'))->boolean()->sortable(),
                 TextColumn::make('dob')->date()->sortable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')->label(__('Created'))->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),

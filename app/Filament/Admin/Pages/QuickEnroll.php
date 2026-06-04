@@ -29,20 +29,19 @@ use Illuminate\Validation\Rules\Unique;
 
 class QuickEnroll extends Page implements HasForms
 {
-    use HasHexaLite;
-    use InteractsWithForms;
+    use HasHexaLite, InteractsWithForms;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserPlus;
 
     protected string $view = 'filament.admin.pages.quick-enroll';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 1;
 
     public ?array $data = [];
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Education');
+        return __('Operations');
     }
 
     public static function getNavigationLabel(): string
@@ -57,7 +56,19 @@ class QuickEnroll extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return hexa()->can('student.create') && hexa()->can('registration.create');
+        return hexa()->can('quick-enroll.access');
+    }
+
+    public function roleName(): string
+    {
+        return __('Quick Enroll');
+    }
+
+    public function defineGates(): array
+    {
+        return [
+            'quick-enroll.access' => __('Access'),
+        ];
     }
 
     public function mount(): void
