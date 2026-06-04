@@ -74,10 +74,7 @@ class PaymentTypeResource extends Resource
             ->components([
                 Section::make('')
                     ->schema([
-                        TextInput::make('name')
-                            ->label(__('Name'))
-                            ->required()
-                            ->maxLength(255),
+                        \App\Filament\Support\TranslatableInput::make('name', __('Name')),
                     ])
                     ->columnSpanFull(),
             ]);

@@ -64,7 +64,12 @@ class LoginActivities extends Page implements HasTable
                 TextColumn::make('auth_type')
                     ->label(__('User Type'))
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => __(class_basename($state)))
+                    ->formatStateUsing(fn (string $state): string => match (class_basename($state)) {
+                        'User' => __('Employee'),
+                        'Student' => __('Student'),
+                        'Trainer' => __('Trainer'),
+                        default => __(class_basename($state)),
+                    })
                     ->color(fn (string $state): string => match (class_basename($state)) {
                         'User' => 'danger',
                         'Student' => 'info',
@@ -87,7 +92,7 @@ class LoginActivities extends Page implements HasTable
                 SelectFilter::make('auth_type')
                     ->label(__('User Type'))
                     ->options([
-                        \App\Models\User::class => __('Admin'),
+                        \App\Models\User::class => __('Employee'),
                         \App\Models\Student::class => __('Student'),
                         \App\Models\Trainer::class => __('Trainer'),
                     ]),

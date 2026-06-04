@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('payment_types', function (Blueprint $table): void {
             $table->id();
-            $table->string('name');
+            $table->json('name');
             $table->timestamps();
             $table->softDeletes();
         });

@@ -32,6 +32,12 @@ class TrainerInfolist
                             ->label(__('Wallet Balance'))
                             ->formatStateUsing(fn ($state) => number_format((float) $state, 2).' ₪')
                             ->color(fn ($state) => ((float) $state) < 0 ? 'danger' : 'success'),
+                        TextEntry::make('subjects.name')
+                            ->label(__('Subjects'))
+                            ->badge()
+                            ->separator(',')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
                         TextEntry::make('bio')->label(__('Bio'))->placeholder('—')->columnSpanFull(),
                         TextEntry::make('created_at')->label(__('Created'))->dateTime()->placeholder('—'),
                         TextEntry::make('deleted_at')

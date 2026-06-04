@@ -49,13 +49,27 @@ class PdfController extends Controller
     {
         $this->authorizeHexaGate($request, 'student.index');
 
+        $student->loadMissing(['governorate', 'city']);
+
         $qr = base64_encode(
             QrCode::format('png')->size(200)->margin(1)->generate($student->student_number ?? (string) $student->id)
         );
 
+        // Embed the student photo (if any) as a data URI so mPDF renders it reliably.
+        $photo = null;
+        $media = $student->getFirstMedia('main');
+        if ($media && is_file($media->getPath())) {
+            $photo = 'data:'.$media->mime_type.';base64,'.base64_encode((string) file_get_contents($media->getPath()));
+        }
+
+        $name = $student->getTranslation('name', 'ar', false)
+            ?: (is_array($student->name) ? reset($student->name) : $student->name);
+
         $html = View::make('pdf.student-card', [
             'student' => $student,
             'qrPng' => $qr,
+            'photo' => $photo,
+            'name' => $name,
         ])->render();
 
         $pdf = LaravelMpdf::loadHTML($html, [

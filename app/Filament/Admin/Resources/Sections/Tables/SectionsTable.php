@@ -33,7 +33,7 @@ class SectionsTable
                 TextColumn::make('start_date')->label(__('Start'))->date()->sortable(),
                 TextColumn::make('end_date')->label(__('End'))->date()->sortable(),
                 TextColumn::make('price')->label(__('Price'))->money('ILS', decimalPlaces: 0)->sortable(),
-                TextColumn::make('trainer_rate')->label(__('Trainer Rate'))->suffix(' %')->sortable(),
+                TextColumn::make('trainer_rate')->label(__('Trainer Rate'))->formatStateUsing(fn ($state) => $state === null ? null : rtrim(rtrim(number_format((float) $state, 2, '.', ''), '0'), '.').' %')->sortable(),
                 TextColumn::make('capacity')->label(__('Capacity'))->sortable(),
                 TextColumn::make('registrations_count')->counts('registrations')->label(__('Enrolled')),
                 TextColumn::make('status')

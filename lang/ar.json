@@ -676,6 +676,8 @@
     "System": "النظام",
     "Operations": "العمليات",
     "Communication": "التواصل",
+    "Access Roles & Permissions": "الوصول للأدوار والصلاحيات",
+    "Select All Permissions": "تحديد كل الصلاحيات",
     "Registration #:id — :student": "تسجيل #:id — :student",
     "Registration #:id cancelled": "تم إلغاء التسجيل #:id",
     "Registration cancelled": "تم إلغاء التسجيل",
