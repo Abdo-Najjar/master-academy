@@ -42,9 +42,15 @@ class ComplaintResource extends Resource
         return __('Complaints');
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        // Hide archived (older than a month) complaints from the table, view and badge.
+        return parent::getEloquentQuery()->notArchived();
+    }
+
     public static function getNavigationBadge(): ?string
     {
-        $open = Complaint::query()->where('status', Complaint::STATUS_OPEN)->count();
+        $open = Complaint::query()->notArchived()->where('status', Complaint::STATUS_OPEN)->count();
 
         return $open > 0 ? (string) $open : null;
     }

@@ -163,7 +163,7 @@ class StudentDashboard extends Component
         }
 
         $complaints = $student
-            ? $student->complaints()->orderByDesc('created_at')->limit(50)->get()
+            ? $student->complaints()->notArchived()->orderByDesc('created_at')->limit(50)->get()
             : collect();
 
         $loginActivities = $student

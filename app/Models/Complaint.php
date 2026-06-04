@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -66,5 +67,14 @@ class Complaint extends Model
             self::STATUS_RESOLVED => 'success',
             default => 'gray',
         });
+    }
+
+    /**
+     * Complaints older than one month are archived: hidden from the admin panel
+     * and from the student/trainer portals (the rows are kept, just not shown).
+     */
+    public function scopeNotArchived(Builder $query): Builder
+    {
+        return $query->where('created_at', '>=', now()->subMonth());
     }
 }

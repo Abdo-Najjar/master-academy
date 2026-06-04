@@ -91,9 +91,34 @@
             @endif
 
             @if ($activeTab === 'attendance')
+                <style>
+                    .ta-actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.75rem;}
+                    .ta-btn{padding:.5rem .75rem;border-radius:.5rem;font-size:.75rem;font-weight:600;color:#fff;border:none;cursor:pointer;}
+                    .ta-btn--green{background:#16a34a;} .ta-btn--red{background:#dc2626;}
+                    .ta-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.75rem;margin:1rem 0;}
+                    .ta-stat{padding:1rem;border-radius:.75rem;border:1px solid;}
+                    .ta-stat__label{font-size:.75rem;margin:0;} .ta-stat__value{font-size:1.5rem;font-weight:700;margin:.25rem 0 0;}
+                    .ta-stat--gray{background:rgba(148,163,184,.10);border-color:rgba(148,163,184,.25);color:#64748b;}
+                    .ta-stat--green{background:rgba(34,197,94,.10);border-color:rgba(34,197,94,.30);color:#166534;}
+                    .ta-stat--red{background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.30);color:#991b1b;}
+                    .ta-stat--amber{background:rgba(245,158,11,.10);border-color:rgba(245,158,11,.30);color:#92400e;}
+                    .ta-stat--blue{background:rgba(59,130,246,.10);border-color:rgba(59,130,246,.30);color:#1e40af;}
+                    .ta-row{padding:.75rem 0;border-top:1px solid rgba(148,163,184,.15);display:flex;flex-wrap:wrap;align-items:center;gap:1rem;}
+                    .ta-row__info{display:flex;align-items:center;gap:.75rem;flex:1;min-width:200px;}
+                    .ta-avatar{width:40px;height:40px;border-radius:9999px;object-fit:cover;}
+                    .ta-avatar--initials{display:flex;align-items:center;justify-content:center;background:#059669;color:#fff;font-weight:700;}
+                    .ta-row__name{font-weight:600;margin:0;} .ta-row__id{font-size:.75rem;color:#64748b;margin:0;}
+                    .ta-toggles{display:flex;flex-wrap:wrap;gap:.375rem;}
+                    .ta-toggle{padding:.375rem .75rem;border-radius:.5rem;font-size:.75rem;font-weight:600;border:none;cursor:pointer;}
+                    .ta-toggle--green{background:rgba(34,197,94,.15);color:#166534;} .ta-toggle--green.is-active{background:#16a34a;color:#fff;}
+                    .ta-toggle--red{background:rgba(239,68,68,.15);color:#991b1b;} .ta-toggle--red.is-active{background:#dc2626;color:#fff;}
+                    .ta-toggle--amber{background:rgba(245,158,11,.15);color:#92400e;} .ta-toggle--amber.is-active{background:#d97706;color:#fff;}
+                    .ta-toggle--blue{background:rgba(59,130,246,.15);color:#1e40af;} .ta-toggle--blue.is-active{background:#2563eb;color:#fff;}
+                    .ta-note{width:180px;padding:.375rem .75rem;border-radius:.5rem;border:1px solid rgba(148,163,184,.40);background:transparent;font-size:.75rem;}
+                </style>
                 <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                     <h3 class="text-lg font-semibold mb-4">{{ __('Mark Attendance') }}</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <select wire:model.live="attendanceSectionId" wire:change="loadAttendance" class="px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
                             <option value="">{{ __('Select section') }}</option>
                             @foreach ($sections as $s)
@@ -104,20 +129,57 @@
                     </div>
 
                     @if ($attendanceSection)
-                        <div class="space-y-2">
-                            @foreach ($attendanceSection->registrations as $reg)
-                                <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                                    <span>{{ $reg->student?->getTranslation('name', app()->getLocale(), false) }}</span>
-                                    <select wire:model="attendanceStatuses.{{ $reg->student_id }}" class="px-2 py-1 border rounded dark:bg-gray-900 dark:border-gray-600 text-sm">
-                                        <option value="present">{{ __('Present') }}</option>
-                                        <option value="absent">{{ __('Absent') }}</option>
-                                        <option value="late">{{ __('Late') }}</option>
-                                        <option value="excused">{{ __('Excused') }}</option>
-                                    </select>
-                                </div>
-                            @endforeach
+                        <div class="ta-actions">
+                            <button type="button" wire:click="markAll('present')" class="ta-btn ta-btn--green">{{ __('Mark All Present') }}</button>
+                            <button type="button" wire:click="markAll('absent')" class="ta-btn ta-btn--red">{{ __('Mark All Absent') }}</button>
                         </div>
-                        <button wire:click="saveAttendance" class="mt-4 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">{{ __('Save Attendance') }}</button>
+
+                        <div class="ta-stats">
+                            <div class="ta-stat ta-stat--gray"><p class="ta-stat__label">{{ __('Total Students') }}</p><p class="ta-stat__value">{{ count($attendanceStatuses) }}</p></div>
+                            <div class="ta-stat ta-stat--green"><p class="ta-stat__label">{{ __('Present') }}</p><p class="ta-stat__value">{{ $this->attendanceCounts['present'] }}</p></div>
+                            <div class="ta-stat ta-stat--red"><p class="ta-stat__label">{{ __('Absent') }}</p><p class="ta-stat__value">{{ $this->attendanceCounts['absent'] }}</p></div>
+                            <div class="ta-stat ta-stat--amber"><p class="ta-stat__label">{{ __('Late') }}</p><p class="ta-stat__value">{{ $this->attendanceCounts['late'] }}</p></div>
+                            <div class="ta-stat ta-stat--blue"><p class="ta-stat__label">{{ __('Attendance Rate') }}</p><p class="ta-stat__value">{{ $this->attendanceRate }}%</p></div>
+                        </div>
+
+                        @if ($attendanceSection->registrations->isNotEmpty())
+                            <p class="text-sm text-gray-500 mb-1">{{ \Carbon\Carbon::parse($attendanceDate)->translatedFormat('l, d M Y') }}</p>
+                            <div>
+                                @foreach ($attendanceSection->registrations as $reg)
+                                    @php
+                                        $student = $reg->student;
+                                        $sid = $student?->id;
+                                        $current = $attendanceStatuses[$sid] ?? 'present';
+                                        $avatar = $student?->getFirstMediaUrl('main');
+                                    @endphp
+                                    @if ($student)
+                                        <div class="ta-row">
+                                            <div class="ta-row__info">
+                                                @if ($avatar)
+                                                    <img src="{{ $avatar }}" class="ta-avatar" alt="">
+                                                @else
+                                                    <div class="ta-avatar ta-avatar--initials">{{ mb_substr($student->getTranslation('name', app()->getLocale(), false) ?? 'S', 0, 1) }}</div>
+                                                @endif
+                                                <div>
+                                                    <p class="ta-row__name">{{ $student->getTranslation('name', app()->getLocale(), false) }}</p>
+                                                    <p class="ta-row__id">{{ $student->student_number }}</p>
+                                                </div>
+                                            </div>
+                                            <div class="ta-toggles">
+                                                @foreach (['present' => [__('Present'),'green'], 'absent' => [__('Absent'),'red'], 'late' => [__('Late'),'amber'], 'excused' => [__('Excused'),'blue']] as $key => [$label, $color])
+                                                    <button type="button" wire:click="setStatus({{ $sid }}, '{{ $key }}')"
+                                                            class="ta-toggle ta-toggle--{{ $color }} @if ($current === $key) is-active @endif">{{ $label }}</button>
+                                                @endforeach
+                                            </div>
+                                            <input type="text" wire:model="attendanceNotes.{{ $sid }}" placeholder="{{ __('Optional note') }}" class="ta-note">
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                            <button wire:click="saveAttendance" class="mt-4 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">{{ __('Save Attendance') }}</button>
+                        @else
+                            <p class="text-gray-500 text-sm">{{ __('No students registered in this section yet.') }}</p>
+                        @endif
                     @endif
                 </div>
             @endif
@@ -264,21 +326,21 @@
                         <h3 class="text-lg font-semibold mb-4">{{ __('Profile Picture') }}</h3>
                         <form wire:submit="updateProfile" class="space-y-4">
                             @php $avatarUrl = $trainer->getFirstMediaUrl('main'); @endphp
-                            <div class="flex items-center gap-4">
-                                <label class="relative cursor-pointer">
-                                    <span class="flex items-center justify-center w-24 h-24 rounded-full overflow-hidden ring-2 ring-emerald-500 bg-gray-100 dark:bg-gray-700">
+                            <div style="display:flex; align-items:center; gap:1rem;">
+                                <label style="position:relative; display:inline-block; cursor:pointer; flex:0 0 auto;">
+                                    <span style="display:flex; align-items:center; justify-content:center; width:96px; height:96px; border-radius:9999px; overflow:hidden; border:2px solid #10b981; background:#f3f4f6;">
                                         @if ($newAvatar)
-                                            <img src="{{ $newAvatar->temporaryUrl() }}" class="w-24 h-24 object-cover" alt="">
+                                            <img src="{{ $newAvatar->temporaryUrl() }}" style="width:96px; height:96px; object-fit:cover;" alt="">
                                         @elseif ($avatarUrl)
-                                            <img src="{{ $avatarUrl }}" class="w-24 h-24 object-cover" alt="">
+                                            <img src="{{ $avatarUrl }}" style="width:96px; height:96px; object-fit:cover;" alt="">
                                         @else
-                                            <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                                            <svg style="width:48px; height:48px; color:#9ca3af;" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                                         @endif
                                     </span>
-                                    <span class="absolute bottom-0 left-0 flex items-center justify-center w-7 h-7 rounded-full bg-emerald-600 text-white ring-2 ring-white dark:ring-gray-800">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    <span style="position:absolute; bottom:0; left:0; display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:9999px; background:#059669; color:#fff; border:2px solid #fff;">
+                                        <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                     </span>
-                                    <input type="file" wire:model="newAvatar" accept="image/*" class="hidden">
+                                    <input type="file" wire:model="newAvatar" accept="image/*" style="display:none;">
                                 </label>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Click the photo to choose a new image') }}</p>
                             </div>

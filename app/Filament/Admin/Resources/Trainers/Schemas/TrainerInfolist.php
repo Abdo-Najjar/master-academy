@@ -32,10 +32,24 @@ class TrainerInfolist
                             ->label(__('Wallet Balance'))
                             ->formatStateUsing(fn ($state) => number_format((float) $state, 2).' ₪')
                             ->color(fn ($state) => ((float) $state) < 0 ? 'danger' : 'success'),
-                        TextEntry::make('subjects.name')
+                        TextEntry::make('subjects_badges')
                             ->label(__('Subjects'))
-                            ->badge()
-                            ->separator(',')
+                            ->state(fn (Trainer $record): string => $record->subjects
+                                ->map(function ($subject): string {
+                                    $hex = ltrim((string) ($subject->color ?: '#6b7280'), '#');
+                                    if (strlen($hex) === 3) {
+                                        $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+                                    }
+                                    $r = (int) hexdec(substr($hex, 0, 2));
+                                    $g = (int) hexdec(substr($hex, 2, 2));
+                                    $b = (int) hexdec(substr($hex, 4, 2));
+                                    $text = (0.299 * $r + 0.587 * $g + 0.114 * $b) > 150 ? '#111827' : '#ffffff';
+                                    $name = e($subject->getTranslation('name', app()->getLocale(), false));
+
+                                    return '<span style="display:inline-block;padding:2px 10px;margin:2px;border-radius:9999px;font-size:.75rem;font-weight:600;background:#'.$hex.';color:'.$text.';">'.$name.'</span>';
+                                })
+                                ->implode(' '))
+                            ->html()
                             ->placeholder('—')
                             ->columnSpanFull(),
                         TextEntry::make('bio')->label(__('Bio'))->placeholder('—')->columnSpanFull(),

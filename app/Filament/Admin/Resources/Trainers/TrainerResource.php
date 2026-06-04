@@ -7,7 +7,6 @@ use App\Filament\Admin\Resources\Trainers\Pages\EditTrainer;
 use App\Filament\Admin\Resources\Trainers\Pages\ListTrainers;
 use App\Filament\Admin\Resources\Trainers\Pages\ViewTrainer;
 use App\Filament\Admin\Resources\Trainers\RelationManagers\SectionsRelationManager;
-use App\Filament\Admin\Resources\Trainers\RelationManagers\SubjectsRelationManager;
 use App\Filament\Admin\Resources\Trainers\RelationManagers\TransactionsRelationManager;
 use App\Filament\Admin\Resources\Trainers\Schemas\TrainerForm;
 use App\Filament\Admin\Resources\Trainers\Schemas\TrainerInfolist;
@@ -83,7 +82,6 @@ class TrainerResource extends Resource
     public static function getRelations(): array
     {
         return [
-            SubjectsRelationManager::class,
             SectionsRelationManager::class,
             TransactionsRelationManager::class,
             \App\Filament\Admin\Resources\Users\RelationManagers\LoginActivitiesRelationManager::class,

@@ -10,6 +10,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -37,6 +38,9 @@ class TrainerDashboard extends Component
 
     /** @var array<int, string> student_id => status */
     public array $attendanceStatuses = [];
+
+    /** @var array<int, string> student_id => optional note */
+    public array $attendanceNotes = [];
 
     /** @var int|null */
     public ?int $materialsSectionId = null;
@@ -120,13 +124,60 @@ class TrainerDashboard extends Component
         $existing = Attendance::query()
             ->where('section_id', $this->attendanceSectionId)
             ->whereDate('date', $this->attendanceDate)
-            ->pluck('status', 'student_id');
+            ->get()
+            ->keyBy('student_id');
 
         $section = Section::query()->with('registrations.student')->find($this->attendanceSectionId);
         $this->attendanceStatuses = [];
+        $this->attendanceNotes = [];
         foreach ($section?->registrations ?? [] as $reg) {
-            $this->attendanceStatuses[$reg->student_id] = $existing[$reg->student_id] ?? 'present';
+            $row = $existing->get($reg->student_id);
+            $this->attendanceStatuses[$reg->student_id] = $row?->status ?? 'present';
+            $this->attendanceNotes[$reg->student_id] = $row?->note ?? '';
         }
+    }
+
+    public function setStatus(int $studentId, string $status): void
+    {
+        if (in_array($status, ['present', 'absent', 'late', 'excused'], true)) {
+            $this->attendanceStatuses[$studentId] = $status;
+        }
+    }
+
+    public function markAll(string $status): void
+    {
+        if (! in_array($status, ['present', 'absent', 'late', 'excused'], true)) {
+            return;
+        }
+        foreach (array_keys($this->attendanceStatuses) as $studentId) {
+            $this->attendanceStatuses[$studentId] = $status;
+        }
+    }
+
+    /** @return array<string, int> */
+    #[Computed]
+    public function attendanceCounts(): array
+    {
+        $tally = ['present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0];
+        foreach ($this->attendanceStatuses as $status) {
+            if (isset($tally[$status])) {
+                $tally[$status]++;
+            }
+        }
+
+        return $tally;
+    }
+
+    #[Computed]
+    public function attendanceRate(): float
+    {
+        $total = count($this->attendanceStatuses);
+        if ($total === 0) {
+            return 0.0;
+        }
+        $present = $this->attendanceCounts['present'] + $this->attendanceCounts['late'];
+
+        return round(($present / $total) * 100, 1);
     }
 
     public function saveAttendance(): void
@@ -137,7 +188,7 @@ class TrainerDashboard extends Component
         foreach ($this->attendanceStatuses as $studentId => $status) {
             Attendance::query()->updateOrCreate(
                 ['section_id' => $this->attendanceSectionId, 'student_id' => $studentId, 'date' => $this->attendanceDate],
-                ['status' => $status]
+                ['status' => $status, 'note' => $this->attendanceNotes[$studentId] ?? null]
             );
         }
         session()->flash('message', __('Attendance saved'));
@@ -236,7 +287,7 @@ class TrainerDashboard extends Component
         }
 
         $complaints = $trainer
-            ? $trainer->complaints()->orderByDesc('created_at')->limit(50)->get()
+            ? $trainer->complaints()->notArchived()->orderByDesc('created_at')->limit(50)->get()
             : collect();
 
         $loginActivities = $trainer
