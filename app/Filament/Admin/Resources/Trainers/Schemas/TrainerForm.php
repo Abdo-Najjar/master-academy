@@ -102,7 +102,8 @@ class TrainerForm
                             ->multiple()
                             ->relationship('subjects', 'name')
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->columnSpanFull(),
                         TextInput::make('default_rate')
                             ->label(__('Default Rate (%)'))
                             ->numeric()

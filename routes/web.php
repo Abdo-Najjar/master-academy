@@ -5,7 +5,6 @@ use App\Http\Controllers\PdfController;
 use App\Livewire\Portal;
 use App\Livewire\StudentDashboard;
 use App\Livewire\StudentLogin;
-use App\Livewire\TrainerAttendance;
 use App\Livewire\TrainerDashboard;
 use App\Livewire\TrainerLogin;
 use Illuminate\Support\Facades\Route;
@@ -14,7 +13,6 @@ Route::get('/', Portal::class)->name('portal');
 
 Route::get('/trainer/login', TrainerLogin::class)->name('trainer.login');
 Route::get('/trainer/dashboard', TrainerDashboard::class)->name('trainer.dashboard')->middleware('trainer.auth');
-Route::get('/trainer/attendance', TrainerAttendance::class)->name('trainer.attendance')->middleware('trainer.auth');
 
 Route::get('/student/login', StudentLogin::class)->name('student.login');
 Route::get('/student/dashboard', StudentDashboard::class)->name('student.dashboard')->middleware('student.auth');

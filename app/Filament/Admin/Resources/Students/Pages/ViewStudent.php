@@ -16,11 +16,12 @@ class ViewStudent extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('studentCard')
-                ->label(__('Student Card'))
-                ->icon('heroicon-o-identification')
-                ->color('gray')
-                ->url(fn (Student $record): string => route('admin.pdf.student-card', $record), shouldOpenInNewTab: true),
+            // Student Card button hidden for now (re-enable when needed).
+            // Action::make('studentCard')
+            //     ->label(__('Student Card'))
+            //     ->icon('heroicon-o-identification')
+            //     ->color('gray')
+            //     ->url(fn (Student $record): string => route('admin.pdf.student-card', $record), shouldOpenInNewTab: true),
             Action::make('notifyParent')
                 ->label(__('Notify Parent (WhatsApp)'))
                 ->icon('heroicon-o-chat-bubble-left-ellipsis')

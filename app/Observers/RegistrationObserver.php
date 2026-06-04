@@ -3,10 +3,29 @@
 namespace App\Observers;
 
 use App\Models\Registration;
+use App\Models\Section;
 use Illuminate\Support\Facades\DB;
 
 class RegistrationObserver
 {
+    /**
+     * On creating: if the trainer's share wasn't provided (e.g. Quick Enroll or
+     * the admin form, which don't expose the field), derive it from the
+     * section's effective rate applied to the amount paid.
+     */
+    public function creating(Registration $registration): void
+    {
+        if (empty($registration->trainer_amount) || (float) $registration->trainer_amount === 0.0) {
+            $section = $registration->section ?: Section::find($registration->section_id);
+            if ($section) {
+                $registration->trainer_amount = round(
+                    ((float) $registration->amount_paid) * $section->effectiveTrainerRate() / 100,
+                    2
+                );
+            }
+        }
+    }
+
     /**
      * On create: deduct `amount_paid` from the student's wallet (allows negative
      * balance) and credit `trainer_amount` to the trainer's wallet.
