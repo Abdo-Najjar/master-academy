@@ -97,7 +97,9 @@
                     <button type="button" class="cd-zbtn" @click="zoomBy(0.1)">+</button>
                     <button type="button" class="cd-zbtn cd-zbtn--fit" @click="fitToView()">{{ __('Fit') }}</button>
                 </div>
-                <div style="position:relative;display:inline-block;">
+                {{-- wire:ignore keeps Livewire from morphing/wiping the Fabric
+                     canvas when the component re-renders after saving. --}}
+                <div wire:ignore style="position:relative;display:inline-block;">
                     <canvas id="certificate-canvas"></canvas>
                 </div>
             </div>

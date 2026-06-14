@@ -6,6 +6,7 @@ use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 
 class CertificateTemplateForm
@@ -31,17 +32,33 @@ class CertificateTemplateForm
                             ->image()
                             ->imageEditor()
                             ->columnSpanFull()
-                            ->helperText(__('Upload the certificate background image. Then use the Design button to position text fields.')),
+                            ->live()
+                            // Auto-fill canvas size from the uploaded image's real pixel
+                            // dimensions, so the admin never has to enter them manually.
+                            ->afterStateUpdated(function ($state, Set $set): void {
+                                $file = is_array($state) ? reset($state) : $state;
+                                if (! $file || ! method_exists($file, 'getRealPath')) {
+                                    return;
+                                }
+                                $info = @getimagesize($file->getRealPath());
+                                if ($info && $info[0] > 0 && $info[1] > 0) {
+                                    $set('canvas_width', $info[0]);
+                                    $set('canvas_height', $info[1]);
+                                }
+                            })
+                            ->helperText(__('Upload the certificate background. Canvas size is detected automatically. Then use Design to position fields.')),
                         TextInput::make('canvas_width')
                             ->label(__('Canvas Width (px)'))
                             ->numeric()
                             ->default(1000)
-                            ->required(),
+                            ->required()
+                            ->helperText(__('Auto-filled from the background image.')),
                         TextInput::make('canvas_height')
                             ->label(__('Canvas Height (px)'))
                             ->numeric()
                             ->default(700)
-                            ->required(),
+                            ->required()
+                            ->helperText(__('Auto-filled from the background image.')),
                     ])
                     ->columns(2),
             ]);
