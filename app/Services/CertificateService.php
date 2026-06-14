@@ -37,17 +37,40 @@ class CertificateService
         }
 
         $verifyUrl = url('/certificates/verify/'.$certificate->verification_token);
-        $qrPng = base64_encode(
-            QrCode::format('png')->size(120)->margin(1)->generate($verifyUrl)
-        );
+
+        // SVG QR works without the imagick extension and renders crisply in mPDF.
+        // Size it to the QR field placed in the design (or a sensible default).
+        $qrField = collect($template->fields_config ?? [])->firstWhere('key', 'qr_code');
+        $qrSize = $qrField ? (int) ($qrField['size'] ?? 140) : 90;
+        $qrSvg = (string) QrCode::format('svg')->size($qrSize)->margin(0)->generate($verifyUrl);
+        $qrSvg = preg_replace('/^<\?xml[^>]*\?>\s*/', '', $qrSvg);
+
+        // Resolve bilingual values once.
+        $studentNameAr = $student ? ((string) ($student->getTranslation('name', 'ar', false)
+            ?: (is_array($student->name) ? reset($student->name) : $student->name))) : '';
+        $studentNameEn = $student ? (string) $student->getTranslation('name', 'en', false) : '';
+        $sectionNameAr = $section ? (string) $section->getTranslation('name', 'ar', false) : '';
+        $sectionNameEn = $section ? (string) $section->getTranslation('name', 'en', false) : '';
+        $subjectNameAr = $section?->subject ? (string) $section->subject->getTranslation('name', 'ar', false) : '';
+        $subjectNameEn = $section?->subject ? (string) $section->subject->getTranslation('name', 'en', false) : '';
 
         $fieldValues = [
-            'student_name' => $student ? (is_array($student->name) ? ($student->name[app()->getLocale()] ?? reset($student->name)) : $student->name) : '',
-            'section_name' => $section?->getTranslation('name', 'ar', false) ?? ($section?->getTranslation('name', 'en', false) ?? ''),
-            'subject_name' => $section?->subject?->getTranslation('name', 'ar', false) ?? '',
+            // Locale-default keys (backward compatible with old templates)
+            'student_name'  => $studentNameAr ?: $studentNameEn,
+            'section_name'  => $sectionNameAr ?: $sectionNameEn,
+            'subject_name'  => $subjectNameAr ?: $subjectNameEn,
+            // Explicit per-language keys
+            'student_name_ar' => $studentNameAr,
+            'student_name_en' => $studentNameEn,
+            'section_name_ar' => $sectionNameAr,
+            'section_name_en' => $sectionNameEn,
+            'subject_name_ar' => $subjectNameAr,
+            'subject_name_en' => $subjectNameEn,
+            // Other fields
             'serial_number' => $certificate->serial_number,
             'issued_date' => $certificate->issued_at?->format('Y/m/d') ?? now()->format('Y/m/d'),
             'student_number' => $student?->student_number ?? '',
+            'student_ssn' => $student?->ssn ?? '',
         ];
 
         $html = view('pdf.certificate', [
@@ -55,7 +78,7 @@ class CertificateService
             'template' => $template,
             'bgDataUri' => $bgDataUri,
             'fieldValues' => $fieldValues,
-            'qrPng' => $qrPng,
+            'qrSvg' => $qrSvg,
         ])->render();
 
         $w = (int) ($template->canvas_width / 3.7795);
@@ -72,6 +95,10 @@ class CertificateService
             'default_font' => 'dejavusans',
             'autoLangToFont' => true,
             'autoScriptToLang' => true,
+            // Keep embedded background images crisp (default 96dpi downsamples them).
+            'dpi' => 96,
+            'img_dpi' => 300,
+            'jpeg_quality' => 95,
         ]);
 
         return $pdf->output();

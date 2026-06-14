@@ -8,6 +8,9 @@
         .cd-chip{display:inline-flex;align-items:center;gap:.25rem;padding:.45rem .85rem;font-size:.8rem;font-weight:700;border:none;border-radius:.6rem;cursor:pointer;background:#eef2f9;color:#1e40af;transition:background .15s,transform .15s;}
         .cd-chip:hover{background:#dbe4f4;transform:translateY(-1px);}
         .dark .cd-chip{background:#0f1e3d;color:#93c5fd;}
+        .cd-chip--qr{background:#fef3c7;color:#92400e;}
+        .cd-chip--qr:hover{background:#fde68a;}
+        .dark .cd-chip--qr{background:#422006;color:#fcd34d;}
         .cd-spacer{flex:1;min-width:1rem;}
         .cd-save{padding:.6rem 1.5rem;font-size:.9rem;font-weight:800;color:#fff;border:none;border-radius:.7rem;cursor:pointer;background:linear-gradient(135deg,#16a34a,#15803d);box-shadow:0 6px 16px -6px rgba(22,163,74,.55);transition:filter .15s,transform .15s;}
         .cd-save:hover{filter:brightness(1.08);transform:translateY(-1px);}
@@ -15,6 +18,12 @@
         @media(min-width:1024px){.cd-main{flex-direction:row;align-items:flex-start;}}
         .cd-canvas{flex:1;min-width:0;overflow:auto;background:#f1f5f9;border:1px solid #e5e7eb;border-radius:1rem;padding:1rem;}
         .dark .cd-canvas{background:#0f172a;border-color:#334155;}
+        .cd-zoombar{display:flex;align-items:center;gap:.4rem;margin-bottom:.75rem;}
+        .cd-zbtn{min-width:32px;height:32px;padding:0 .6rem;font-size:1rem;font-weight:700;line-height:1;color:#334155;background:#fff;border:1px solid #d1d5db;border-radius:.5rem;cursor:pointer;transition:background .12s;}
+        .cd-zbtn:hover{background:#eef2f7;}
+        .cd-zbtn--fit{font-size:.8rem;font-weight:600;}
+        .dark .cd-zbtn{background:#1e293b;border-color:#334155;color:#cbd5e1;}
+        .cd-zlevel{min-width:48px;text-align:center;font-size:.82rem;font-weight:700;color:#64748b;}
         .cd-side{width:100%;display:flex;flex-direction:column;gap:1rem;}
         @media(min-width:1024px){.cd-side{width:290px;flex-shrink:0;position:sticky;top:1rem;}}
         .cd-card{background:#fff;border:1px solid #e5e7eb;border-radius:1rem;padding:1.25rem;box-shadow:0 4px 14px -8px rgba(0,0,0,.12);}
@@ -54,26 +63,41 @@
             <span class="cd-tlabel">{{ __('Add Field') }}:</span>
 
             @foreach ([
-                'student_name' => __('Student Name'),
-                'section_name' => __('Section Name'),
-                'subject_name' => __('Subject'),
+                'student_name_ar' => __('Student Name') . ' (ع)',
+                'student_name_en' => __('Student Name') . ' (EN)',
+                'section_name_ar' => __('Section Name') . ' (ع)',
+                'section_name_en' => __('Section Name') . ' (EN)',
+                'subject_name_ar' => __('Subject') . ' (ع)',
+                'subject_name_en' => __('Subject') . ' (EN)',
                 'serial_number' => __('Serial Number'),
                 'issued_date'   => __('Issue Date'),
                 'student_number'=> __('Student Number'),
+                'student_ssn'   => __('SSN'),
             ] as $key => $label)
                 <button type="button" class="cd-chip" @click="addField('{{ $key }}', '{{ $label }}')">+ {{ $label }}</button>
             @endforeach
 
+            <button type="button" class="cd-chip cd-chip--qr" @click="addQr()">+ {{ __('QR Code') }}</button>
+
             <span class="cd-spacer"></span>
 
-            <button type="button" class="cd-save" @click="saveDesign()" wire:loading.attr="disabled">{{ __('Save Design') }}</button>
+            <button type="button" class="cd-save" @click="saveDesign()" :disabled="saving">
+                <span x-show="!saving">{{ __('Save Design') }}</span>
+                <span x-show="saving">{{ __('Saving...') }}</span>
+            </button>
         </div>
 
         {{-- Canvas + properties --}}
         <div class="cd-main">
             {{-- Canvas --}}
-            <div class="cd-canvas">
-                <div style="position:relative;display:inline-block;width: {{ $this->record->canvas_width }}px; height: {{ $this->record->canvas_height }}px;">
+            <div class="cd-canvas" x-ref="canvasWrap">
+                <div class="cd-zoombar">
+                    <button type="button" class="cd-zbtn" @click="zoomBy(-0.1)">−</button>
+                    <span class="cd-zlevel" x-text="Math.round(zoom * 100) + '%'"></span>
+                    <button type="button" class="cd-zbtn" @click="zoomBy(0.1)">+</button>
+                    <button type="button" class="cd-zbtn cd-zbtn--fit" @click="fitToView()">{{ __('Fit') }}</button>
+                </div>
+                <div style="position:relative;display:inline-block;">
                     <canvas id="certificate-canvas"></canvas>
                 </div>
             </div>
@@ -89,22 +113,31 @@
                                 <label class="cd-lbl">{{ __('Label') }}</label>
                                 <input class="cd-in" type="text" x-model="selectedField.label" readonly>
                             </div>
-                            <div class="cd-f">
+                            {{-- Text field properties --}}
+                            <div class="cd-f" x-show="selectedField.key !== 'qr_code'">
                                 <label class="cd-lbl">{{ __('Font Size') }}</label>
                                 <input class="cd-in" type="number" x-model.number="selectedField.font_size" @input="updateSelected()" min="8" max="200">
                             </div>
-                            <div class="cd-f">
+                            <div class="cd-f" x-show="selectedField.key !== 'qr_code'">
                                 <label class="cd-lbl">{{ __('Color') }}</label>
                                 <input class="cd-color" type="color" x-model="selectedField.font_color" @input="updateSelected()">
                             </div>
-                            <div class="cd-f">
+                            <div class="cd-f cd-f--full" x-show="selectedField.key !== 'qr_code'">
+                                <label class="cd-lbl">{{ __('Font') }}</label>
+                                <select class="cd-sel" x-model="selectedField.font_family" @change="updateSelected()">
+                                    <option value="dejavusans">{{ __('Sans') }}</option>
+                                    <option value="dejavuserif">{{ __('Serif') }}</option>
+                                    <option value="dejavusansmono">{{ __('Monospace') }}</option>
+                                </select>
+                            </div>
+                            <div class="cd-f" x-show="selectedField.key !== 'qr_code'">
                                 <label class="cd-lbl">{{ __('Font Weight') }}</label>
                                 <select class="cd-sel" x-model="selectedField.font_weight" @change="updateSelected()">
                                     <option value="normal">{{ __('Normal') }}</option>
                                     <option value="bold">{{ __('Bold') }}</option>
                                 </select>
                             </div>
-                            <div class="cd-f">
+                            <div class="cd-f" x-show="selectedField.key !== 'qr_code'">
                                 <label class="cd-lbl">{{ __('Text Align') }}</label>
                                 <select class="cd-sel" x-model="selectedField.text_align" @change="updateSelected()">
                                     <option value="right">{{ __('Right') }}</option>
@@ -112,6 +145,18 @@
                                     <option value="left">{{ __('Left') }}</option>
                                 </select>
                             </div>
+                            <div class="cd-f cd-f--full" x-show="selectedField.key !== 'qr_code'">
+                                <label class="cd-lbl">{{ __('Width (px, 0=auto)') }}</label>
+                                <input class="cd-in" type="number" x-model.number="selectedField.width" @input="updateSelected()" min="0">
+                            </div>
+
+                            {{-- QR-only property --}}
+                            <div class="cd-f cd-f--full" x-show="selectedField.key === 'qr_code'">
+                                <label class="cd-lbl">{{ __('QR Size (px)') }}</label>
+                                <input class="cd-in" type="number" x-model.number="selectedField.size" @input="updateQrSize()" min="40" max="600">
+                            </div>
+
+                            {{-- Position (all) --}}
                             <div class="cd-f">
                                 <label class="cd-lbl">{{ __('Position X') }}</label>
                                 <input class="cd-in" type="number" x-model.number="selectedField.x" @input="updateSelectedPos()" min="0">
@@ -119,10 +164,6 @@
                             <div class="cd-f">
                                 <label class="cd-lbl">{{ __('Position Y') }}</label>
                                 <input class="cd-in" type="number" x-model.number="selectedField.y" @input="updateSelectedPos()" min="0">
-                            </div>
-                            <div class="cd-f cd-f--full">
-                                <label class="cd-lbl">{{ __('Width (px, 0=auto)') }}</label>
-                                <input class="cd-in" type="number" x-model.number="selectedField.width" @input="updateSelected()" min="0">
                             </div>
                             <button type="button" class="cd-del" @click="deleteSelected()">{{ __('Delete Field') }}</button>
                         </div>
@@ -162,6 +203,8 @@
             selectedField: null,
             selectedIndex: -1,
             fabricObjects: [],
+            zoom: 1,
+            saving: false,
 
             init() {
                 this.canvas = new fabric.Canvas('certificate-canvas', {
@@ -190,6 +233,37 @@
                 this.canvas.on('selection:updated', (e) => this.onSelect(e.selected[0]));
                 this.canvas.on('selection:cleared', () => { this.selectedField = null; this.selectedIndex = -1; });
                 this.canvas.on('object:modified', (e) => this.onMoved(e.target));
+
+                // Scale the (often large) canvas down so the whole certificate is visible.
+                this.$nextTick(() => this.fitToView());
+                window.addEventListener('resize', () => this.fitToView());
+            },
+
+            applyZoom(scale) {
+                this.zoom = Math.max(0.1, Math.min(scale, 3));
+                this.canvas.setZoom(this.zoom);
+                this.canvas.setDimensions({
+                    width: Math.round(canvasWidth * this.zoom),
+                    height: Math.round(canvasHeight * this.zoom),
+                });
+                this.canvas.renderAll();
+            },
+
+            fitToView() {
+                const wrap = this.$refs.canvasWrap;
+                if (!wrap) return;
+                const avail = wrap.clientWidth - 34; // minus padding
+                this.applyZoom(Math.min(avail / canvasWidth, 1));
+            },
+
+            zoomBy(delta) {
+                this.applyZoom(this.zoom + delta);
+            },
+
+            fontMap: {
+                dejavusans: 'Arial, sans-serif',
+                dejavuserif: 'Georgia, serif',
+                dejavusansmono: '"Courier New", monospace',
             },
 
             addField(key, label) {
@@ -201,31 +275,51 @@
                     font_size: 36,
                     font_color: '#000000',
                     font_weight: 'bold',
+                    font_family: 'dejavusans',
                     text_align: 'center',
                     width: 0,
                 };
                 this.addFieldFromConfig(config);
             },
 
+            addQr() {
+                // Only one QR per template.
+                const existing = this.fields.findIndex(f => f.key === 'qr_code');
+                if (existing >= 0) { this.selectFieldByIndex(existing); return; }
+                this.addFieldFromConfig({ key: 'qr_code', label: 'QR', x: 100, y: 100, size: 140 });
+            },
+
             addFieldFromConfig(config) {
                 const idx = this.fields.length;
                 this.fields.push({ ...config });
 
-                const txt = new fabric.IText(config.label + ': [' + config.key + ']', {
-                    left: config.x,
-                    top: config.y,
-                    fontSize: config.font_size,
-                    fill: config.font_color,
-                    fontWeight: config.font_weight,
-                    textAlign: config.text_align,
-                    width: config.width || undefined,
-                    fontFamily: 'Arial',
-                    fieldIndex: idx,
-                    editable: false,
-                });
+                let obj;
+                if (config.key === 'qr_code') {
+                    const size = config.size || 140;
+                    const rect = new fabric.Rect({ width: size, height: size, fill: '#eef2f7', stroke: '#64748b', strokeWidth: 2, rx: 6, ry: 6, originX: 'center', originY: 'center' });
+                    const label = new fabric.Text('QR', { fontSize: Math.round(size * 0.28), fill: '#475569', fontWeight: 'bold', originX: 'center', originY: 'center' });
+                    obj = new fabric.Group([rect, label], {
+                        left: config.x, top: config.y,
+                        fieldIndex: idx, lockUniScaling: true, lockRotation: true,
+                    });
+                    obj.setControlsVisibility({ mtr: false });
+                } else {
+                    obj = new fabric.IText(config.label + ': [' + config.key + ']', {
+                        left: config.x,
+                        top: config.y,
+                        fontSize: config.font_size,
+                        fill: config.font_color,
+                        fontWeight: config.font_weight,
+                        textAlign: config.text_align,
+                        width: config.width || undefined,
+                        fontFamily: this.fontMap[config.font_family] || 'Arial, sans-serif',
+                        fieldIndex: idx,
+                        editable: false,
+                    });
+                }
 
-                this.canvas.add(txt);
-                this.fabricObjects.push(txt);
+                this.canvas.add(obj);
+                this.fabricObjects.push(obj);
                 this.canvas.renderAll();
             },
 
@@ -240,6 +334,10 @@
                 const idx = obj.fieldIndex;
                 this.fields[idx].x = Math.round(obj.left);
                 this.fields[idx].y = Math.round(obj.top);
+                // For a resized QR group, capture the new size.
+                if (this.fields[idx].key === 'qr_code') {
+                    this.fields[idx].size = Math.round(obj.width * obj.scaleX);
+                }
                 if (this.selectedIndex === idx) {
                     this.selectedField = { ...this.fields[idx] };
                 }
@@ -250,14 +348,27 @@
                 const f = this.selectedField;
                 this.fields[this.selectedIndex] = { ...f };
                 const obj = this.fabricObjects[this.selectedIndex];
-                if (!obj) return;
+                if (!obj || f.key === 'qr_code') { this.canvas.renderAll(); return; }
                 obj.set({
                     fontSize: f.font_size,
                     fill: f.font_color,
                     fontWeight: f.font_weight,
                     textAlign: f.text_align,
+                    fontFamily: this.fontMap[f.font_family] || 'Arial, sans-serif',
                     width: f.width > 0 ? f.width : undefined,
                 });
+                this.canvas.renderAll();
+            },
+
+            updateQrSize() {
+                if (this.selectedIndex < 0) return;
+                const f = this.selectedField;
+                this.fields[this.selectedIndex].size = f.size;
+                const obj = this.fabricObjects[this.selectedIndex];
+                if (!obj) return;
+                const scale = (f.size || 140) / obj.width;
+                obj.set({ scaleX: scale, scaleY: scale });
+                obj.setCoords();
                 this.canvas.renderAll();
             },
 
@@ -299,13 +410,18 @@
             saveDesign() {
                 const syncedFields = this.fields.map((f, i) => {
                     const obj = this.fabricObjects[i];
-                    if (obj) {
-                        return { ...f, x: Math.round(obj.left), y: Math.round(obj.top) };
+                    if (!obj) return f;
+                    const synced = { ...f, x: Math.round(obj.left), y: Math.round(obj.top) };
+                    if (f.key === 'qr_code') {
+                        synced.size = Math.round(obj.width * obj.scaleX);
                     }
-                    return f;
+                    return synced;
                 });
 
-                this.$wire.call('saveDesign', syncedFields, this.canvas.width, this.canvas.height);
+                this.saving = true;
+                // Pass the REAL design dimensions, not the zoomed canvas size.
+                Promise.resolve(this.$wire.call('saveDesign', syncedFields, canvasWidth, canvasHeight))
+                    .finally(() => { this.saving = false; });
             },
         };
     };

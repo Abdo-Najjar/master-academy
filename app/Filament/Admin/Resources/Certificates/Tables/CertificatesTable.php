@@ -13,6 +13,8 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
@@ -43,20 +45,37 @@ class CertificatesTable
                             ->label(__('Student'))
                             ->options(Student::query()->orderBy('id')->get()->pluck('name', 'id'))
                             ->searchable()
+                            ->live()
+                            ->afterStateUpdated(fn (Set $set) => $set('section_id', null))
                             ->required(),
                         Select::make('template_id')
                             ->label(__('Template'))
-                            ->options(CertificateTemplate::where('is_active', true)->pluck('name', 'id'))
+                            ->options(CertificateTemplate::where('is_active', true)->get()->pluck('name', 'id'))
                             ->required(),
                         Select::make('section_id')
-                            ->label(__('Section (optional)'))
-                            ->options(Section::query()->get()->pluck('name', 'id'))
-                            ->searchable(),
+                            ->label(__('Section'))
+                            ->options(function (Get $get): array {
+                                $studentId = $get('student_id');
+                                if (! $studentId) {
+                                    return [];
+                                }
+
+                                return Section::query()
+                                    ->whereHas('registrations', fn ($q) => $q->where('student_id', $studentId))
+                                    ->get()
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->searchable()
+                            ->required()
+                            ->placeholder(fn (Get $get): string => $get('student_id')
+                                ? __('Select a section')
+                                : __('Select a student first')),
                     ])
                     ->action(function (array $data): void {
                         $student = Student::findOrFail($data['student_id']);
                         $template = CertificateTemplate::findOrFail($data['template_id']);
-                        $section = isset($data['section_id']) ? Section::find($data['section_id']) : null;
+                        $section = Section::find($data['section_id']);
                         CertificateService::issue($student, $template, $section);
                     }),
             ])

@@ -47,21 +47,22 @@ class ViewStudent extends ViewRecord
                 ->schema([
                     Select::make('template_id')
                         ->label(__('Template'))
-                        ->options(CertificateTemplate::where('is_active', true)->pluck('name', 'id'))
+                        ->options(CertificateTemplate::where('is_active', true)->get()->pluck('name', 'id'))
                         ->required(),
                     Select::make('section_id')
-                        ->label(__('Section (optional)'))
+                        ->label(__('Section'))
                         ->options(fn (Student $record) => $record->registrations()
                             ->with('section')
                             ->get()
                             ->pluck('section.name', 'section.id')
                             ->filter()
                         )
-                        ->searchable(),
+                        ->searchable()
+                        ->required(),
                 ])
                 ->action(function (Student $record, array $data): StreamedResponse {
                     $template = CertificateTemplate::findOrFail($data['template_id']);
-                    $section = isset($data['section_id']) ? Section::find($data['section_id']) : null;
+                    $section = Section::find($data['section_id']);
                     $cert = CertificateService::issue($record, $template, $section);
                     $pdf = CertificateService::generatePdf($cert);
 
