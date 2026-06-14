@@ -19,7 +19,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CertificatesTable
 {
@@ -87,19 +86,6 @@ class CertificatesTable
             ])
             ->recordActions([
                 ActionGroup::make([
-                    Action::make('download_pdf')
-                        ->label(__('Download PDF'))
-                        ->icon('heroicon-o-arrow-down-tray')
-                        ->color('gray')
-                        ->action(function (Certificate $record): StreamedResponse {
-                            $pdfContent = CertificateService::generatePdf($record);
-
-                            return response()->streamDownload(
-                                fn () => print($pdfContent),
-                                'certificate-'.$record->serial_number.'.pdf',
-                                ['Content-Type' => 'application/pdf']
-                            );
-                        }),
                     Action::make('download_image')
                         ->label(__('Download Image'))
                         ->icon('heroicon-o-photo')

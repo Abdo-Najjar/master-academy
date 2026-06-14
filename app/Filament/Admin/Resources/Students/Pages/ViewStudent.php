@@ -13,7 +13,6 @@ use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ViewRecord;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ViewStudent extends ViewRecord
 {
@@ -60,17 +59,12 @@ class ViewStudent extends ViewRecord
                         ->searchable()
                         ->required(),
                 ])
-                ->action(function (Student $record, array $data): StreamedResponse {
+                ->action(function (Student $record, array $data) {
                     $template = CertificateTemplate::findOrFail($data['template_id']);
                     $section = Section::find($data['section_id']);
                     $cert = CertificateService::issue($record, $template, $section);
-                    $pdf = CertificateService::generatePdf($cert);
 
-                    return response()->streamDownload(
-                        fn () => print($pdf),
-                        'certificate-'.$cert->serial_number.'.pdf',
-                        ['Content-Type' => 'application/pdf']
-                    );
+                    return redirect()->route('admin.pdf.certificate-image', $cert);
                 }),
             TransferSectionAction::make(),
             WalletActions::deposit(),

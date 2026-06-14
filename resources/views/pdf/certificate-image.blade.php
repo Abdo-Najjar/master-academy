@@ -97,9 +97,12 @@
             if (payload.bgUrl) {
                 fabric.Image.fromURL(payload.bgUrl, (img) => {
                     if (img) {
-                        img.set({ left: 0, top: 0, selectable: false });
-                        img.scaleToWidth(payload.width);
-                        img.scaleToHeight(payload.height);
+                        // Stretch to fill the whole canvas exactly (100% w/h), no white space.
+                        img.set({
+                            left: 0, top: 0, selectable: false,
+                            scaleX: payload.width / img.width,
+                            scaleY: payload.height / img.height,
+                        });
                         canvas.add(img);
                     }
                     drawOverlay();

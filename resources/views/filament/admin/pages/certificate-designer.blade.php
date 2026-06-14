@@ -217,9 +217,12 @@
                 // Load background
                 if (bgUrl) {
                     fabric.Image.fromURL(bgUrl, (img) => {
-                        img.set({ selectable: false, evented: false, crossOrigin: 'anonymous' });
-                        img.scaleToWidth(canvasWidth);
-                        img.scaleToHeight(canvasHeight);
+                        // Stretch to fill the canvas exactly (100% w/h) — no white space.
+                        img.set({
+                            selectable: false, evented: false, crossOrigin: 'anonymous',
+                            scaleX: canvasWidth / img.width,
+                            scaleY: canvasHeight / img.height,
+                        });
                         this.canvas.setBackgroundImage(img, this.canvas.renderAll.bind(this.canvas));
                     }, { crossOrigin: 'anonymous' });
                 }
