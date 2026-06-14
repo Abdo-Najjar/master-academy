@@ -33,8 +33,6 @@ class Section extends Model implements HasMedia
         'sessions_per_fee_cycle',
         'seat_reservation_type',
         'seat_reservation_amount',
-        'google_meet_url',
-        'google_classroom_url',
     ];
 
     /** @var list<string> */

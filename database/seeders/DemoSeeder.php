@@ -204,8 +204,6 @@ class DemoSeeder extends Seeder
                 'price' => random_int(50, 300) * 1000,
                 'trainer_rate' => $rate,
                 'capacity' => random_int(15, 30),
-                'google_meet_url' => null,
-                'google_classroom_url' => null,
             ]);
 
             // 1-2 weekly times, each on a unique global slot.

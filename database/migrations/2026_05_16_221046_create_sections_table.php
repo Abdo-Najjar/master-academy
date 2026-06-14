@@ -18,8 +18,6 @@ return new class extends Migration
             $table->decimal('price', 10, 2)->default(0);
             $table->decimal('trainer_rate', 5, 2)->nullable();
             $table->unsignedInteger('capacity')->nullable();
-            $table->string('google_meet_url')->nullable();
-            $table->string('google_classroom_url')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

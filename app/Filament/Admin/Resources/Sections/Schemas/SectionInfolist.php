@@ -31,8 +31,6 @@ class SectionInfolist
                             ->label(__('Trainer Rate (%)'))
                             ->formatStateUsing(fn ($state) => $state !== null ? number_format((float) $state, 2).' %' : '—'),
                         TextEntry::make('capacity')->label(__('Capacity'))->numeric()->placeholder('—'),
-                        TextEntry::make('google_meet_url')->label(__('Google Meet URL'))->placeholder('—'),
-                        TextEntry::make('google_classroom_url')->label(__('Google Classroom URL'))->placeholder('—'),
                         TextEntry::make('created_at')->label(__('Created'))->dateTime()->placeholder('—'),
                         TextEntry::make('deleted_at')
                             ->label(__('Deleted'))

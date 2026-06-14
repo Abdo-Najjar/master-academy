@@ -126,11 +126,11 @@
         </div>
     </div>
 
-    @push('scripts')
+    @assets
     <script src="{{ asset('vendor/fabric.min.js') }}"></script>
     <script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('certificateDesigner', (initialFields, canvasWidth, canvasHeight, bgUrl) => ({
+    window.certificateDesigner = function (initialFields, canvasWidth, canvasHeight, bgUrl) {
+        return {
             canvas: null,
             fields: [],
             selectedField: null,
@@ -279,10 +279,10 @@
                     return f;
                 });
 
-                @this.call('saveDesign', syncedFields, this.canvas.width, this.canvas.height);
+                this.$wire.call('saveDesign', syncedFields, this.canvas.width, this.canvas.height);
             },
-        }));
-    });
+        };
+    };
     </script>
-    @endpush
+    @endassets
 </x-filament-panels::page>

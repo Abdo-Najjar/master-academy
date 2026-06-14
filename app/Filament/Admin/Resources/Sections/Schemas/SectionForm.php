@@ -141,13 +141,6 @@ class SectionForm
 
                 Section::make('')
                     ->schema([
-                        TextInput::make('google_meet_url')->label(__('Google Meet URL'))->url(),
-                        TextInput::make('google_classroom_url')->label(__('Google Classroom URL'))->url(),
-                    ])
-                    ->columns(2),
-
-                Section::make('')
-                    ->schema([
                         Repeater::make('times')
                             ->label(__('Lecture Times'))
                             ->relationship('times')
