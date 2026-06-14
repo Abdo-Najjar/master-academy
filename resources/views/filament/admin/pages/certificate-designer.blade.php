@@ -107,7 +107,7 @@
                 <div class="cd-card">
                     <h3 class="cd-ctitle">{{ __('Selected Field Properties') }}</h3>
 
-                    <template x-if="selectedField">
+                    <template x-if="hasSelection">
                         <div class="cd-grid">
                             <div class="cd-f cd-f--full">
                                 <label class="cd-lbl">{{ __('Label') }}</label>
@@ -169,7 +169,7 @@
                         </div>
                     </template>
 
-                    <template x-if="!selectedField">
+                    <template x-if="!hasSelection">
                         <p class="cd-hint">{{ __('Click a field on the canvas to select it.') }}</p>
                     </template>
                 </div>
@@ -200,7 +200,8 @@
         return {
             canvas: null,
             fields: [],
-            selectedField: null,
+            selectedField: {},
+            hasSelection: false,
             selectedIndex: -1,
             fabricObjects: [],
             zoom: 1,
@@ -231,7 +232,7 @@
                 // Selection events
                 this.canvas.on('selection:created', (e) => this.onSelect(e.selected[0]));
                 this.canvas.on('selection:updated', (e) => this.onSelect(e.selected[0]));
-                this.canvas.on('selection:cleared', () => { this.selectedField = null; this.selectedIndex = -1; });
+                this.canvas.on('selection:cleared', () => { this.clearSelection(); });
                 this.canvas.on('object:modified', (e) => this.onMoved(e.target));
 
                 // Scale the (often large) canvas down so the whole certificate is visible.
@@ -323,10 +324,17 @@
                 this.canvas.renderAll();
             },
 
+            clearSelection() {
+                this.hasSelection = false;
+                this.selectedIndex = -1;
+                this.selectedField = {};
+            },
+
             onSelect(obj) {
-                if (!obj || obj.fieldIndex === undefined) { this.selectedField = null; this.selectedIndex = -1; return; }
+                if (!obj || obj.fieldIndex === undefined) { this.clearSelection(); return; }
                 this.selectedIndex = obj.fieldIndex;
-                this.selectedField = this.fields[obj.fieldIndex];
+                this.selectedField = { ...this.fields[obj.fieldIndex] };
+                this.hasSelection = true;
             },
 
             onMoved(obj) {
@@ -386,6 +394,7 @@
             selectFieldByIndex(i) {
                 this.selectedIndex = i;
                 this.selectedField = { ...this.fields[i] };
+                this.hasSelection = true;
                 const obj = this.fabricObjects[i];
                 if (obj) {
                     this.canvas.setActiveObject(obj);
@@ -395,15 +404,17 @@
 
             deleteSelected() {
                 if (this.selectedIndex < 0) return;
-                const obj = this.fabricObjects[this.selectedIndex];
+                const idx = this.selectedIndex;
+                // Clear selection state BEFORE removing from canvas so reactive
+                // bindings never read a stale/removed field.
+                this.clearSelection();
+                this.canvas.discardActiveObject();
+                const obj = this.fabricObjects[idx];
                 if (obj) { this.canvas.remove(obj); }
-                this.fields.splice(this.selectedIndex, 1);
-                this.fabricObjects.splice(this.selectedIndex, 1);
+                this.fields.splice(idx, 1);
+                this.fabricObjects.splice(idx, 1);
                 // Re-index remaining objects
                 this.fabricObjects.forEach((o, i) => { if (o) o.fieldIndex = i; });
-                this.selectedField = null;
-                this.selectedIndex = -1;
-                this.canvas.discardActiveObject();
                 this.canvas.renderAll();
             },
 
