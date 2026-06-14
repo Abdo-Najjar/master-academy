@@ -12,6 +12,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section as FormSection;
 use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 
 class RegistrationForm
 {
@@ -28,7 +30,7 @@ class RegistrationForm
                             ->preload()
                             ->required()
                             ->live()
-                            ->afterStateUpdated(function ($state, callable $set) {
+                            ->afterStateUpdated(function ($state, Set $set) {
                                 if ($state) {
                                     $student = Student::find($state);
                                     if ($student) {
@@ -48,7 +50,7 @@ class RegistrationForm
                             ->preload()
                             ->required()
                             ->live()
-                            ->afterStateUpdated(function ($state, callable $set) {
+                            ->afterStateUpdated(function ($state, Set $set) {
                                 if ($state) {
                                     $section = Section::find($state);
                                     if ($section) {
@@ -129,7 +131,7 @@ class RegistrationForm
                             ->prefix('₪')
                             ->required()
                             ->live(debounce: 500)
-                            ->afterStateUpdated(function (callable $get, callable $set) {
+                            ->afterStateUpdated(function (Get $get, Set $set) {
                                 $due = (float) ($get('amount_due') ?? 0);
                                 $exemption = (float) ($get('exemption_amount') ?? 0);
                                 $set('amount_paid', max(0, $due - $exemption));
@@ -141,7 +143,7 @@ class RegistrationForm
                             ->minValue(0)
                             ->prefix('₪')
                             ->live(debounce: 500)
-                            ->afterStateUpdated(function (callable $get, callable $set) {
+                            ->afterStateUpdated(function (Get $get, Set $set) {
                                 $due = (float) ($get('amount_due') ?? 0);
                                 $exemption = (float) ($get('exemption_amount') ?? 0);
                                 $set('amount_paid', max(0, $due - $exemption));

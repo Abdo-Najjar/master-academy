@@ -26,6 +26,8 @@ use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Unique;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\Utilities\Get;
 
 class QuickEnroll extends Page implements HasForms
 {
@@ -128,7 +130,7 @@ class QuickEnroll extends Page implements HasForms
                             ->tel()
                             ->maxLength(255)
                             ->live(debounce: 500)
-                            ->afterStateUpdated(function ($state, callable $get, callable $set) {
+                            ->afterStateUpdated(function ($state, Get $get, Set $set) {
                                 if (! $state) {
                                     return;
                                 }
@@ -195,7 +197,7 @@ class QuickEnroll extends Page implements HasForms
                             ->searchable()
                             ->required()
                             ->live()
-                            ->afterStateUpdated(function ($state, callable $set) {
+                            ->afterStateUpdated(function ($state, Set $set) {
                                 if ($state) {
                                     $section = Section::find($state);
                                     if ($section) {
@@ -208,7 +210,7 @@ class QuickEnroll extends Page implements HasForms
 
                         Select::make('payment_type_id')
                             ->label(__('Payment Type'))
-                            ->options(PaymentType::pluck('name', 'id'))
+                            ->options(PaymentType::all()->pluck('name', 'id'))
                             ->searchable()
                             ->preload(),
 
@@ -219,7 +221,7 @@ class QuickEnroll extends Page implements HasForms
                             ->required()
                             ->minValue(0)
                             ->live(debounce: 500)
-                            ->afterStateUpdated(function (callable $get, callable $set) {
+                            ->afterStateUpdated(function (Get $get, Set $set) {
                                 $due = (float) ($get('amount_due') ?? 0);
                                 $exempt = (float) ($get('exemption_amount') ?? 0);
                                 $set('amount_paid', max(0, $due - $exempt));
@@ -232,7 +234,7 @@ class QuickEnroll extends Page implements HasForms
                             ->default(0)
                             ->minValue(0)
                             ->live(debounce: 500)
-                            ->afterStateUpdated(function (callable $get, callable $set) {
+                            ->afterStateUpdated(function (Get $get, Set $set) {
                                 $due = (float) ($get('amount_due') ?? 0);
                                 $exempt = (float) ($get('exemption_amount') ?? 0);
                                 $set('amount_paid', max(0, $due - $exempt));

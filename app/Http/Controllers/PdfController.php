@@ -51,9 +51,10 @@ class PdfController extends Controller
 
         $student->loadMissing(['governorate', 'city']);
 
-        $qr = base64_encode(
-            QrCode::format('png')->size(200)->margin(1)->generate($student->student_number ?? (string) $student->id)
-        );
+        // SVG backend works without the imagick extension; mPDF renders inline SVG.
+        $qrSvg = (string) QrCode::format('svg')->size(58)->margin(0)
+            ->generate($student->student_number ?? (string) $student->id);
+        $qrSvg = preg_replace('/^<\?xml[^>]*\?>\s*/', '', $qrSvg);
 
         // Embed the student photo (if any) as a data URI so mPDF renders it reliably.
         $photo = null;
@@ -65,21 +66,35 @@ class PdfController extends Controller
         $name = $student->getTranslation('name', 'ar', false)
             ?: (is_array($student->name) ? reset($student->name) : $student->name);
 
+        // Embed the center logo as a data URI for reliable mPDF rendering.
+        $logo = null;
+        $logoSetting = \App\Support\AppBranding::settings()['logo_path'] ?? null;
+        $logoFile = $logoSetting && \Illuminate\Support\Facades\Storage::disk('public')->exists($logoSetting)
+            ? \Illuminate\Support\Facades\Storage::disk('public')->path($logoSetting)
+            : public_path('logo/logo.png');
+        if (is_file($logoFile)) {
+            $mime = str_ends_with(strtolower($logoFile), '.svg') ? 'image/svg+xml' : (mime_content_type($logoFile) ?: 'image/png');
+            $logo = 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($logoFile));
+        }
+
         $html = View::make('pdf.student-card', [
             'student' => $student,
-            'qrPng' => $qr,
+            'qrSvg' => $qrSvg,
             'photo' => $photo,
             'name' => $name,
+            'logo' => $logo,
         ])->render();
 
         $pdf = LaravelMpdf::loadHTML($html, [
             'mode' => 'utf-8',
-            'format' => [85, 54], // ID-1 card size in mm
-            'orientation' => 'L',
-            'margin_left' => 4,
-            'margin_right' => 4,
-            'margin_top' => 4,
-            'margin_bottom' => 4,
+            // Custom format array is [width, height]; keep orientation P or
+            // mPDF swaps the dimensions again and the card comes out portrait.
+            'format' => [85.6, 54], // ID-1 card size in mm
+            'orientation' => 'P',
+            'margin_left' => 0,
+            'margin_right' => 0,
+            'margin_top' => 0,
+            'margin_bottom' => 0,
             'default_font' => 'dejavusans',
             'autoLangToFont' => true,
             'autoScriptToLang' => true,

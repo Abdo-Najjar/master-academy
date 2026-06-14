@@ -36,6 +36,19 @@ class StudentsTable
                 TextColumn::make('phone_number')->label(__('Phone'))->searchable(),
                 TextColumn::make('governorate.name')->label(__('Governorate'))->toggleable(),
                 TextColumn::make('city.name')->label(__('City'))->toggleable(),
+                TextColumn::make('status')
+                    ->label(__('Status'))
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'active' => 'success',
+                        'suspended' => 'warning',
+                        'withdrawn' => 'danger',
+                        'archived' => 'gray',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn ($state) => __($state))
+                    ->sortable(),
+                TextColumn::make('grade_level')->label(__('Grade'))->searchable()->toggleable(),
                 TextColumn::make('registrations_count')->counts('registrations')->label(__('Registrations')),
                 TextColumn::make('balanceFloat')->label(__('Wallet Balance'))->money('ILS', decimalPlaces: 0)->getStateUsing(fn ($record) => $record->balanceFloat),
                 IconColumn::make('is_active')->label(__('Active'))->boolean()->sortable(),
@@ -43,6 +56,14 @@ class StudentsTable
                 TextColumn::make('created_at')->label(__('Created'))->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('status')
+                    ->label(__('Status'))
+                    ->options([
+                        'active' => __('Active'),
+                        'suspended' => __('Suspended'),
+                        'withdrawn' => __('Withdrawn'),
+                        'archived' => __('Archived'),
+                    ]),
                 SelectFilter::make('governorate_id')
                     ->label(__('Governorate'))
                     ->relationship('governorate', 'name')

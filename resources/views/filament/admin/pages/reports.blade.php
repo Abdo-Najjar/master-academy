@@ -54,6 +54,8 @@
         $stats = $this->stats;
         $topTrainers = $this->topTrainers;
         $levels = $this->subjectBreakdown;
+        $dueStudents = $this->dueStudents;
+        $withdrawalStats = $this->withdrawalStats;
         $money = fn ($n) => number_format((float) $n, 2).' ₪';
     @endphp
 
@@ -126,6 +128,81 @@
             </div>
         </x-filament::section>
     </div>
+
+    {{-- Withdrawal + certificate stats --}}
+    <x-filament::section>
+        <div class="ma-rep-stats">
+            <div class="ma-rep-card ma-rep-card--blue">
+                <p class="ma-rep-card__label">{{ __('Withdrawn (period)') }}</p>
+                <p class="ma-rep-card__value">{{ number_format($withdrawalStats['withdrawn']) }}</p>
+            </div>
+            <div class="ma-rep-card ma-rep-card--indigo">
+                <p class="ma-rep-card__label">{{ __('Suspended') }}</p>
+                <p class="ma-rep-card__value">{{ number_format($withdrawalStats['suspended']) }}</p>
+            </div>
+            <div class="ma-rep-card ma-rep-card--green">
+                <p class="ma-rep-card__label">{{ __('Archived') }}</p>
+                <p class="ma-rep-card__value">{{ number_format($withdrawalStats['archived']) }}</p>
+            </div>
+            <div class="ma-rep-card ma-rep-card--emerald">
+                <p class="ma-rep-card__label">{{ __('Certificates Issued (period)') }}</p>
+                <p class="ma-rep-card__value">{{ number_format($withdrawalStats['certificates_issued']) }}</p>
+            </div>
+        </div>
+    </x-filament::section>
+
+    {{-- Due/overdue students with WhatsApp links --}}
+    @if ($dueStudents->isNotEmpty())
+        <x-filament::section icon="heroicon-o-exclamation-circle">
+            <x-slot name="heading">{{ __('Students with Due / Overdue Payments') }}</x-slot>
+            <div class="ma-rep-overflow">
+                <table class="ma-rep-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('Student') }}</th>
+                            <th>{{ __('Section') }}</th>
+                            <th>{{ __('Subject') }}</th>
+                            <th>{{ __('Status') }}</th>
+                            <th>{{ __('WhatsApp') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($dueStudents as $reg)
+                            @php
+                                $student = $reg->student;
+                                $sName = $reg->section?->getTranslation('name', app()->getLocale(), false);
+                                $sSubject = $reg->section?->subject?->getTranslation('name', app()->getLocale(), false);
+                                $studentName = is_array($student?->name) ? ($student->name[app()->getLocale()] ?? reset($student->name)) : $student?->name;
+                                $phone = preg_replace('/[^0-9]/', '', (string) ($student?->parent_whatsapp ?: $student?->parent_phone ?: $student?->whatsapp_number ?: $student?->phone_number));
+                                $waMsg = urlencode(__('Payment reminder for :name in :section', ['name' => $studentName, 'section' => $sName]));
+                                $waUrl = $phone ? "https://wa.me/{$phone}?text={$waMsg}" : null;
+                            @endphp
+                            <tr>
+                                <td class="name">{{ $studentName }}</td>
+                                <td>{{ $sName }}</td>
+                                <td>{{ $sSubject }}</td>
+                                <td>
+                                    <span style="padding:.2rem .6rem;border-radius:9999px;font-size:.75rem;font-weight:600;
+                                        {{ $reg->financial_status === 'overdue' ? 'background:rgba(239,68,68,.1);color:rgb(220,38,38)' : 'background:rgba(245,158,11,.1);color:rgb(180,83,9)' }}">
+                                        {{ $reg->financial_status === 'overdue' ? __('Overdue') : __('Due') }}
+                                    </span>
+                                </td>
+                                <td>
+                                    @if ($waUrl)
+                                        <a href="{{ $waUrl }}" target="_blank" style="color:rgb(22,163,74);font-size:.875rem;font-weight:600;">
+                                            {{ __('Send') }} ↗
+                                        </a>
+                                    @else
+                                        <span class="ma-rep-empty">—</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </x-filament::section>
+    @endif
 
     {{-- Top trainers + Subject breakdown --}}
     <div class="ma-rep-2col">

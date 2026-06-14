@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Pages;
 
 use App\Models\Attendance;
+use App\Models\Certificate;
 use App\Models\Registration;
 use App\Models\Student;
 use App\Models\Trainer;
@@ -191,5 +192,34 @@ class Reports extends Page implements HasForms
             ->orderByDesc('total')
             ->limit(10)
             ->get();
+    }
+
+    /** Students with overdue/due payments + WhatsApp links. */
+    public function getDueStudentsProperty()
+    {
+        return Registration::query()
+            ->whereNull('registrations.deleted_at')
+            ->whereIn('financial_status', ['overdue', 'due'])
+            ->with(['student', 'section.subject'])
+            ->orderByRaw("CASE financial_status WHEN 'overdue' THEN 0 WHEN 'due' THEN 1 ELSE 2 END")
+            ->limit(50)
+            ->get();
+    }
+
+    /** Withdrawal / suspension counts in selected period. */
+    public function getWithdrawalStatsProperty(): array
+    {
+        [$from, $to] = $this->range();
+
+        return [
+            'withdrawn' => Student::query()->where('status', 'withdrawn')
+                ->whereBetween('withdrawal_date', [$from->toDateString(), $to->toDateString()])
+                ->count(),
+            'suspended' => Student::query()->where('status', 'suspended')->count(),
+            'archived' => Student::query()->where('status', 'archived')->count(),
+            'certificates_issued' => Certificate::query()
+                ->whereBetween('issued_at', [$from, $to])
+                ->count(),
+        ];
     }
 }

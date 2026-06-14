@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900" x-data="{ sidebarOpen: false }">
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900" x-data="{ sidebarOpen: false, confirmBox: { open: false, message: '', action: null } }">
     <div class="md:hidden sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
         <h1 class="text-lg font-semibold">{{ __('Student Portal') }}</h1>
         <button @click="sidebarOpen = !sidebarOpen" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -7,8 +7,8 @@
     </div>
 
     <div class="flex min-h-screen">
-        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
-               class="fixed md:static top-0 bottom-0 z-50 w-60 md:w-64 bg-white dark:bg-gray-800 border-{{ app()->getLocale() === 'ar' ? 'l' : 'r' }} border-gray-200 dark:border-gray-700 transition-transform duration-300 ease-in-out shrink-0">
+        <aside :class="sidebarOpen ? 'translate-x-0' : '{{ app()->getLocale() === 'ar' ? 'translate-x-full' : '-translate-x-full' }} md:translate-x-0'"
+               class="fixed md:static top-0 bottom-0 start-0 z-50 w-60 md:w-64 bg-white dark:bg-gray-800 border-{{ app()->getLocale() === 'ar' ? 'l' : 'r' }} border-gray-200 dark:border-gray-700 transition-transform duration-300 ease-in-out shrink-0">
             <div class="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex items-center gap-3">
                     @php $avatar = $student->getFirstMediaUrl('main'); @endphp
@@ -26,7 +26,7 @@
                 </div>
             </div>
             <nav class="p-4 space-y-1">
-                @foreach (['registrations' => __('My Sections'), 'schedule' => __('Schedule'), 'transactions' => __('Transactions'), 'complaints' => __('Complaints'), 'profile' => __('Edit Profile')] as $tab => $label)
+                @foreach (['registrations' => __('My Sections'), 'schedule' => __('Schedule'), 'transactions' => __('Transactions'), 'certificates' => __('Certificates'), 'complaints' => __('Complaints'), 'profile' => __('Edit Profile')] as $tab => $label)
                     <button wire:click="setActiveTab('{{ $tab }}')" @click="sidebarOpen = false"
                             class="w-full text-start px-4 py-2.5 rounded-lg transition {{ $activeTab === $tab ? 'bg-purple-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700' }}">
                         {{ $label }}
@@ -34,7 +34,7 @@
                 @endforeach
             </nav>
             <div class="p-4 border-t border-gray-200 dark:border-gray-700">
-                <button wire:click="logout" wire:confirm="{{ __('Are you sure you want to logout?') }}"
+                <button type="button" @click="confirmBox = { open: true, message: '{{ __('Are you sure you want to logout?') }}', action: () => $wire.logout() }"
                         class="w-full text-start px-4 py-2.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
                     {{ __('Logout') }}
                 </button>
@@ -43,7 +43,7 @@
 
         <div x-show="sidebarOpen" @click="sidebarOpen = false" class="md:hidden fixed inset-0 bg-black/50 z-40" style="display: none;"></div>
 
-        <main class="flex-1 p-4 md:p-6">
+        <main class="flex-1 min-w-0 p-4 md:p-6">
             @if (session('message'))
                 <div class="mb-4 p-3 bg-green-100 border border-green-300 text-green-800 rounded-lg">{{ session('message') }}</div>
             @endif
@@ -171,6 +171,33 @@
                 </div>
             @endif
 
+            @if ($activeTab === 'certificates')
+                <div class="space-y-3">
+                    @forelse ($certificates as $cert)
+                        <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
+                            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                <div>
+                                    <h3 class="text-lg font-semibold">{{ $cert->template?->name ?? __('Certificate') }}</h3>
+                                    @if ($cert->section)
+                                        <p class="text-sm text-gray-500">{{ $cert->section->getTranslation('name', app()->getLocale(), false) }} · {{ $cert->section->subject?->getTranslation('name', app()->getLocale(), false) }}</p>
+                                    @endif
+                                    <p class="text-xs text-gray-400 mt-1">{{ __('Serial') }}: {{ $cert->serial_number }} · {{ optional($cert->issued_at)->format('Y-m-d') }}</p>
+                                </div>
+                                <a href="{{ route('certificates.verify', $cert->verification_token) }}" target="_blank"
+                                   class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm whitespace-nowrap">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                                    </svg>
+                                    {{ __('Verify') }}
+                                </a>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="p-6 text-center text-gray-500">{{ __('No certificates issued yet') }}</div>
+                    @endforelse
+                </div>
+            @endif
+
             @if ($activeTab === 'complaints')
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
@@ -291,5 +318,7 @@
                 </div>
             @endif
         </main>
+
+        @include('livewire.partials.confirm-modal')
     </div>
 </div>

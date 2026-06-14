@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900" x-data="{ sidebarOpen: false }">
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900" x-data="{ sidebarOpen: false, confirmBox: { open: false, message: '', action: null } }">
     <div class="md:hidden sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
         <h1 class="text-lg font-semibold">{{ __('Trainer Portal') }}</h1>
         <button @click="sidebarOpen = !sidebarOpen" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -7,8 +7,8 @@
     </div>
 
     <div class="flex min-h-screen">
-        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
-               class="fixed md:static top-0 bottom-0 z-50 w-60 md:w-64 bg-white dark:bg-gray-800 border-{{ app()->getLocale() === 'ar' ? 'l' : 'r' }} border-gray-200 dark:border-gray-700 transition-transform duration-300 ease-in-out shrink-0">
+        <aside :class="sidebarOpen ? 'translate-x-0' : '{{ app()->getLocale() === 'ar' ? 'translate-x-full' : '-translate-x-full' }} md:translate-x-0'"
+               class="fixed md:static top-0 bottom-0 start-0 z-50 w-60 md:w-64 bg-white dark:bg-gray-800 border-{{ app()->getLocale() === 'ar' ? 'l' : 'r' }} border-gray-200 dark:border-gray-700 transition-transform duration-300 ease-in-out shrink-0">
             <div class="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex items-center gap-3">
                     @php $avatar = $trainer->getFirstMediaUrl('main'); @endphp
@@ -34,7 +34,7 @@
                 @endforeach
             </nav>
             <div class="p-4 border-t border-gray-200 dark:border-gray-700">
-                <button wire:click="logout" wire:confirm="{{ __('Are you sure you want to logout?') }}"
+                <button type="button" @click="confirmBox = { open: true, message: '{{ __('Are you sure you want to logout?') }}', action: () => $wire.logout() }"
                         class="w-full text-start px-4 py-2.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
                     {{ __('Logout') }}
                 </button>
@@ -43,7 +43,7 @@
 
         <div x-show="sidebarOpen" @click="sidebarOpen = false" class="md:hidden fixed inset-0 bg-black/50 z-40" style="display: none;"></div>
 
-        <main class="flex-1 p-4 md:p-6">
+        <main class="flex-1 min-w-0 p-4 md:p-6">
             @if (session('message'))
                 <div class="mb-4 p-3 bg-green-100 border border-green-300 text-green-800 rounded-lg">{{ session('message') }}</div>
             @endif
@@ -204,7 +204,7 @@
                             @forelse ($materialsSection->getMedia('materials') as $media)
                                 <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
                                     <a href="{{ $media->getFullUrl() }}" target="_blank" class="text-emerald-600 hover:underline">{{ $media->file_name }}</a>
-                                    <button wire:click="removeMaterial({{ $media->id }})" wire:confirm="{{ __('Delete this file?') }}" class="text-sm text-red-600 hover:underline">{{ __('Delete') }}</button>
+                                    <button type="button" @click="confirmBox = { open: true, message: '{{ __('Delete this file?') }}', action: () => $wire.removeMaterial({{ $media->id }}) }" class="text-sm text-red-600 hover:underline">{{ __('Delete') }}</button>
                                 </div>
                             @empty
                                 <p class="text-gray-500">{{ __('No materials uploaded yet') }}</p>
@@ -365,5 +365,7 @@
                 </div>
             @endif
         </main>
+
+        @include('livewire.partials.confirm-modal')
     </div>
 </div>

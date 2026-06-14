@@ -26,6 +26,10 @@ class Registration extends Model
         'amount_paid',
         'exemption_amount',
         'trainer_amount',
+        'session_offset',
+        'paid_through_session',
+        'financial_status',
+        'seat_reservation_paid',
         'note',
     ];
 
@@ -37,6 +41,9 @@ class Registration extends Model
             'amount_paid' => 'decimal:2',
             'exemption_amount' => 'decimal:2',
             'trainer_amount' => 'decimal:2',
+            'seat_reservation_paid' => 'decimal:2',
+            'session_offset' => 'integer',
+            'paid_through_session' => 'integer',
         ];
     }
 

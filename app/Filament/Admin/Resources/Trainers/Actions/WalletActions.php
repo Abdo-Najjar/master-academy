@@ -71,7 +71,7 @@ class WalletActions
                 ->step(0.01),
             Select::make('payment_type_id')
                 ->label(__('Payment Type'))
-                ->options(PaymentType::pluck('name', 'id'))
+                ->options(PaymentType::all()->pluck('name', 'id'))
                 ->searchable()
                 ->preload()
                 ->native(false),

@@ -71,6 +71,42 @@ class StudentForm
 
                 Section::make('')
                     ->schema([
+                        Select::make('status')
+                            ->label(__('Status'))
+                            ->options([
+                                'active' => __('Active'),
+                                'suspended' => __('Suspended'),
+                                'withdrawn' => __('Withdrawn'),
+                                'archived' => __('Archived'),
+                            ])
+                            ->default('active')
+                            ->required()
+                            ->live(),
+                        Select::make('gender')
+                            ->label(__('Gender'))
+                            ->options([
+                                'male' => __('Male'),
+                                'female' => __('Female'),
+                            ]),
+                        TextInput::make('school')
+                            ->label(__('School'))
+                            ->maxLength(255),
+                        TextInput::make('grade_level')
+                            ->label(__('Grade Level'))
+                            ->maxLength(255),
+                        TextInput::make('withdrawal_reason')
+                            ->label(__('Withdrawal Reason'))
+                            ->maxLength(255)
+                            ->visible(fn (callable $get) => in_array($get('status'), ['withdrawn', 'archived'])),
+                        DatePicker::make('withdrawal_date')
+                            ->label(__('Withdrawal Date'))
+                            ->native(false)
+                            ->visible(fn (callable $get) => in_array($get('status'), ['withdrawn', 'archived'])),
+                    ])
+                    ->columns(2),
+
+                Section::make('')
+                    ->schema([
                         TextInput::make('phone_number')
                             ->label(__('Phone Number'))
                             ->tel()
@@ -90,6 +126,12 @@ class StudentForm
                             ->label(__('Parent WhatsApp'))
                             ->tel()
                             ->maxLength(255),
+                        Select::make('parent_id')
+                            ->label(__('Parent Account'))
+                            ->relationship('parent', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->placeholder(__('Select parent account (optional)')),
                         Select::make('governorate_id')
                             ->label(__('Governorate'))
                             ->relationship('governorate', 'name')

@@ -11,6 +11,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\Utilities\Get;
 
 class SectionForm
 {
@@ -31,7 +33,7 @@ class SectionForm
                             ->afterStateUpdated(fn (callable $set) => $set('trainer_id', null)),
                         Select::make('trainer_id')
                             ->label(__('Trainer'))
-                            ->options(function (callable $get): array {
+                            ->options(function (Get $get): array {
                                 $subjectId = $get('subject_id');
                                 if (! $subjectId) {
                                     return Trainer::query()->orderBy('name')->pluck('name', 'id')->all();
@@ -45,7 +47,7 @@ class SectionForm
                             ->searchable()
                             ->preload()
                             ->live()
-                            ->afterStateUpdated(function ($state, callable $set) {
+                            ->afterStateUpdated(function ($state, Set $set) {
                                 if ($state) {
                                     $trainer = Trainer::find($state);
                                     if ($trainer && (float) $trainer->default_rate > 0) {
@@ -70,6 +72,39 @@ class SectionForm
 
                 Section::make('')
                     ->schema([
+                        Select::make('section_type')
+                            ->label(__('Section Type'))
+                            ->options([
+                                'male' => __('Male'),
+                                'female' => __('Female'),
+                                'mixed' => __('Mixed'),
+                            ])
+                            ->default('mixed')
+                            ->required(),
+                        TextInput::make('capacity')
+                            ->label(__('Capacity'))
+                            ->numeric()
+                            ->minValue(1),
+                    ])
+                    ->columns(2),
+
+                Section::make(__('Pricing'))
+                    ->schema([
+                        Select::make('fee_type')
+                            ->label(__('Fee Type'))
+                            ->options([
+                                'per_session' => __('Per Session Cycle'),
+                                'fixed_course' => __('Fixed Course Fee'),
+                            ])
+                            ->default('per_session')
+                            ->required()
+                            ->live(),
+                        TextInput::make('sessions_per_fee_cycle')
+                            ->label(__('Sessions per Payment Cycle'))
+                            ->numeric()
+                            ->minValue(1)
+                            ->visible(fn (callable $get) => $get('fee_type') === 'per_session')
+                            ->helperText(__('e.g., 6 means payment is due every 6 sessions')),
                         TextInput::make('price')
                             ->label(__('Price'))
                             ->required()
@@ -87,12 +122,22 @@ class SectionForm
                             ->default(40)
                             ->suffix('%')
                             ->helperText(__('Leave empty to use trainer default rate')),
-                        TextInput::make('capacity')
-                            ->label(__('Capacity'))
+                        Select::make('seat_reservation_type')
+                            ->label(__('Seat Reservation Type'))
+                            ->options([
+                                'fixed' => __('Fixed Amount'),
+                                'percentage' => __('Percentage of Price'),
+                            ])
+                            ->live(),
+                        TextInput::make('seat_reservation_amount')
+                            ->label(__('Seat Reservation Amount'))
                             ->numeric()
-                            ->minValue(1),
+                            ->minValue(0)
+                            ->step(0.01)
+                            ->visible(fn (callable $get) => filled($get('seat_reservation_type')))
+                            ->prefix(fn (callable $get) => $get('seat_reservation_type') === 'percentage' ? '%' : '₪'),
                     ])
-                    ->columns(3),
+                    ->columns(2),
 
                 Section::make('')
                     ->schema([

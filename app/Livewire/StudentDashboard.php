@@ -183,6 +183,10 @@ class StudentDashboard extends Component
                 ->get();
         }
 
+        $certificates = $student
+            ? $student->certificates()->with(['template', 'section.subject'])->orderByDesc('issued_at')->get()
+            : collect();
+
         return view('livewire.student-dashboard', [
             'student' => $student,
             'registrations' => $registrations,
@@ -191,6 +195,7 @@ class StudentDashboard extends Component
             'complaints' => $complaints,
             'loginActivities' => $loginActivities,
             'announcements' => $announcements,
+            'certificates' => $certificates,
         ]);
     }
 }

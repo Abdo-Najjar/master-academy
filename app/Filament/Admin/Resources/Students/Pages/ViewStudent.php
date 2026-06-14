@@ -2,12 +2,18 @@
 
 namespace App\Filament\Admin\Resources\Students\Pages;
 
+use App\Filament\Admin\Resources\Students\Actions\TransferSectionAction;
 use App\Filament\Admin\Resources\Students\Actions\WalletActions;
 use App\Filament\Admin\Resources\Students\StudentResource;
+use App\Models\CertificateTemplate;
+use App\Models\Section;
 use App\Models\Student;
+use App\Services\CertificateService;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ViewRecord;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ViewStudent extends ViewRecord
 {
@@ -16,12 +22,11 @@ class ViewStudent extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            // Student Card button hidden for now (re-enable when needed).
-            // Action::make('studentCard')
-            //     ->label(__('Student Card'))
-            //     ->icon('heroicon-o-identification')
-            //     ->color('gray')
-            //     ->url(fn (Student $record): string => route('admin.pdf.student-card', $record), shouldOpenInNewTab: true),
+            Action::make('studentCard')
+                ->label(__('Student Card'))
+                ->icon('heroicon-o-identification')
+                ->color('gray')
+                ->url(fn (Student $record): string => route('admin.pdf.student-card', $record), shouldOpenInNewTab: true),
             Action::make('notifyParent')
                 ->label(__('Notify Parent (WhatsApp)'))
                 ->icon('heroicon-o-chat-bubble-left-ellipsis')
@@ -35,6 +40,38 @@ class ViewStudent extends ViewRecord
                     ]));
                     return "https://wa.me/{$phone}?text={$msg}";
                 }, shouldOpenInNewTab: true),
+            Action::make('issueCertificate')
+                ->label(__('Issue Certificate'))
+                ->icon('heroicon-o-academic-cap')
+                ->color('info')
+                ->schema([
+                    Select::make('template_id')
+                        ->label(__('Template'))
+                        ->options(CertificateTemplate::where('is_active', true)->pluck('name', 'id'))
+                        ->required(),
+                    Select::make('section_id')
+                        ->label(__('Section (optional)'))
+                        ->options(fn (Student $record) => $record->registrations()
+                            ->with('section')
+                            ->get()
+                            ->pluck('section.name', 'section.id')
+                            ->filter()
+                        )
+                        ->searchable(),
+                ])
+                ->action(function (Student $record, array $data): StreamedResponse {
+                    $template = CertificateTemplate::findOrFail($data['template_id']);
+                    $section = isset($data['section_id']) ? Section::find($data['section_id']) : null;
+                    $cert = CertificateService::issue($record, $template, $section);
+                    $pdf = CertificateService::generatePdf($cert);
+
+                    return response()->streamDownload(
+                        fn () => print($pdf),
+                        'certificate-'.$cert->serial_number.'.pdf',
+                        ['Content-Type' => 'application/pdf']
+                    );
+                }),
+            TransferSectionAction::make(),
             WalletActions::deposit(),
             WalletActions::withdraw(),
             EditAction::make(),

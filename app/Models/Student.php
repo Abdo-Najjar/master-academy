@@ -39,7 +39,14 @@ class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
         'parent_whatsapp',
         'governorate_id',
         'city_id',
+        'parent_id',
         'is_active',
+        'status',
+        'gender',
+        'school',
+        'grade_level',
+        'withdrawal_reason',
+        'withdrawal_date',
     ];
 
     /** @var list<string> */
@@ -55,6 +62,7 @@ class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
             'password' => 'hashed',
             'dob' => 'date',
             'is_active' => 'boolean',
+            'withdrawal_date' => 'date',
         ];
     }
 
@@ -87,6 +95,16 @@ class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
     }
 
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(ParentGuardian::class, 'parent_id');
+    }
+
+    public function sectionTransfers(): HasMany
+    {
+        return $this->hasMany(StudentSectionTransfer::class);
+    }
+
     public function governorate(): BelongsTo
     {
         return $this->belongsTo(Governorate::class);
@@ -110,6 +128,11 @@ class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
     public function examGrades(): HasMany
     {
         return $this->hasMany(ExamGrade::class);
+    }
+
+    public function certificates(): HasMany
+    {
+        return $this->hasMany(Certificate::class);
     }
 
     public function complaints(): MorphMany

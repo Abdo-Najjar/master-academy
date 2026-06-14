@@ -1,38 +1,46 @@
-<div class="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
-    <div class="max-w-md w-full bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-gray-200 dark:border-gray-700">
-        <div class="text-center mb-6">
-            <img src="{{ \App\Support\AppBranding::logoUrl() }}" alt="" class="mx-auto h-20 mb-3" onerror="this.style.display='none'">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ __('Student Login') }}</h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ __('Sign in to your student account') }}</p>
+<div class="pa-root" style="--pa-a1:#8b5cf6;--pa-a2:#6d28d9;">
+    @include('livewire.partials.portal-auth-style')
+
+    <span class="pa-blob pa-blob--1"></span>
+    <span class="pa-blob pa-blob--2"></span>
+
+    <div class="pa-card">
+        <img src="{{ \App\Support\AppBranding::logoUrl() }}" alt="" class="pa-logo" onerror="this.style.display='none'">
+
+        <div class="pa-icon">
+            <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/>
+            </svg>
         </div>
 
-        <form wire:submit="login" class="space-y-4">
+        <div class="pa-head">
+            <h1 class="pa-title">{{ __('Student Login') }}</h1>
+            <p class="pa-sub">{{ __('Sign in to your student account') }}</p>
+        </div>
+
+        <form wire:submit="login" class="pa-form">
             <div>
-                <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ __('Username') }}</label>
-                <input wire:model="username" type="text" id="username" autocomplete="username"
-                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
-                @error('username') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                <label for="username" class="pa-label">{{ __('Username') }}</label>
+                <input wire:model="username" type="text" id="username" autocomplete="username" class="pa-input">
+                @error('username') <p class="pa-error">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ __('Password') }}</label>
-                <input wire:model="password" type="password" id="password" autocomplete="current-password"
-                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
-                @error('password') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                <label for="password" class="pa-label">{{ __('Password') }}</label>
+                <input wire:model="password" type="password" id="password" autocomplete="current-password" class="pa-input">
+                @error('password') <p class="pa-error">{{ $message }}</p> @enderror
             </div>
-            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                <input wire:model="remember" type="checkbox" class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+            <label class="pa-remember">
+                <input wire:model="remember" type="checkbox">
                 {{ __('Remember me') }}
             </label>
-            <button type="submit" class="w-full px-4 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-medium">
+            <button type="submit" class="pa-btn" wire:loading.attr="disabled" wire:target="login">
                 <span wire:loading.remove wire:target="login">{{ __('Login') }}</span>
                 <span wire:loading wire:target="login">{{ __('Signing in...') }}</span>
             </button>
         </form>
 
-        <div class="mt-6 text-center">
-            <a href="{{ route('portal') }}" wire:navigate class="text-sm text-gray-600 dark:text-gray-400 hover:text-purple-600">
-                ← {{ __('Back to Portal') }}
-            </a>
-        </div>
+        <a href="{{ route('portal') }}" wire:navigate class="pa-back">← {{ __('Back to Portal') }}</a>
     </div>
+
+    <div class="pa-footer">© {{ now()->year }} {{ __('Manba Al-Tamayoz Center') }}</div>
 </div>
