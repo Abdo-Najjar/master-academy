@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Certificate;
 use App\Models\Registration;
 use App\Models\Student;
+use App\Services\CertificateService;
+use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
@@ -13,6 +16,20 @@ use Symfony\Component\HttpFoundation\Response;
 
 class PdfController extends Controller
 {
+    /**
+     * Client-side high-resolution PNG export of a certificate. The browser draws
+     * the certificate on a Fabric canvas (crisp vector text + native-resolution
+     * background) and downloads it as an image — no imagick/headless browser.
+     */
+    public function certificateImage(Request $request, Certificate $certificate): ViewContract
+    {
+        $this->authorizeHexaGate($request, 'certificate.index');
+
+        return View::make('pdf.certificate-image', [
+            'payload' => CertificateService::imagePayload($certificate),
+        ]);
+    }
+
     /**
      * Printable receipt for a single registration. mPDF is used because
      * dompdf does not shape Arabic glyphs / RTL correctly.

@@ -45,33 +45,7 @@ class CertificateService
         $qrSvg = (string) QrCode::format('svg')->size($qrSize)->margin(0)->generate($verifyUrl);
         $qrSvg = preg_replace('/^<\?xml[^>]*\?>\s*/', '', $qrSvg);
 
-        // Resolve bilingual values once.
-        $studentNameAr = $student ? ((string) ($student->getTranslation('name', 'ar', false)
-            ?: (is_array($student->name) ? reset($student->name) : $student->name))) : '';
-        $studentNameEn = $student ? (string) $student->getTranslation('name', 'en', false) : '';
-        $sectionNameAr = $section ? (string) $section->getTranslation('name', 'ar', false) : '';
-        $sectionNameEn = $section ? (string) $section->getTranslation('name', 'en', false) : '';
-        $subjectNameAr = $section?->subject ? (string) $section->subject->getTranslation('name', 'ar', false) : '';
-        $subjectNameEn = $section?->subject ? (string) $section->subject->getTranslation('name', 'en', false) : '';
-
-        $fieldValues = [
-            // Locale-default keys (backward compatible with old templates)
-            'student_name'  => $studentNameAr ?: $studentNameEn,
-            'section_name'  => $sectionNameAr ?: $sectionNameEn,
-            'subject_name'  => $subjectNameAr ?: $subjectNameEn,
-            // Explicit per-language keys
-            'student_name_ar' => $studentNameAr,
-            'student_name_en' => $studentNameEn,
-            'section_name_ar' => $sectionNameAr,
-            'section_name_en' => $sectionNameEn,
-            'subject_name_ar' => $subjectNameAr,
-            'subject_name_en' => $subjectNameEn,
-            // Other fields
-            'serial_number' => $certificate->serial_number,
-            'issued_date' => $certificate->issued_at?->format('Y/m/d') ?? now()->format('Y/m/d'),
-            'student_number' => $student?->student_number ?? '',
-            'student_ssn' => $student?->ssn ?? '',
-        ];
+        $fieldValues = self::resolveFieldValues($certificate, $student, $section);
 
         $html = view('pdf.certificate', [
             'certificate' => $certificate,
@@ -105,5 +79,109 @@ class CertificateService
         ]);
 
         return $pdf->output();
+    }
+
+    /**
+     * Build the data a client-side renderer needs to draw the certificate on a
+     * Fabric canvas and export a high-resolution PNG (crisp text + native-res
+     * background, no imagick/headless browser required).
+     *
+     * @return array<string, mixed>
+     */
+    public static function imagePayload(Certificate $certificate): array
+    {
+        $certificate->loadMissing(['student', 'section.subject', 'template']);
+
+        $template = $certificate->template;
+        $student = $certificate->student;
+        $section = $certificate->section;
+
+        $values = self::resolveFieldValues($certificate, $student, $section);
+
+        $verifyUrl = url('/certificates/verify/'.$certificate->verification_token);
+        $qrField = collect($template->fields_config ?? [])->firstWhere('key', 'qr_code');
+        $qrSize = $qrField ? (int) ($qrField['size'] ?? 140) : 0;
+        $qrSvg = null;
+        if ($qrSize > 0) {
+            $qrSvg = (string) QrCode::format('svg')->size($qrSize)->margin(0)->generate($verifyUrl);
+            $qrSvg = preg_replace('/^<\?xml[^>]*\?>\s*/', '', $qrSvg);
+        }
+
+        $fonts = [
+            'dejavusans' => 'Arial, sans-serif',
+            'dejavuserif' => 'Georgia, serif',
+            'dejavusansmono' => '"Courier New", monospace',
+        ];
+
+        $fields = [];
+        foreach ($template->fields_config ?? [] as $f) {
+            $key = $f['key'] ?? '';
+            if ($key === 'qr_code') {
+                continue;
+            }
+            if (($values[$key] ?? '') === '') {
+                continue;
+            }
+            $fields[] = [
+                'value' => (string) $values[$key],
+                'x' => (int) ($f['x'] ?? 0),
+                'y' => (int) ($f['y'] ?? 0),
+                'fontSize' => (int) ($f['font_size'] ?? 24),
+                'fill' => (string) ($f['font_color'] ?? '#000000'),
+                'fontWeight' => (string) ($f['font_weight'] ?? 'normal'),
+                'fontFamily' => $fonts[$f['font_family'] ?? 'dejavusans'] ?? 'Arial, sans-serif',
+                'textAlign' => (string) ($f['text_align'] ?? 'right'),
+                'width' => (int) ($f['width'] ?? 0),
+            ];
+        }
+
+        return [
+            'width' => (int) $template->canvas_width,
+            'height' => (int) $template->canvas_height,
+            'bgUrl' => $template->getFirstMediaUrl('background') ?: null,
+            'fields' => $fields,
+            'qr' => $qrField ? [
+                'x' => (int) ($qrField['x'] ?? 0),
+                'y' => (int) ($qrField['y'] ?? 0),
+                'size' => $qrSize,
+                'svg' => $qrSvg,
+            ] : null,
+            'filename' => 'certificate-'.$certificate->serial_number.'.png',
+        ];
+    }
+
+    /**
+     * Resolve every supported field key to its concrete value for a certificate.
+     *
+     * @return array<string, string>
+     */
+    protected static function resolveFieldValues(Certificate $certificate, ?Student $student, ?Section $section): array
+    {
+        $studentNameAr = $student ? ((string) ($student->getTranslation('name', 'ar', false)
+            ?: (is_array($student->name) ? reset($student->name) : $student->name))) : '';
+        $studentNameEn = $student ? (string) $student->getTranslation('name', 'en', false) : '';
+        $sectionNameAr = $section ? (string) $section->getTranslation('name', 'ar', false) : '';
+        $sectionNameEn = $section ? (string) $section->getTranslation('name', 'en', false) : '';
+        $subjectNameAr = $section?->subject ? (string) $section->subject->getTranslation('name', 'ar', false) : '';
+        $subjectNameEn = $section?->subject ? (string) $section->subject->getTranslation('name', 'en', false) : '';
+
+        return [
+            // Locale-default keys (backward compatible with old templates)
+            'student_name'  => $studentNameAr ?: $studentNameEn,
+            'section_name'  => $sectionNameAr ?: $sectionNameEn,
+            'subject_name'  => $subjectNameAr ?: $subjectNameEn,
+            // Explicit per-language keys
+            'student_name_ar' => $studentNameAr,
+            'student_name_en' => $studentNameEn,
+            'section_name_ar' => $sectionNameAr,
+            'section_name_en' => $sectionNameEn,
+            'subject_name_ar' => $subjectNameAr,
+            'subject_name_en' => $subjectNameEn,
+            // Other fields
+            'serial_number' => $certificate->serial_number,
+            'issued_date' => $certificate->issued_at?->format('Y/m/d') ?? now()->format('Y/m/d'),
+            'student_number' => $student?->student_number ?? '',
+            'student_ssn' => $student?->ssn ?? '',
+        ];
     }
 }

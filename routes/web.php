@@ -48,4 +48,5 @@ Route::middleware(['web', 'auth'])
     ->group(function () {
         Route::get('receipt/{registration}', [PdfController::class, 'receipt'])->name('receipt');
         Route::get('student-card/{student}', [PdfController::class, 'studentCard'])->name('student-card');
+        Route::get('certificate-image/{certificate}', [PdfController::class, 'certificateImage'])->name('certificate-image');
     });

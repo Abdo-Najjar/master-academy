@@ -100,6 +100,11 @@ class CertificatesTable
                                 ['Content-Type' => 'application/pdf']
                             );
                         }),
+                    Action::make('download_image')
+                        ->label(__('Download Image'))
+                        ->icon('heroicon-o-photo')
+                        ->color('gray')
+                        ->url(fn (Certificate $record): string => route('admin.pdf.certificate-image', $record), shouldOpenInNewTab: true),
                     DeleteAction::make(),
                 ]),
             ])
