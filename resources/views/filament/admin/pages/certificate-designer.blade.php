@@ -127,7 +127,7 @@
     </div>
 
     @push('scripts')
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="{{ asset('vendor/fabric.min.js') }}"></script>
     <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('certificateDesigner', (initialFields, canvasWidth, canvasHeight, bgUrl) => ({

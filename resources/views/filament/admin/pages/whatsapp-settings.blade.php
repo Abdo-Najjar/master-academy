@@ -4,15 +4,17 @@
     @endphp
 
     <style>
-        .wa-card{background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:1.5rem;max-width:640px;}
-        .dark .wa-card{background:#1e293b;border-color:#334155;}
+        .wa-wrap{max-width:560px;margin-inline:auto;width:100%;}
+        .wa-card{background:#fff;border:1px solid #e2e8f0;border-radius:1rem;padding:2.5rem 2rem;width:100%;box-shadow:0 10px 30px -12px rgba(0,0,0,.12);}
+        .dark .wa-card{background:#1e293b;border-color:#334155;box-shadow:0 10px 30px -12px rgba(0,0,0,.5);}
         .wa-status{display:inline-flex;align-items:center;gap:.5rem;padding:.35rem .9rem;border-radius:9999px;font-size:.8rem;font-weight:600;}
         .wa-status--ready{background:#dcfce7;color:#15803d;}
         .wa-status--qr{background:#fef9c3;color:#92400e;}
         .wa-status--init{background:#dbeafe;color:#1d4ed8;}
         .wa-status--error{background:#fee2e2;color:#b91c1c;}
         .wa-qr{display:flex;justify-content:center;padding:1.5rem 0;}
-        .wa-qr img{border-radius:.5rem;max-width:240px;border:4px solid #e2e8f0;}
+        .wa-qr img{border-radius:.75rem;width:100%;max-width:300px;border:6px solid #fff;box-shadow:0 4px 16px rgba(0,0,0,.1);}
+        .dark .wa-qr img{border-color:#0f172a;}
         .wa-info-row{display:flex;align-items:center;gap:.75rem;padding:.5rem 0;font-size:.9rem;}
         .wa-info-label{color:#64748b;min-width:130px;}
         .wa-info-val{font-weight:600;}
@@ -21,6 +23,7 @@
         @keyframes wa-blink{0%,100%{opacity:1;}50%{opacity:.35;}}
     </style>
 
+    <div class="wa-wrap">
     <div class="wa-card" wire:poll.3s="pollStatus">
         @if (! $session)
             {{-- No session yet --}}
@@ -123,6 +126,7 @@
             </form>
         </div>
     @endif
+    </div>
 
     <style>
         @keyframes spin { to { transform: rotate(360deg); } }

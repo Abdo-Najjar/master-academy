@@ -15,6 +15,7 @@ class CertificateTemplateForm
         return $schema
             ->components([
                 Section::make('')
+                    ->columnSpanFull()
                     ->schema([
                         TextInput::make('name')
                             ->label(__('Template Name'))
