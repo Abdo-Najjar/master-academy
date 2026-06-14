@@ -305,7 +305,7 @@
                     });
                     obj.setControlsVisibility({ mtr: false });
                 } else {
-                    obj = new fabric.IText(config.label + ': [' + config.key + ']', {
+                    obj = new fabric.IText(config.label, {
                         left: config.x,
                         top: config.y,
                         fontSize: config.font_size,

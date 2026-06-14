@@ -86,8 +86,11 @@ class CertificateService
 
         $pdf = LaravelMpdf::loadHTML($html, [
             'mode' => 'utf-8',
+            // format is the literal [width, height]; keep orientation 'P' so mPDF
+            // uses these as-is instead of swapping them (which produced a portrait
+            // page for a landscape certificate, leaving white space).
             'format' => [$w, $h],
-            'orientation' => $w > $h ? 'L' : 'P',
+            'orientation' => 'P',
             'margin_left' => 0,
             'margin_right' => 0,
             'margin_top' => 0,

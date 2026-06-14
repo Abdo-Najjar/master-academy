@@ -14,8 +14,10 @@
     .bg {
         position: absolute;
         top: 0; left: 0;
-        width: 100%;
-        height: 100%;
+        /* Explicit px dimensions force mPDF to stretch the image to fill the
+           whole page exactly (matching the designer), avoiding white space. */
+        width: {{ $template->canvas_width }}px;
+        height: {{ $template->canvas_height }}px;
         z-index: 0;
     }
     .field {
