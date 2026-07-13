@@ -13,6 +13,8 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\Select;
+use Filament\Notifications\Actions\Action as NotificationAction;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Tables\Columns\TextColumn;
@@ -71,11 +73,29 @@ class CertificatesTable
                                 ? __('Select a section')
                                 : __('Select a student first')),
                     ])
-                    ->action(function (array $data): void {
+                    ->action(function (array $data, $livewire): void {
                         $student = Student::findOrFail($data['student_id']);
                         $template = CertificateTemplate::findOrFail($data['template_id']);
                         $section = Section::find($data['section_id']);
-                        CertificateService::issue($student, $template, $section);
+                        $cert = CertificateService::issue($student, $template, $section);
+
+                        $url = route('admin.pdf.certificate-image', $cert);
+
+                        // Best-effort: open the certificate in a new tab automatically.
+                        $livewire->js('window.open('.json_encode($url).", '_blank')");
+
+                        // Reliable fallback button (real click → not popup-blocked).
+                        Notification::make()
+                            ->success()
+                            ->title(__('Certificate issued successfully'))
+                            ->actions([
+                                NotificationAction::make('open')
+                                    ->label(__('Open Certificate'))
+                                    ->url($url, shouldOpenInNewTab: true)
+                                    ->button(),
+                            ])
+                            ->persistent()
+                            ->send();
                     }),
             ])
             ->filters([

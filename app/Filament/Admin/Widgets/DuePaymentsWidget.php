@@ -15,23 +15,19 @@ class DuePaymentsWidget extends BaseWidget
 
     protected int|string|array $columnSpan = 'full';
 
-    protected static ?string $heading = null;
-
-    public function getHeading(): string
-    {
-        return __('Students with Due Payments');
-    }
-
     public function table(Table $table): Table
     {
         return $table
+            ->heading(__('Students with Due Payments'))
             ->query(
                 Registration::query()
                     ->whereNull('deleted_at')
                     ->whereIn('financial_status', ['due', 'overdue', 'warning'])
                     ->with(['student', 'section.subject'])
-                    ->orderByRaw("FIELD(financial_status, 'overdue', 'due', 'warning')")
+                    ->orderByRaw("CASE financial_status WHEN 'overdue' THEN 0 WHEN 'due' THEN 1 WHEN 'warning' THEN 2 ELSE 3 END")
             )
+            ->emptyStateHeading(__('No due payments'))
+            ->emptyStateIcon('heroicon-o-check-circle')
             ->columns([
                 TextColumn::make('student.name')
                     ->label(__('Student'))

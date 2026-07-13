@@ -65,7 +65,6 @@
         <div class="mp-hero">
             <img src="{{ \App\Support\AppBranding::logoUrl() }}" alt="{{ __('Logo') }}" class="mp-logo" onerror="this.style.display='none'">
             <h1 class="mp-title">منبع التميز</h1>
-            <p class="mp-sub">{{ __('Training Center Management System') }}</p>
             <div class="mp-sub-line"></div>
         </div>
 
@@ -128,5 +127,5 @@
         </div>
     </div>
 
-    <div class="mp-footer">© {{ now()->year }} {{ __('Manba Al-Tamayoz Center') }} — {{ __('Training Center Management System') }}</div>
+    <div class="mp-footer">© {{ now()->year }} {{ __('Manba Al-Tamayoz Center') }}</div>
 </div>

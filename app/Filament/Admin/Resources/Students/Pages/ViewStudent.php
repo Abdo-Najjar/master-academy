@@ -12,6 +12,8 @@ use App\Services\CertificateService;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
+use Filament\Notifications\Actions\Action as NotificationAction;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewStudent extends ViewRecord
@@ -59,12 +61,26 @@ class ViewStudent extends ViewRecord
                         ->searchable()
                         ->required(),
                 ])
-                ->action(function (Student $record, array $data) {
+                ->action(function (Student $record, array $data, $livewire): void {
                     $template = CertificateTemplate::findOrFail($data['template_id']);
                     $section = Section::find($data['section_id']);
                     $cert = CertificateService::issue($record, $template, $section);
 
-                    return redirect()->route('admin.pdf.certificate-image', $cert);
+                    $url = route('admin.pdf.certificate-image', $cert);
+
+                    $livewire->js('window.open('.json_encode($url).", '_blank')");
+
+                    Notification::make()
+                        ->success()
+                        ->title(__('Certificate issued successfully'))
+                        ->actions([
+                            NotificationAction::make('open')
+                                ->label(__('Open Certificate'))
+                                ->url($url, shouldOpenInNewTab: true)
+                                ->button(),
+                        ])
+                        ->persistent()
+                        ->send();
                 }),
             TransferSectionAction::make(),
             WalletActions::deposit(),

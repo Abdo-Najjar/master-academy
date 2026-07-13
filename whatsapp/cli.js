@@ -175,9 +175,27 @@ class WhatsAppConsole {
 
 async function main() {
   const isLink = process.argv.includes('link');
-  const timeoutMs = isLink ? 120000 : 60000;
+  // Give plenty of time to scan. Baileys keeps rotating the QR while we are
+  // alive, so the page always shows a fresh one. On timeout we mark the
+  // session disconnected so the UI prompts a re-link instead of showing a
+  // dead (expired) QR code.
+  const timeoutMs = isLink ? 180000 : 60000;
   globalTimeoutId = setTimeout(() => {
     console.log(`Timeout after ${timeoutMs / 1000}s`);
+    if (isLink) {
+      try {
+        const sf = path.join(__dirname, 'auth_info_baileys', 'status.json');
+        if (fs.existsSync(sf)) {
+          const cur = JSON.parse(fs.readFileSync(sf, 'utf8'));
+          if (cur.status !== 'ready') {
+            fs.writeFileSync(sf, JSON.stringify({
+              ...cur, status: 'disconnected', qr_code: null,
+              updated_at: new Date().toISOString(),
+            }));
+          }
+        }
+      } catch (e) { /* ignore */ }
+    }
     process.exit(0);
   }, timeoutMs);
   const timeoutId = globalTimeoutId;

@@ -72,10 +72,28 @@ class WhatsappLinkService
         ];
 
         $status = in_array($data['status'], $allowed, true) ? $data['status'] : WhatsappSession::STATUS_ERROR;
+        $qrCode = $data['qr_code'] ?? null;
+
+        // Stale-QR guard: Baileys rotates the QR every ~20-30s while the CLI is
+        // alive and rewrites status.json each time. If the QR hasn't refreshed
+        // in over 75s the CLI has died, so the displayed code is expired —
+        // surface it as disconnected so the UI prompts a fresh re-link instead
+        // of letting the admin scan a dead code.
+        if ($status === WhatsappSession::STATUS_QR_READY && ! empty($data['updated_at'])) {
+            try {
+                $ageSeconds = \Carbon\Carbon::parse($data['updated_at'])->diffInSeconds(now(), true);
+                if ($ageSeconds > 75) {
+                    $status = WhatsappSession::STATUS_DISCONNECTED;
+                    $qrCode = null;
+                }
+            } catch (\Throwable $e) {
+                // Keep the reported status if the timestamp is unparseable.
+            }
+        }
 
         $session->update([
             'status'               => $status,
-            'qr_code'              => $data['qr_code'] ?? null,
+            'qr_code'              => $qrCode,
             'phone_number'         => isset($data['phone_number']) ? preg_replace('/\D/', '', (string) $data['phone_number']) : $session->phone_number,
             'name'                 => $data['name'] ?? $session->name,
             'profile_picture_path' => $data['profile_picture_path'] ?? $session->profile_picture_path,
