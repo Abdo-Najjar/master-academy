@@ -21,7 +21,11 @@ class GovernorateSeeder extends Seeder
             ['ar' => 'أريحا', 'en' => 'Jericho'],
             ['ar' => 'سلفيت', 'en' => 'Salfit'],
             ['ar' => 'طوباس', 'en' => 'Tubas'],
+            ['ar' => 'شمال غزة', 'en' => 'North Gaza'],
             ['ar' => 'غزة', 'en' => 'Gaza'],
+            ['ar' => 'دير البلح', 'en' => 'Deir al-Balah'],
+            ['ar' => 'خان يونس', 'en' => 'Khan Yunis'],
+            ['ar' => 'رفح', 'en' => 'Rafah'],
         ];
 
         foreach ($governorates as $name) {
