@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Filament\Admin\Pages\AttendanceRecords;
 use App\Models\Certificate;
 use App\Models\Registration;
+use App\Models\Section;
 use App\Models\Student;
 use App\Services\CertificateService;
+use Carbon\Carbon;
 use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Str;
 use Mccarlosen\LaravelMpdf\Facades\LaravelMpdf;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Symfony\Component\HttpFoundation\Response;
@@ -119,5 +123,66 @@ class PdfController extends Controller
         ]);
 
         return $pdf->stream('student-card-'.$student->id.'.pdf');
+    }
+
+    /**
+     * Printable daily attendance sheet for a single section: one row per
+     * enrolled student with their recorded status for the given date.
+     */
+    public function attendanceSheet(Request $request, Section $section): Response
+    {
+        $this->authorizeHexaGate($request, 'attendance.index');
+
+        $data = $request->validate(['date' => 'required|date']);
+        $date = Carbon::parse($data['date']);
+
+        $section->loadMissing(['subject', 'trainer']);
+
+        $attendances = $section->attendances()
+            ->whereDate('date', $date)
+            ->get()
+            ->keyBy('student_id');
+
+        $students = $section->registrations()
+            ->with('student')
+            ->get()
+            ->pluck('student')
+            ->filter()
+            ->unique('id')
+            ->sortBy(fn (Student $s): string => is_array($s->name) ? ($s->name['ar'] ?? reset($s->name)) : (string) $s->name)
+            ->values();
+
+        $presentCount = $students->filter(fn (Student $s): bool => in_array($attendances->get($s->id)?->status, ['present', 'late'], true))->count();
+        $absentCount = $students->filter(fn (Student $s): bool => $attendances->get($s->id)?->status === 'absent')->count();
+        $percent = $students->count() > 0 ? round($presentCount / $students->count() * 100) : 0;
+
+        $translated = fn (mixed $value): ?string => is_array($value) ? ($value['ar'] ?? reset($value) ?: null) : $value;
+
+        $sectionName = $translated($section->name) ?? (string) $section->id;
+
+        $html = View::make('pdf.attendance-sheet', [
+            'sectionName' => $sectionName,
+            'subjectName' => $translated($section->subject?->name),
+            'trainerName' => $translated($section->trainer?->name),
+            'date' => $date,
+            'students' => $students,
+            'attendances' => $attendances,
+            'labels' => AttendanceRecords::statusLabels(),
+            'presentCount' => $presentCount,
+            'absentCount' => $absentCount,
+            'percent' => $percent,
+        ])->render();
+
+        $pdf = LaravelMpdf::loadHTML($html, [
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'orientation' => 'P',
+            'default_font' => 'dejavusans',
+            'autoLangToFont' => true,
+            'autoScriptToLang' => true,
+            'directionality' => 'rtl',
+        ]);
+
+        return $pdf->stream('attendance-'.Str::slug($sectionName).'-'.$date->format('Y-m-d').'.pdf');
     }
 }

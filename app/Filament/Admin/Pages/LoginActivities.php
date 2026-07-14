@@ -21,11 +21,11 @@ class LoginActivities extends Page implements HasTable
 
     protected string $view = 'filament.admin.pages.login-activities';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 2;
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Settings');
+        return __('Reports');
     }
 
     public static function getNavigationLabel(): string

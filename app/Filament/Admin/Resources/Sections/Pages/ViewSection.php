@@ -8,6 +8,8 @@ use App\Models\Section;
 use App\Services\WhatsAppService;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\Pages\ViewRecord;
@@ -65,6 +67,36 @@ class ViewSection extends ViewRecord
                 ->icon('heroicon-o-clipboard-document-check')
                 ->color('info')
                 ->action(fn (Section $record): StreamedResponse => $this->exportAttendanceMatrix($record)),
+            Action::make('exportAttendanceSheet')
+                ->label(__('Export Daily Attendance'))
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('gray')
+                ->schema([
+                    DatePicker::make('date')
+                        ->label(__('Date'))
+                        ->native(false)
+                        ->required()
+                        ->default(now()),
+                    Radio::make('format')
+                        ->label(__('Format'))
+                        ->options([
+                            'pdf' => __('PDF'),
+                            'excel' => __('Excel'),
+                        ])
+                        ->default('pdf')
+                        ->inline()
+                        ->required(),
+                ])
+                ->action(function (Section $record, array $data, $livewire): ?StreamedResponse {
+                    if ($data['format'] === 'excel') {
+                        return $this->exportAttendanceSheetExcel($record, $data['date']);
+                    }
+
+                    $url = route('admin.pdf.attendance-sheet', ['section' => $record, 'date' => $data['date']]);
+                    $livewire->js('window.open('.json_encode($url).", '_blank')");
+
+                    return null;
+                }),
             EditAction::make(),
         ];
     }
@@ -142,6 +174,57 @@ class ViewSection extends ViewRecord
 
             $writer->close();
         }, 'attendance-'.\Str::slug($sectionName).'-'.now()->format('Y-m-d').'.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    /**
+     * Stream an XLSX daily attendance sheet: one row per student with their
+     * recorded status for the given date. Mirrors the PDF attendance sheet.
+     */
+    public function exportAttendanceSheetExcel(Section $section, string $date): StreamedResponse
+    {
+        $labels = AttendanceRecords::statusLabels();
+
+        $attendances = $section->attendances()
+            ->whereDate('date', $date)
+            ->get()
+            ->keyBy('student_id');
+
+        $students = $section->registrations()
+            ->with('student')
+            ->get()
+            ->pluck('student')
+            ->filter()
+            ->unique('id')
+            ->sortBy(fn ($s) => $s->getTranslation('name', app()->getLocale(), false))
+            ->values();
+
+        $sectionName = $section->getTranslation('name', app()->getLocale(), false) ?: (string) $section->id;
+
+        return response()->streamDownload(function () use ($students, $attendances, $labels): void {
+            $writer = new Writer();
+            $writer->openToFile('php://output');
+
+            $writer->addRow(Row::fromValues([
+                __('Student'),
+                __('Status'),
+                __('Note'),
+            ]));
+
+            foreach ($students as $student) {
+                $a = $attendances->get($student->id);
+                $name = $student->getTranslation('name', app()->getLocale(), false) ?: (string) $student->id;
+
+                $writer->addRow(Row::fromValues([
+                    $name,
+                    $a ? ($labels[$a->status] ?? $a->status) : __('Not recorded'),
+                    (string) ($a?->note ?? ''),
+                ]));
+            }
+
+            $writer->close();
+        }, 'attendance-'.\Str::slug($sectionName).'-'.$date.'.xlsx', [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
     }
