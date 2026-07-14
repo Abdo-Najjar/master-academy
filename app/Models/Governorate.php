@@ -22,4 +22,14 @@ class Governorate extends Model
     {
         return $this->hasMany(City::class);
     }
+
+    public function students(): HasMany
+    {
+        return $this->hasMany(Student::class);
+    }
+
+    public function trainers(): HasMany
+    {
+        return $this->hasMany(Trainer::class);
+    }
 }

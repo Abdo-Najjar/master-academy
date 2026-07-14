@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Governorates;
 
 use App\Filament\Admin\Resources\Governorates\Pages\ManageGovernorates;
+use App\Filament\Support\DeletionGuard;
 use App\Models\Governorate;
 use BackedEnum;
 use Filament\Actions\ActionGroup;
@@ -14,6 +15,7 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
+use Illuminate\Support\Collection;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -104,19 +106,44 @@ class GovernorateResource extends Resource
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make(),
-                    DeleteAction::make(),
-                    ForceDeleteAction::make(),
+                    DeleteAction::make()
+                        ->before(fn (Governorate $record) => static::guardDeletion($record)),
+                    ForceDeleteAction::make()
+                        ->before(fn (Governorate $record) => static::guardDeletion($record)),
                     RestoreAction::make(),
                 ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->before(fn (Collection $records) => static::guardDeletionForMany($records)),
+                    ForceDeleteBulkAction::make()
+                        ->before(fn (Collection $records) => static::guardDeletionForMany($records)),
                     RestoreBulkAction::make(),
                 ]),
             ])
             ->defaultSort('id', 'desc');
+    }
+
+    protected static function guardDeletion(Governorate $record): void
+    {
+        DeletionGuard::ensureUnused($record, [
+            'cities' => __('Cities'),
+            'students' => __('Students'),
+            'trainers' => __('Trainers'),
+        ]);
+    }
+
+    /**
+     * @param  Collection<int, Governorate>  $records
+     */
+    protected static function guardDeletionForMany(Collection $records): void
+    {
+        DeletionGuard::ensureUnusedForMany($records, [
+            'cities' => __('Cities'),
+            'students' => __('Students'),
+            'trainers' => __('Trainers'),
+        ]);
     }
 
     public static function getPages(): array

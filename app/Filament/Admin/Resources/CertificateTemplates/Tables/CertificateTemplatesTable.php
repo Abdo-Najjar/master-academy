@@ -3,6 +3,8 @@
 namespace App\Filament\Admin\Resources\CertificateTemplates\Tables;
 
 use App\Filament\Admin\Resources\CertificateTemplates\CertificateTemplateResource;
+use App\Filament\Support\DeletionGuard;
+use App\Models\CertificateTemplate;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
@@ -14,6 +16,7 @@ use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Collection;
 
 class CertificateTemplatesTable
 {
@@ -45,14 +48,33 @@ class CertificateTemplatesTable
                         ->color('success')
                         ->url(fn ($record) => CertificateTemplateResource::getUrl('design', ['record' => $record])),
                     EditAction::make(),
-                    DeleteAction::make(),
+                    DeleteAction::make()
+                        ->before(fn (CertificateTemplate $record) => static::guardDeletion($record)),
                 ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->before(fn (Collection $records) => static::guardDeletionForMany($records)),
                 ]),
             ])
             ->defaultSort('id', 'desc');
+    }
+
+    protected static function guardDeletion(CertificateTemplate $record): void
+    {
+        DeletionGuard::ensureUnused($record, [
+            'certificates' => __('Certificates'),
+        ]);
+    }
+
+    /**
+     * @param  Collection<int, CertificateTemplate>  $records
+     */
+    protected static function guardDeletionForMany(Collection $records): void
+    {
+        DeletionGuard::ensureUnusedForMany($records, [
+            'certificates' => __('Certificates'),
+        ]);
     }
 }

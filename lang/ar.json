@@ -174,6 +174,8 @@
     "Cancelled Tasks": "المهام الملغاة",
     "Cancelled projects": "المشاريع الملغاة",
     "Cancelled tasks": "المهام الملغاة",
+    "Cannot Delete": "لا يمكن الحذف",
+    "This record is linked to :items and cannot be deleted. Remove those links first.": "لا يمكن حذف هذا العنصر لأنه مرتبط بـ :items. يرجى إزالة هذه الروابط أولاً.",
     "Cannot delete a student who has one or more active course registrations.": "لا يمكن حذف الطالب لوجود تسجيل أو أكثر نشط في شعب الدورات.",
     "Cannot delete a trainer who is assigned to one or more course sections.": "لا يمكن حذف هذا المدرب لأنه مرتبط بشعبة دورة واحدة أو أكثر.",
     "Cannot delete branch with course sections": "لا يمكن حذف الفرع الذي يحتوي على شعب",

@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Rooms;
 
 use App\Filament\Admin\Resources\Rooms\Pages\ManageRooms;
+use App\Filament\Support\DeletionGuard;
 use App\Models\Room;
 use BackedEnum;
 use Filament\Actions\ActionGroup;
@@ -14,6 +15,7 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
+use Illuminate\Support\Collection;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -109,19 +111,40 @@ class RoomResource extends Resource
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make(),
-                    DeleteAction::make(),
-                    ForceDeleteAction::make(),
+                    DeleteAction::make()
+                        ->before(fn (Room $record) => static::guardDeletion($record)),
+                    ForceDeleteAction::make()
+                        ->before(fn (Room $record) => static::guardDeletion($record)),
                     RestoreAction::make(),
                 ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->before(fn (Collection $records) => static::guardDeletionForMany($records)),
+                    ForceDeleteBulkAction::make()
+                        ->before(fn (Collection $records) => static::guardDeletionForMany($records)),
                     RestoreBulkAction::make(),
                 ]),
             ])
             ->defaultSort('id', 'desc');
+    }
+
+    protected static function guardDeletion(Room $record): void
+    {
+        DeletionGuard::ensureUnused($record, [
+            'sectionTimes' => __('Course Section Time'),
+        ]);
+    }
+
+    /**
+     * @param  Collection<int, Room>  $records
+     */
+    protected static function guardDeletionForMany(Collection $records): void
+    {
+        DeletionGuard::ensureUnusedForMany($records, [
+            'sectionTimes' => __('Course Section Time'),
+        ]);
     }
 
     public static function getPages(): array

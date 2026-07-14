@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\ExemptionTypes;
 
 use App\Filament\Admin\Resources\ExemptionTypes\Pages\ManageExemptionTypes;
+use App\Filament\Support\DeletionGuard;
 use App\Models\ExemptionType;
 use BackedEnum;
 use Filament\Actions\ActionGroup;
@@ -14,6 +15,7 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
+use Illuminate\Support\Collection;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -127,19 +129,40 @@ class ExemptionTypeResource extends Resource
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make(),
-                    DeleteAction::make(),
-                    ForceDeleteAction::make(),
+                    DeleteAction::make()
+                        ->before(fn (ExemptionType $record) => static::guardDeletion($record)),
+                    ForceDeleteAction::make()
+                        ->before(fn (ExemptionType $record) => static::guardDeletion($record)),
                     RestoreAction::make(),
                 ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->before(fn (Collection $records) => static::guardDeletionForMany($records)),
+                    ForceDeleteBulkAction::make()
+                        ->before(fn (Collection $records) => static::guardDeletionForMany($records)),
                     RestoreBulkAction::make(),
                 ]),
             ])
             ->defaultSort('id', 'desc');
+    }
+
+    protected static function guardDeletion(ExemptionType $record): void
+    {
+        DeletionGuard::ensureUnused($record, [
+            'registrations' => __('Registrations'),
+        ]);
+    }
+
+    /**
+     * @param  Collection<int, ExemptionType>  $records
+     */
+    protected static function guardDeletionForMany(Collection $records): void
+    {
+        DeletionGuard::ensureUnusedForMany($records, [
+            'registrations' => __('Registrations'),
+        ]);
     }
 
     public static function getPages(): array

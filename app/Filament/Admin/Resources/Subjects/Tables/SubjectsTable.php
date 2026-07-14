@@ -2,6 +2,8 @@
 
 namespace App\Filament\Admin\Resources\Subjects\Tables;
 
+use App\Filament\Support\DeletionGuard;
+use App\Models\Subject;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -14,6 +16,7 @@ use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Collection;
 
 class SubjectsTable
 {
@@ -40,17 +43,37 @@ class SubjectsTable
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make(),
-                    DeleteAction::make(),
+                    DeleteAction::make()
+                        ->before(fn (Subject $record) => static::guardDeletion($record)),
                 ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->before(fn (Collection $records) => static::guardDeletionForMany($records)),
+                    ForceDeleteBulkAction::make()
+                        ->before(fn (Collection $records) => static::guardDeletionForMany($records)),
                     RestoreBulkAction::make(),
                 ]),
             ])
             ->reorderable('sort_order')
             ->defaultSort('sort_order');
+    }
+
+    protected static function guardDeletion(Subject $record): void
+    {
+        DeletionGuard::ensureUnused($record, [
+            'sections' => __('Sections'),
+        ]);
+    }
+
+    /**
+     * @param  Collection<int, Subject>  $records
+     */
+    protected static function guardDeletionForMany(Collection $records): void
+    {
+        DeletionGuard::ensureUnusedForMany($records, [
+            'sections' => __('Sections'),
+        ]);
     }
 }
