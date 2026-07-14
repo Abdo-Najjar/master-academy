@@ -27,14 +27,13 @@ class Reports extends Page implements HasForms
 
     protected string $view = 'filament.admin.pages.reports';
 
-    /** High sort value so it lands near the bottom of the standalone (un-grouped) items. */
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 1;
 
     public ?array $filters = [];
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Finance');
+        return __('Reports');
     }
 
     public static function getNavigationLabel(): string

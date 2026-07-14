@@ -47,10 +47,11 @@ class AdminPanelProvider extends PanelProvider
             ->navigationGroups([
                 NavigationGroup::make()->label(__('Education'))->collapsed(false),
                 NavigationGroup::make()->label(__('Operations'))->collapsed(false),
-                NavigationGroup::make()->label(__('Communication'))->collapsed(true),
+                NavigationGroup::make()->label(__('Reports'))->collapsed(false),
                 NavigationGroup::make()->label(__('Finance'))->collapsed(true),
-                NavigationGroup::make()->label(__('Locations'))->collapsed(true),
+                NavigationGroup::make()->label(__('Communication'))->collapsed(true),
                 NavigationGroup::make()->label(__('Administration'))->collapsed(true),
+                NavigationGroup::make()->label(__('Locations'))->collapsed(true),
                 NavigationGroup::make()->label(__('Settings'))->collapsed(true),
             ])
             ->pages([
