@@ -12,7 +12,6 @@ use App\Services\CertificateService;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
-use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -74,7 +73,7 @@ class ViewStudent extends ViewRecord
                         ->success()
                         ->title(__('Certificate issued successfully'))
                         ->actions([
-                            NotificationAction::make('open')
+                            Action::make('open')
                                 ->label(__('Open Certificate'))
                                 ->url($url, shouldOpenInNewTab: true)
                                 ->button(),

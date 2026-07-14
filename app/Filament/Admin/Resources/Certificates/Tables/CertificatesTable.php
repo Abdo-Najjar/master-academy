@@ -13,7 +13,6 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\Select;
-use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -89,7 +88,7 @@ class CertificatesTable
                             ->success()
                             ->title(__('Certificate issued successfully'))
                             ->actions([
-                                NotificationAction::make('open')
+                                Action::make('open')
                                     ->label(__('Open Certificate'))
                                     ->url($url, shouldOpenInNewTab: true)
                                     ->button(),
