@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class DuePaymentsWidget extends BaseWidget
 {
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 5;
 
     protected int|string|array $columnSpan = 'full';
 
