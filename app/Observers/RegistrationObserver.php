@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Registration;
 use App\Models\Section;
+use App\Services\FinancialDueService;
 use Illuminate\Support\Facades\DB;
 
 class RegistrationObserver
@@ -23,6 +24,18 @@ class RegistrationObserver
                     2
                 );
             }
+        }
+
+        $registration->financial_status = FinancialDueService::computeStatus($registration);
+    }
+
+    /**
+     * Keep financial_status in sync whenever the money fields change.
+     */
+    public function updating(Registration $registration): void
+    {
+        if ($registration->isDirty(['amount_due', 'amount_paid', 'exemption_amount'])) {
+            $registration->financial_status = FinancialDueService::computeStatus($registration);
         }
     }
 

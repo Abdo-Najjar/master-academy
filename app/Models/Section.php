@@ -29,8 +29,6 @@ class Section extends Model implements HasMedia
         'trainer_rate',
         'capacity',
         'section_type',
-        'fee_type',
-        'sessions_per_fee_cycle',
         'seat_reservation_type',
         'seat_reservation_amount',
     ];
@@ -48,7 +46,6 @@ class Section extends Model implements HasMedia
             'trainer_rate' => 'decimal:2',
             'seat_reservation_amount' => 'decimal:2',
             'capacity' => 'integer',
-            'sessions_per_fee_cycle' => 'integer',
         ];
     }
 

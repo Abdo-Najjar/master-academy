@@ -27,15 +27,12 @@ class StudentInfolist
                         TextEntry::make('whatsapp_number')->label(__('WhatsApp'))->placeholder('—'),
                         TextEntry::make('parent_name')
                             ->label(__('Parent Name'))
-                            ->state(fn (Student $record): ?string => $record->parent_name ?: $record->parent?->name)
                             ->placeholder('—'),
                         TextEntry::make('parent_phone')
                             ->label(__('Parent Phone'))
-                            ->state(fn (Student $record): ?string => $record->parent_phone ?: $record->parent?->phone)
                             ->placeholder('—'),
                         TextEntry::make('parent_whatsapp')
                             ->label(__('Parent WhatsApp'))
-                            ->state(fn (Student $record): ?string => $record->parent_whatsapp ?: $record->parent?->whatsapp)
                             ->placeholder('—'),
                         TextEntry::make('governorate.name')->label(__('Governorate'))->placeholder('—'),
                         TextEntry::make('city.name')->label(__('City'))->placeholder('—'),

@@ -17,7 +17,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'trainer.auth' => TrainerAuth::class,
             'student.auth' => StudentAuth::class,
-            'parent.auth' => \App\Http\Middleware\ParentAuth::class,
             'active.user' => EnsureUserIsActive::class,
         ]);
         $middleware->web(append: [

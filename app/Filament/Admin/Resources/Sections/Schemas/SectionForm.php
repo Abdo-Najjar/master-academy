@@ -90,23 +90,8 @@ class SectionForm
 
                 Section::make(__('Pricing'))
                     ->schema([
-                        Select::make('fee_type')
-                            ->label(__('Fee Type'))
-                            ->options([
-                                'per_session' => __('Per Session Cycle'),
-                                'fixed_course' => __('Fixed Course Fee'),
-                            ])
-                            ->default('per_session')
-                            ->required()
-                            ->live(),
-                        TextInput::make('sessions_per_fee_cycle')
-                            ->label(__('Sessions per Payment Cycle'))
-                            ->numeric()
-                            ->minValue(1)
-                            ->visible(fn (callable $get) => $get('fee_type') === 'per_session')
-                            ->helperText(__('e.g., 6 means payment is due every 6 sessions')),
                         TextInput::make('price')
-                            ->label(__('Price'))
+                            ->label(__('Course Fee'))
                             ->required()
                             ->numeric()
                             ->default(0)

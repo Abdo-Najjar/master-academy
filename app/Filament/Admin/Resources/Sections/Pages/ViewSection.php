@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Sections\Pages;
 
+use App\Filament\Admin\Pages\AttendanceRecords;
 use App\Filament\Admin\Resources\Sections\SectionResource;
 use App\Models\Section;
 use App\Services\WhatsAppService;
@@ -10,6 +11,8 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\Pages\ViewRecord;
+use OpenSpout\Common\Entity\Row;
+use OpenSpout\Writer\XLSX\Writer;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ViewSection extends ViewRecord
@@ -57,8 +60,90 @@ class ViewSection extends ViewRecord
                         ['Content-Type' => 'text/html; charset=utf-8']
                     );
                 }),
+            Action::make('exportAttendance')
+                ->label(__('Export Attendance'))
+                ->icon('heroicon-o-clipboard-document-check')
+                ->color('info')
+                ->action(fn (Section $record): StreamedResponse => $this->exportAttendanceMatrix($record)),
             EditAction::make(),
         ];
+    }
+
+    /**
+     * Stream an XLSX attendance sheet: one row per student, one column per
+     * session date, plus present/absent tallies and attendance percentage.
+     */
+    public function exportAttendanceMatrix(Section $section): StreamedResponse
+    {
+        $labels = AttendanceRecords::statusLabels();
+
+        $dates = $section->attendances()
+            ->select('date')
+            ->distinct()
+            ->orderBy('date')
+            ->pluck('date')
+            ->map(fn ($d): string => $d instanceof \Carbon\CarbonInterface ? $d->format('Y-m-d') : (string) $d)
+            ->values();
+
+        // status lookup: [student_id][Y-m-d] => status
+        $lookup = [];
+        foreach ($section->attendances()->get() as $a) {
+            $key = $a->date instanceof \Carbon\CarbonInterface ? $a->date->format('Y-m-d') : (string) $a->date;
+            $lookup[$a->student_id][$key] = $a->status;
+        }
+
+        $students = $section->registrations()
+            ->with('student')
+            ->get()
+            ->pluck('student')
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        $sectionName = $section->getTranslation('name', app()->getLocale(), false) ?: (string) $section->id;
+
+        return response()->streamDownload(function () use ($dates, $lookup, $students, $labels): void {
+            $writer = new Writer();
+            $writer->openToFile('php://output');
+
+            $header = [__('Student')];
+            foreach ($dates as $d) {
+                $header[] = $d;
+            }
+            $header[] = __('Present');
+            $header[] = __('Absent');
+            $header[] = __('Attendance %');
+            $writer->addRow(Row::fromValues($header));
+
+            foreach ($students as $student) {
+                $name = $student->getTranslation('name', app()->getLocale(), false) ?: (string) $student->id;
+                $row = [$name];
+                $present = 0;
+                $absent = 0;
+
+                foreach ($dates as $d) {
+                    $status = $lookup[$student->id][$d] ?? null;
+                    $row[] = $status ? ($labels[$status] ?? $status) : '';
+                    if (in_array($status, ['present', 'late'], true)) {
+                        $present++;
+                    } elseif ($status === 'absent') {
+                        $absent++;
+                    }
+                }
+
+                $total = $dates->count();
+                $percent = $total > 0 ? round($present / $total * 100) : 0;
+                $row[] = $present;
+                $row[] = $absent;
+                $row[] = $percent.'%';
+
+                $writer->addRow(Row::fromValues($row));
+            }
+
+            $writer->close();
+        }, 'attendance-'.\Str::slug($sectionName).'-'.now()->format('Y-m-d').'.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
     }
 
     private static function buildContactsHtml(string $sectionName, array $contacts, string $message): string

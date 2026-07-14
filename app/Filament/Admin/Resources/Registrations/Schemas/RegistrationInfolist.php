@@ -24,6 +24,9 @@ class RegistrationInfolist
                         TextEntry::make('amount_paid')
                             ->label(__('Amount Paid'))
                             ->formatStateUsing(fn ($state) => number_format((float) $state, 2).' ₪'),
+                        TextEntry::make('exemptionType.name')
+                            ->label(__('Exemption Type'))
+                            ->placeholder('—'),
                         TextEntry::make('exemption_amount')
                             ->label(__('Exemption / Discount'))
                             ->formatStateUsing(fn ($state) => number_format((float) $state, 2).' ₪'),

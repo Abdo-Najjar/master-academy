@@ -2,8 +2,6 @@
 
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\PdfController;
-use App\Livewire\ParentDashboard;
-use App\Livewire\ParentLogin;
 use App\Livewire\Portal;
 use App\Livewire\StudentDashboard;
 use App\Livewire\StudentLogin;
@@ -18,9 +16,6 @@ Route::get('/trainer/dashboard', TrainerDashboard::class)->name('trainer.dashboa
 
 Route::get('/student/login', StudentLogin::class)->name('student.login');
 Route::get('/student/dashboard', StudentDashboard::class)->name('student.dashboard')->middleware('student.auth');
-
-Route::get('/parent/login', ParentLogin::class)->name('parent.login');
-Route::get('/parent/dashboard', ParentDashboard::class)->name('parent.dashboard')->middleware('parent.auth');
 
 Route::get('/certificates/verify/{token}', function (string $token) {
     $cert = \App\Models\Certificate::where('verification_token', $token)->with(['student', 'section.subject', 'template'])->firstOrFail();

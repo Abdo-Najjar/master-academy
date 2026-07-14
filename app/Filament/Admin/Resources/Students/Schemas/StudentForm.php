@@ -126,12 +126,6 @@ class StudentForm
                             ->label(__('Parent WhatsApp'))
                             ->tel()
                             ->maxLength(255),
-                        Select::make('parent_id')
-                            ->label(__('Parent Account'))
-                            ->relationship('parent', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->placeholder(__('Select parent account (optional)')),
                         Select::make('governorate_id')
                             ->label(__('Governorate'))
                             ->relationship('governorate', 'name')

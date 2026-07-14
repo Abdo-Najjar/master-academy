@@ -34,6 +34,7 @@ class RegistrationsTable
                     ->toggleable(),
                 TextColumn::make('paymentType.name')->label(__('Payment'))->toggleable(),
                 TextColumn::make('amount_due')->label(__('Due'))->money('ILS', decimalPlaces: 0)->sortable(),
+                TextColumn::make('exemptionType.name')->label(__('Exemption Type'))->placeholder('—')->toggleable(),
                 TextColumn::make('exemption_amount')->label(__('Exemption'))->money('ILS', decimalPlaces: 0)->sortable(),
                 TextColumn::make('amount_paid')->label(__('Paid'))->money('ILS', decimalPlaces: 0)->sortable(),
                 TextColumn::make('trainer_amount')->label(__('Trainer Share'))->money('ILS', decimalPlaces: 0)->sortable(),
@@ -48,6 +49,10 @@ class RegistrationsTable
                 SelectFilter::make('payment_type_id')
                     ->label(__('Payment Type'))
                     ->relationship('paymentType', 'name')
+                    ->preload(),
+                SelectFilter::make('exemption_type_id')
+                    ->label(__('Exemption Type'))
+                    ->relationship('exemptionType', 'name')
                     ->preload(),
                 TrashedFilter::make(),
             ])

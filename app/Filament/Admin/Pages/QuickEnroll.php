@@ -227,6 +227,31 @@ class QuickEnroll extends Page implements HasForms
                                 $set('amount_paid', max(0, $due - $exempt));
                             }),
 
+                        Select::make('exemption_type_id')
+                            ->label(__('Exemption Type'))
+                            ->options(fn () => \App\Models\ExemptionType::query()
+                                ->where('is_active', true)
+                                ->get()
+                                ->mapWithKeys(fn (\App\Models\ExemptionType $t) => [
+                                    $t->id => $t->getTranslation('name', app()->getLocale(), false),
+                                ]))
+                            ->searchable()
+                            ->preload()
+                            ->placeholder(__('No exemption'))
+                            ->live()
+                            ->afterStateUpdated(function ($state, Get $get, Set $set) {
+                                $due = (float) ($get('amount_due') ?? 0);
+                                if (! $state) {
+                                    return;
+                                }
+                                $type = \App\Models\ExemptionType::find($state);
+                                $discount = $type ? $type->computeDiscount($due) : 0.0;
+                                if ($discount > 0) {
+                                    $set('exemption_amount', $discount);
+                                    $set('amount_paid', max(0, $due - $discount));
+                                }
+                            }),
+
                         TextInput::make('exemption_amount')
                             ->label(__('Exemption / Discount'))
                             ->numeric()
@@ -331,6 +356,7 @@ class QuickEnroll extends Page implements HasForms
                     'amount_due' => $data['amount_due'],
                     'amount_paid' => $data['amount_paid'],
                     'exemption_amount' => $data['exemption_amount'] ?? 0,
+                    'exemption_type_id' => $data['exemption_type_id'] ?? null,
                     'trainer_amount' => 0,
                     'note' => $data['note'] ?? null,
                 ]);

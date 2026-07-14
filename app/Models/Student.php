@@ -39,7 +39,6 @@ class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
         'parent_whatsapp',
         'governorate_id',
         'city_id',
-        'parent_id',
         'is_active',
         'status',
         'gender',
@@ -93,11 +92,6 @@ class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
         $this->addMediaCollection('main')
             ->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
-    }
-
-    public function parent(): BelongsTo
-    {
-        return $this->belongsTo(ParentGuardian::class, 'parent_id');
     }
 
     public function sectionTransfers(): HasMany

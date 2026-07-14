@@ -3,95 +3,43 @@
 namespace App\Services;
 
 use App\Models\Registration;
-use App\Models\Section;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 class FinancialDueService
 {
     /**
-     * Count unique session dates in a section AFTER a given date (inclusive).
+     * Outstanding balance for a registration (course fee minus paid minus exemption).
      */
-    public static function countSectionSessionsAfter(int $sectionId, string $afterDate): int
+    public static function remainingBalance(Registration $registration): float
     {
-        return DB::table('attendances')
-            ->where('section_id', $sectionId)
-            ->where('date', '>=', $afterDate)
-            ->distinct('date')
-            ->count('date');
+        $due = (float) $registration->amount_due;
+        $paid = (float) $registration->amount_paid;
+        $exempt = (float) $registration->exemption_amount;
+
+        return round($due - $paid - $exempt, 2);
     }
 
     /**
-     * Count total unique session dates in a section up to now.
-     */
-    public static function countTotalSectionSessions(int $sectionId): int
-    {
-        return DB::table('attendances')
-            ->where('section_id', $sectionId)
-            ->distinct('date')
-            ->count('date');
-    }
-
-    /**
-     * Compute current session count for a registration (sessions since student registered).
-     */
-    public static function currentSessionCount(Registration $registration): int
-    {
-        if (! $registration->created_at) {
-            return 0;
-        }
-
-        return self::countSectionSessionsAfter(
-            $registration->section_id,
-            $registration->created_at->toDateString()
-        );
-    }
-
-    /**
-     * Sessions since last payment for a registration.
-     */
-    public static function sessionsSinceLastPayment(Registration $registration): int
-    {
-        $total = self::currentSessionCount($registration);
-        $paidThrough = (int) $registration->paid_through_session;
-
-        return max(0, $total - $paidThrough);
-    }
-
-    /**
-     * Compute financial status for a single registration.
-     * ok | warning (2 sessions before due) | due | overdue
+     * Compute financial status for a single (fixed-course) registration.
+     *
+     * ok       -> fully paid / exempted
+     * due      -> partially paid, balance remaining
+     * overdue  -> nothing paid yet on a course that has a fee
      */
     public static function computeStatus(Registration $registration): string
     {
-        $section = $registration->section;
-        if (! $section || $section->fee_type !== 'per_session') {
+        $remaining = self::remainingBalance($registration);
+
+        if ($remaining <= 0.009) {
             return 'ok';
         }
 
-        $cycle = (int) ($section->sessions_per_fee_cycle ?? 0);
-        if ($cycle <= 0) {
-            return 'ok';
-        }
-
-        $sessionsSince = self::sessionsSinceLastPayment($registration);
-
-        if ($sessionsSince >= $cycle + 2) {
-            return 'overdue';
-        }
-        if ($sessionsSince >= $cycle) {
-            return 'due';
-        }
-        if ($sessionsSince >= $cycle - 2) {
-            return 'warning';
-        }
-
-        return 'ok';
+        return ((float) $registration->amount_paid) <= 0.009 ? 'overdue' : 'due';
     }
 
     /**
-     * Update financial_status for all per_session registrations.
-     * Returns the count of registrations that were (or would be) updated.
+     * Recalculate and persist financial_status for all registrations.
+     * Returns the count of registrations whose status changed.
      */
     public static function refreshAllStatuses(bool $dryRun = false): int
     {
@@ -99,8 +47,6 @@ class FinancialDueService
 
         Registration::query()
             ->whereNull('deleted_at')
-            ->whereHas('section', fn ($q) => $q->where('fee_type', 'per_session'))
-            ->with('section')
             ->chunk(200, function (Collection $registrations) use ($dryRun, &$updated): void {
                 foreach ($registrations as $reg) {
                     $status = self::computeStatus($reg);
@@ -114,24 +60,5 @@ class FinancialDueService
             });
 
         return $updated;
-    }
-
-    /**
-     * Mark payment received: advance paid_through_session by one cycle.
-     */
-    public static function recordPayment(Registration $registration): void
-    {
-        $section = $registration->section;
-        $cycle = (int) ($section?->sessions_per_fee_cycle ?? 0);
-
-        if ($cycle <= 0) {
-            return;
-        }
-
-        $newPaid = (int) $registration->paid_through_session + $cycle;
-        $registration->update([
-            'paid_through_session' => $newPaid,
-            'financial_status' => 'ok',
-        ]);
     }
 }

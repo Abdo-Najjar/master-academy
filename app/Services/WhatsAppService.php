@@ -99,7 +99,7 @@ class WhatsAppService
     {
         $contacts = [];
 
-        foreach ($section->registrations()->with('student.parent')->get() as $reg) {
+        foreach ($section->registrations()->with('student')->get() as $reg) {
             $student = $reg->student;
             if (! $student) {
                 continue;
@@ -119,11 +119,10 @@ class WhatsAppService
                 ];
             }
 
-            $parent = $student->parent;
-            if ($parent && (filled($parent->whatsapp) || filled($parent->phone))) {
-                $phone = $parent->whatsapp ?: $parent->phone;
+            if (filled($student->parent_whatsapp) || filled($student->parent_phone)) {
+                $phone = $student->parent_whatsapp ?: $student->parent_phone;
                 $contacts[] = [
-                    'name'  => $parent->name . ' (ولي أمر ' . $name . ')',
+                    'name'  => ($student->parent_name ?: __('Parent')) . ' (ولي أمر ' . $name . ')',
                     'phone' => $phone,
                     'url'   => self::buildUrl($phone, $message),
                     'type'  => 'parent',

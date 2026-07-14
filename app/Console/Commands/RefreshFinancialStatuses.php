@@ -9,7 +9,7 @@ class RefreshFinancialStatuses extends Command
 {
     protected $signature = 'finances:refresh {--dry-run : Show counts without saving}';
 
-    protected $description = 'Recalculate financial_status for all active per-session registrations';
+    protected $description = 'Recalculate financial_status (paid/due/overdue) for all registrations';
 
     public function handle(): int
     {

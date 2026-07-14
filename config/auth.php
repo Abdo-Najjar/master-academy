@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\ParentGuardian;
 use App\Models\Student;
 use App\Models\Trainer;
 use App\Models\User;
@@ -25,10 +24,6 @@ return [
             'driver' => 'session',
             'provider' => 'students',
         ],
-        'parent' => [
-            'driver' => 'session',
-            'provider' => 'parents',
-        ],
     ],
 
     'providers' => [
@@ -43,10 +38,6 @@ return [
         'students' => [
             'driver' => 'eloquent',
             'model' => Student::class,
-        ],
-        'parents' => [
-            'driver' => 'eloquent',
-            'model' => ParentGuardian::class,
         ],
     ],
 
@@ -65,12 +56,6 @@ return [
         ],
         'students' => [
             'provider' => 'students',
-            'table' => 'password_reset_tokens',
-            'expire' => 60,
-            'throttle' => 60,
-        ],
-        'parents' => [
-            'provider' => 'parents',
             'table' => 'password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,

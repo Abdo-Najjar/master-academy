@@ -123,6 +123,31 @@ class RegistrationForm
 
                 FormSection::make('')
                     ->schema([
+                        Select::make('exemption_type_id')
+                            ->label(__('Exemption Type'))
+                            ->options(fn () => \App\Models\ExemptionType::query()
+                                ->where('is_active', true)
+                                ->get()
+                                ->mapWithKeys(fn (\App\Models\ExemptionType $t) => [
+                                    $t->id => $t->getTranslation('name', app()->getLocale(), false),
+                                ]))
+                            ->searchable()
+                            ->preload()
+                            ->placeholder(__('No exemption'))
+                            ->live()
+                            ->columnSpanFull()
+                            ->afterStateUpdated(function ($state, Get $get, Set $set) {
+                                $due = (float) ($get('amount_due') ?? 0);
+                                if (! $state) {
+                                    return;
+                                }
+                                $type = \App\Models\ExemptionType::find($state);
+                                $discount = $type ? $type->computeDiscount($due) : 0.0;
+                                if ($discount > 0) {
+                                    $set('exemption_amount', $discount);
+                                    $set('amount_paid', max(0, $due - $discount));
+                                }
+                            }),
                         TextInput::make('amount_due')
                             ->label(__('Amount Due'))
                             ->numeric()
