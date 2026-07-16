@@ -27,7 +27,7 @@ class RegistrationForm
                         Select::make('student_id')
                             ->label(__('Student'))
                             ->relationship('student', 'name')
-                            ->searchable(['student_number', 'username', 'email', 'phone_number'])
+                            ->searchable(['name', 'student_number', 'username', 'email', 'phone_number'])
                             ->preload()
                             ->required()
                             ->live()
