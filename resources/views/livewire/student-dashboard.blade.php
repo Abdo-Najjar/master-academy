@@ -206,38 +206,12 @@
                                     @else
                                         <span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold whitespace-nowrap">{{ __('Not submitted') }}</span>
                                     @endif
-                                    <button wire:click="openSubmit({{ $a->id }})"
-                                            class="px-3 py-1.5 text-sm rounded-lg bg-purple-600 hover:bg-purple-700 text-white whitespace-nowrap">
+                                    <a href="{{ route('student.assignments.show', $a) }}" wire:navigate
+                                       class="px-3 py-1.5 text-sm rounded-lg bg-purple-600 hover:bg-purple-700 text-white whitespace-nowrap">
                                         {{ $sub ? __('Edit Submission') : __('Submit') }}
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
-
-                            @if ($submitAssignmentId === $a->id)
-                                <form wire:submit="submitAssignment" class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 space-y-3">
-                                    <textarea wire:model="submissionContent" rows="4" placeholder="{{ __('Write your answer here') }}"
-                                              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700"></textarea>
-                                    @error('submissionContent') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
-
-                                    @if ($sub?->getFirstMedia('attachment'))
-                                        <p class="text-xs text-gray-500">
-                                            {{ __('Current file') }}:
-                                            <a href="{{ $sub->getFirstMedia('attachment')->getUrl() }}" target="_blank" class="text-purple-600 hover:underline">{{ $sub->getFirstMedia('attachment')->file_name }}</a>
-                                        </p>
-                                    @endif
-
-                                    <input type="file" wire:model="submissionFile" class="block w-full text-sm">
-                                    <p class="text-xs text-gray-400">{{ __('Maximum file size: 20 MB') }}</p>
-                                    @error('submissionFile') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
-                                    <div wire:loading wire:target="submissionFile" class="text-sm text-gray-500">{{ __('Uploading...') }}</div>
-
-                                    <div class="flex gap-2">
-                                        <button class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm">{{ __('Submit') }}</button>
-                                        <button type="button" wire:click="$set('submitAssignmentId', null)"
-                                                class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm">{{ __('Cancel') }}</button>
-                                    </div>
-                                </form>
-                            @endif
                         </div>
                     @empty
                         <div class="p-6 text-center text-gray-500">{{ __('No records found') }}</div>

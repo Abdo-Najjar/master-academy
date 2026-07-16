@@ -83,6 +83,7 @@ class ManageAppSettings extends Page implements HasForms
     public function form(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
                 Section::make('')
                     ->schema([

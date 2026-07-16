@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use App\Models\Assignment;
-use App\Models\AssignmentSubmission;
 use App\Models\Attendance;
 use App\Models\Complaint;
 use App\Models\Section;
@@ -54,9 +53,6 @@ class TrainerDashboard extends Component
 
     public string $complaintBody = '';
 
-    /** @var int|null */
-    public ?int $assignmentDetailId = null;
-
     public ?int $newAssignmentSectionId = null;
 
     public string $newAssignmentTitle = '';
@@ -66,12 +62,6 @@ class TrainerDashboard extends Component
     public string $newAssignmentDueDate = '';
 
     public ?float $newAssignmentMaxPoints = null;
-
-    /** @var array<int, string|float|null> submission_id => grade */
-    public array $gradeInputs = [];
-
-    /** @var array<int, string> submission_id => feedback */
-    public array $feedbackInputs = [];
 
     public function mount(): void
     {
@@ -90,6 +80,25 @@ class TrainerDashboard extends Component
     public function setActiveTab(string $tab): void
     {
         $this->activeTab = $tab;
+    }
+
+    /** @return array<string, string> */
+    protected function validationAttributes(): array
+    {
+        return [
+            'currentPassword' => __('Current Password'),
+            'newPassword' => __('New Password'),
+            'newPasswordConfirmation' => __('Confirm Password'),
+            'newAvatar' => __('Profile Picture'),
+            'newMaterials.*' => __('File'),
+            'complaintSubject' => __('Subject'),
+            'complaintBody' => __('Body'),
+            'newAssignmentSectionId' => __('Section'),
+            'newAssignmentTitle' => __('Title'),
+            'newAssignmentDescription' => __('Description'),
+            'newAssignmentDueDate' => __('Due Date'),
+            'newAssignmentMaxPoints' => __('Max Points'),
+        ];
     }
 
     public function updatePassword(): void
@@ -307,49 +316,6 @@ class TrainerDashboard extends Component
         session()->flash('message', __('Assignment created'));
     }
 
-    public function openAssignmentDetail(int $assignmentId): void
-    {
-        $trainer = Auth::guard('trainer')->user();
-        $assignment = $trainer?->assignments()->whereKey($assignmentId)->first();
-
-        if (! $assignment) {
-            return;
-        }
-
-        $this->assignmentDetailId = $assignmentId;
-        $this->gradeInputs = [];
-        $this->feedbackInputs = [];
-
-        foreach ($assignment->submissions as $submission) {
-            $this->gradeInputs[$submission->id] = $submission->grade;
-            $this->feedbackInputs[$submission->id] = $submission->feedback ?? '';
-        }
-    }
-
-    public function saveGrade(int $submissionId): void
-    {
-        $trainer = Auth::guard('trainer')->user();
-        $assignmentIds = $trainer?->assignments()->pluck('assignments.id') ?? collect();
-
-        $submission = AssignmentSubmission::query()
-            ->whereKey($submissionId)
-            ->whereIn('assignment_id', $assignmentIds)
-            ->first();
-
-        if (! $submission) {
-            return;
-        }
-
-        $grade = $this->gradeInputs[$submissionId] ?? null;
-
-        $submission->update([
-            'grade' => $grade !== '' && $grade !== null ? (float) $grade : null,
-            'feedback' => $this->feedbackInputs[$submissionId] ?? null,
-        ]);
-
-        session()->flash('message', __('Grade saved'));
-    }
-
     public function render()
     {
         $trainer = Auth::guard('trainer')->user();
@@ -392,14 +358,6 @@ class TrainerDashboard extends Component
             ? $trainer->assignments()->with('section')->withCount('submissions')->orderByDesc('due_date')->get()
             : collect();
 
-        $assignmentDetail = null;
-        if ($this->assignmentDetailId) {
-            $assignmentDetail = $trainer?->assignments()
-                ->with(['submissions.student'])
-                ->whereKey($this->assignmentDetailId)
-                ->first();
-        }
-
         return view('livewire.trainer-dashboard', [
             'trainer' => $trainer,
             'sections' => $sections,
@@ -409,7 +367,6 @@ class TrainerDashboard extends Component
             'complaints' => $complaints,
             'loginActivities' => $loginActivities,
             'assignments' => $assignments,
-            'assignmentDetail' => $assignmentDetail,
         ]);
     }
 }

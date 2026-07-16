@@ -218,29 +218,44 @@
                 <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-4">
                     <h3 class="text-lg font-semibold mb-4">{{ __('New Assignment') }}</h3>
                     <form wire:submit="createAssignment" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <select wire:model="newAssignmentSectionId" class="px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
-                            <option value="">{{ __('Select section') }}</option>
-                            @foreach ($sections as $s)
-                                <option value="{{ $s->id }}">{{ $s->getTranslation('name', app()->getLocale(), false) }}</option>
-                            @endforeach
-                        </select>
-                        @error('newAssignmentSectionId') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                        <div>
+                            <label class="block text-sm font-medium mb-1">{{ __('Section') }}</label>
+                            <select wire:model="newAssignmentSectionId" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                                <option value="">{{ __('Select section') }}</option>
+                                @foreach ($sections as $s)
+                                    <option value="{{ $s->id }}">{{ $s->getTranslation('name', app()->getLocale(), false) }}</option>
+                                @endforeach
+                            </select>
+                            @error('newAssignmentSectionId') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
 
-                        <input wire:model="newAssignmentTitle" type="text" placeholder="{{ __('Title') }}"
-                               class="px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
-                        @error('newAssignmentTitle') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                        <div>
+                            <label class="block text-sm font-medium mb-1">{{ __('Title') }}</label>
+                            <input wire:model="newAssignmentTitle" type="text" placeholder="{{ __('Title') }}"
+                                   class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                            @error('newAssignmentTitle') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
 
-                        <input wire:model="newAssignmentDueDate" type="datetime-local"
-                               class="px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
-                        @error('newAssignmentDueDate') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                        <div>
+                            <label class="block text-sm font-medium mb-1">{{ __('Due Date') }}</label>
+                            <input wire:model="newAssignmentDueDate" type="datetime-local"
+                                   class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                            @error('newAssignmentDueDate') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
 
-                        <input wire:model="newAssignmentMaxPoints" type="number" step="0.01" min="0" placeholder="{{ __('Max Points') }}"
-                               class="px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
-                        @error('newAssignmentMaxPoints') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                        <div>
+                            <label class="block text-sm font-medium mb-1">{{ __('Max Points') }}</label>
+                            <input wire:model="newAssignmentMaxPoints" type="number" step="0.01" min="0" placeholder="{{ __('Max Points') }}"
+                                   class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                            @error('newAssignmentMaxPoints') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
 
-                        <textarea wire:model="newAssignmentDescription" rows="3" placeholder="{{ __('Description') }}"
-                                  class="md:col-span-2 px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700"></textarea>
-                        @error('newAssignmentDescription') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium mb-1">{{ __('Description') }}</label>
+                            <textarea wire:model="newAssignmentDescription" rows="3" placeholder="{{ __('Description') }}"
+                                      class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700"></textarea>
+                            @error('newAssignmentDescription') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
 
                         <button class="md:col-span-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm w-fit">{{ __('Create') }}</button>
                     </form>
@@ -258,43 +273,11 @@
                                         @if ($a->max_points) · {{ __('Max Points') }}: {{ rtrim(rtrim((string) $a->max_points, '0'), '.') }} @endif
                                     </p>
                                 </div>
-                                <button wire:click="openAssignmentDetail({{ $a->id }})"
-                                        class="px-3 py-1.5 text-sm rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 whitespace-nowrap">
+                                <a href="{{ route('trainer.assignments.show', $a) }}" wire:navigate
+                                   class="px-3 py-1.5 text-sm rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 whitespace-nowrap">
                                     {{ __('Submissions') }} ({{ $a->submissions_count }})
-                                </button>
+                                </a>
                             </div>
-
-                            @if ($assignmentDetail && $assignmentDetail->id === $a->id)
-                                <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 space-y-3">
-                                    @forelse ($assignmentDetail->submissions as $sub)
-                                        <div wire:key="submission-{{ $sub->id }}" class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                                            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                                                <div>
-                                                    <p class="font-medium">{{ $sub->student?->getTranslation('name', app()->getLocale(), false) }}</p>
-                                                    <p class="text-xs text-gray-500">{{ $sub->submitted_at?->format('Y-m-d H:i') ?? __('Not submitted') }}</p>
-                                                </div>
-                                                @if ($sub->getFirstMedia('attachment'))
-                                                    <a href="{{ $sub->getFirstMedia('attachment')->getUrl() }}" target="_blank"
-                                                       class="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200">{{ __('File') }}</a>
-                                                @endif
-                                            </div>
-                                            @if ($sub->content)
-                                                <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line mb-2">{{ $sub->content }}</p>
-                                            @endif
-                                            <div class="flex flex-wrap items-center gap-2">
-                                                <input type="number" step="0.01" min="0" wire:model="gradeInputs.{{ $sub->id }}" placeholder="{{ __('Grade') }}"
-                                                       class="w-28 px-2 py-1.5 text-sm border rounded-lg dark:bg-gray-900 dark:border-gray-700">
-                                                <input type="text" wire:model="feedbackInputs.{{ $sub->id }}" placeholder="{{ __('Feedback') }}"
-                                                       class="flex-1 min-w-[160px] px-2 py-1.5 text-sm border rounded-lg dark:bg-gray-900 dark:border-gray-700">
-                                                <button wire:click="saveGrade({{ $sub->id }})"
-                                                        class="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">{{ __('Save') }}</button>
-                                            </div>
-                                        </div>
-                                    @empty
-                                        <p class="text-gray-500 text-sm">{{ __('No submissions yet') }}</p>
-                                    @endforelse
-                                </div>
-                            @endif
                         </div>
                     @empty
                         <p class="text-gray-500">{{ __('No records found') }}</p>

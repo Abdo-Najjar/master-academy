@@ -4,7 +4,6 @@ namespace App\Livewire;
 
 use App\Models\Announcement;
 use App\Models\Assignment;
-use App\Models\AssignmentSubmission;
 use App\Models\Complaint;
 use Bavix\Wallet\Models\Transaction;
 use Carbon\Carbon;
@@ -36,12 +35,6 @@ class StudentDashboard extends Component
 
     public string $complaintBody = '';
 
-    public ?int $submitAssignmentId = null;
-
-    public string $submissionContent = '';
-
-    public TemporaryUploadedFile|UploadedFile|null $submissionFile = null;
-
     public function logout(): void
     {
         Auth::guard('student')->logout();
@@ -54,6 +47,19 @@ class StudentDashboard extends Component
     public function setActiveTab(string $tab): void
     {
         $this->activeTab = $tab;
+    }
+
+    /** @return array<string, string> */
+    protected function validationAttributes(): array
+    {
+        return [
+            'currentPassword' => __('Current Password'),
+            'newPassword' => __('New Password'),
+            'newPasswordConfirmation' => __('Confirm Password'),
+            'newAvatar' => __('Profile Picture'),
+            'complaintSubject' => __('Subject'),
+            'complaintBody' => __('Body'),
+        ];
     }
 
     public function updatePassword(): void
@@ -126,57 +132,6 @@ class StudentDashboard extends Component
 
         $this->reset('newAvatar');
         session()->flash('message', __('Profile updated successfully'));
-    }
-
-    public function openSubmit(int $assignmentId): void
-    {
-        $student = Auth::guard('student')->user();
-        $sectionIds = $student?->registrations()->pluck('section_id') ?? collect();
-
-        $assignment = Assignment::query()->whereKey($assignmentId)->whereIn('section_id', $sectionIds)->first();
-        if (! $assignment) {
-            return;
-        }
-
-        $this->submitAssignmentId = $assignmentId;
-
-        $existing = AssignmentSubmission::query()
-            ->where('assignment_id', $assignmentId)
-            ->where('student_id', $student->id)
-            ->first();
-
-        $this->submissionContent = $existing?->content ?? '';
-        $this->submissionFile = null;
-    }
-
-    public function submitAssignment(): void
-    {
-        $student = Auth::guard('student')->user();
-        $sectionIds = $student?->registrations()->pluck('section_id') ?? collect();
-
-        $assignment = Assignment::query()->whereKey($this->submitAssignmentId)->whereIn('section_id', $sectionIds)->first();
-        if (! $assignment) {
-            return;
-        }
-
-        $this->validate([
-            'submissionContent' => ['nullable', 'string'],
-            'submissionFile' => ['nullable', 'file', 'max:20480'],
-        ]);
-
-        $submission = AssignmentSubmission::query()->updateOrCreate(
-            ['assignment_id' => $assignment->id, 'student_id' => $student->id],
-            ['content' => $this->submissionContent ?: null, 'submitted_at' => now()]
-        );
-
-        if ($this->submissionFile) {
-            $submission->addMedia($this->submissionFile->getRealPath())
-                ->usingFileName($this->submissionFile->getClientOriginalName())
-                ->toMediaCollection('attachment');
-        }
-
-        $this->reset(['submitAssignmentId', 'submissionContent', 'submissionFile']);
-        session()->flash('message', __('Assignment submitted successfully'));
     }
 
     public function render()

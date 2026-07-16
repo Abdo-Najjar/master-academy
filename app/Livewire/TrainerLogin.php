@@ -25,6 +25,15 @@ class TrainerLogin extends Component
         }
     }
 
+    /** @return array<string, string> */
+    protected function validationAttributes(): array
+    {
+        return [
+            'username' => __('Username'),
+            'password' => __('Password'),
+        ];
+    }
+
     public function login(): void
     {
         $this->validate([

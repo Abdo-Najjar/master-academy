@@ -84,6 +84,7 @@ class QuickEnroll extends Page implements HasForms
     public function form(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
                 FormSection::make(__('Student Information'))
                     ->description(__('Personal and account details for the new student.'))
