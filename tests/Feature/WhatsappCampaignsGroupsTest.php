@@ -2,6 +2,7 @@
 
 use App\Filament\Admin\Resources\StudentGroups\Pages\ManageStudentGroups;
 use App\Filament\Admin\Resources\WhatsappCampaigns\Pages\ListWhatsappCampaigns;
+use App\Jobs\SendWhatsappCampaignMessage;
 use App\Models\Student;
 use App\Models\StudentGroup;
 use App\Models\User;
@@ -9,6 +10,7 @@ use App\Models\WhatsappCampaign;
 use App\Models\WhatsappCampaignRecipient;
 use App\Services\WhatsappCampaignService;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Bus;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -66,7 +68,7 @@ it('builds recipients from group students, skipping those with no phone', functi
         ->and($campaign->recipients()->pluck('phone')->all())->toEqualCanonicalizing(['972501111111', '972502222222']);
 });
 
-it('processes a campaign end to end via the send command, throttled between sends', function () {
+it('processes a campaign end to end via per-recipient queued jobs, throttled between sends', function () {
     $group = StudentGroup::create(['name' => 'مجموعة الإرسال']);
     $group->students()->attach([$this->student1->id, $this->student2->id]);
 
@@ -74,12 +76,16 @@ it('processes a campaign end to end via the send command, throttled between send
         'name' => 'حملة إرسال',
         'message' => 'رسالة الاختبار',
         'student_group_id' => $group->id,
+        'status' => WhatsappCampaign::STATUS_RUNNING,
+        'started_at' => now(),
     ]);
 
     WhatsappCampaignService::buildRecipients($campaign);
 
-    $this->artisan('whatsapp:campaign:send', ['campaign' => $campaign->id])
-        ->assertExitCode(0);
+    // QUEUE_CONNECTION=sync in testing, so dispatch() runs each job's
+    // handle() inline — this exercises the real launch()->dispatch()->handle()
+    // chain, including the "mark completed once nothing is pending" logic.
+    WhatsappCampaignService::launch($campaign);
 
     $campaign->refresh();
     expect($campaign->status)->toBe(WhatsappCampaign::STATUS_COMPLETED)
@@ -87,7 +93,30 @@ it('processes a campaign end to end via the send command, throttled between send
         ->and($campaign->recipients()->where('status', WhatsappCampaignRecipient::STATUS_PENDING)->count())->toBe(0);
 });
 
+it('does not send to a recipient once the campaign has been cancelled', function () {
+    $group = StudentGroup::create(['name' => 'مجموعة إلغاء']);
+    $group->students()->attach([$this->student1->id]);
+
+    $campaign = WhatsappCampaign::create([
+        'name' => 'حملة تُلغى',
+        'message' => 'رسالة',
+        'student_group_id' => $group->id,
+        'status' => WhatsappCampaign::STATUS_CANCELLED,
+        'started_at' => now(),
+    ]);
+
+    WhatsappCampaignService::buildRecipients($campaign);
+    $recipient = $campaign->recipients()->first();
+
+    (new SendWhatsappCampaignMessage($campaign->id, $recipient->id))->handle();
+
+    expect($recipient->fresh()->status)->toBe(WhatsappCampaignRecipient::STATUS_PENDING)
+        ->and($campaign->fresh()->status)->toBe(WhatsappCampaign::STATUS_CANCELLED);
+});
+
 it('flips the campaign status to running immediately when launched, before the background process runs', function () {
+    Bus::fake();
+
     $group = StudentGroup::create(['name' => 'مجموعة تشغيل فوري']);
     $group->students()->attach([$this->student1->id]);
 
@@ -102,4 +131,6 @@ it('flips the campaign status to running immediately when launched, before the b
 
     expect($campaign->fresh()->status)->toBe(WhatsappCampaign::STATUS_RUNNING)
         ->and($campaign->fresh()->started_at)->not->toBeNull();
+
+    Bus::assertDispatched(SendWhatsappCampaignMessage::class, 1);
 });

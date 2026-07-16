@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
+use App\Jobs\SendWhatsappCampaignMessage;
 use App\Models\StudentGroup;
 use App\Models\WhatsappCampaign;
 use App\Models\WhatsappCampaignRecipient;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 
 class WhatsappCampaignService
@@ -54,22 +54,34 @@ class WhatsappCampaignService
     }
 
     /**
-     * Dispatch the throttled sender onto Laravel's queue so it runs in the
-     * background without blocking the request. This replaces an earlier
-     * approach that shelled out directly (exec()/popen() spawning
-     * `php artisan ...`) — that broke in production because PHP_BINARY under
-     * php-fpm resolves to the php-fpm binary, not a usable CLI interpreter,
-     * so the spawn silently did nothing. Artisan::queue() sidesteps shell
-     * spawning entirely and relies on the app's own queue worker instead.
+     * Dispatch one queued job per pending recipient, each delayed further
+     * than the last by a random 40-60s, so the 40-60s-apart throttle comes
+     * from the queue's own delay instead of a single job sleeping through
+     * the whole campaign — that tied up a queue worker for the campaign's
+     * entire duration and kept it from picking up anything else meanwhile.
      */
     public static function launch(WhatsappCampaign $campaign): void
     {
-        if (app()->runningUnitTests()) {
-            return;
+        $recipients = $campaign->recipients()
+            ->where('status', WhatsappCampaignRecipient::STATUS_PENDING)
+            ->orderBy('id')
+            ->get();
+
+        $delaySeconds = 0;
+
+        foreach ($recipients as $recipient) {
+            SendWhatsappCampaignMessage::dispatch($campaign->id, $recipient->id)
+                ->delay(now()->addSeconds($delaySeconds));
+
+            $delaySeconds += random_int(
+                config('whatsapp.campaign_throttle_min_seconds', 40),
+                config('whatsapp.campaign_throttle_max_seconds', 60),
+            );
         }
 
-        Artisan::queue('whatsapp:campaign:send', ['campaign' => $campaign->id]);
-
-        Log::info('WhatsApp campaign queued', ['campaign_id' => $campaign->id]);
+        Log::info('WhatsApp campaign messages queued', [
+            'campaign_id' => $campaign->id,
+            'recipient_count' => $recipients->count(),
+        ]);
     }
 }
