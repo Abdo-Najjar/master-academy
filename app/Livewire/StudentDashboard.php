@@ -134,6 +134,15 @@ class StudentDashboard extends Component
         session()->flash('message', __('Profile updated successfully'));
     }
 
+    public function removeAvatar(): void
+    {
+        $student = Auth::guard('student')->user();
+        $student?->clearMediaCollection('main');
+
+        $this->reset('newAvatar');
+        session()->flash('message', __('Profile picture removed'));
+    }
+
     public function render()
     {
         $student = Auth::guard('student')->user();
@@ -195,10 +204,6 @@ class StudentDashboard extends Component
             ? $student->complaints()->notArchived()->orderByDesc('created_at')->limit(50)->get()
             : collect();
 
-        $loginActivities = $student
-            ? $student->loginActivities()->orderByDesc('logged_in_at')->limit(10)->get()
-            : collect();
-
         $announcements = collect();
         if ($student) {
             $dismissedIds = $student->dismissedAnnouncements()->pluck('announcements.id')->all();
@@ -247,7 +252,6 @@ class StudentDashboard extends Component
             'schedule' => $scheduleGrid,
             'transactions' => $transactions,
             'complaints' => $complaints,
-            'loginActivities' => $loginActivities,
             'announcements' => $announcements,
             'certificates' => $certificates,
             'grades' => $grades,

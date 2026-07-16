@@ -140,6 +140,15 @@ class TrainerDashboard extends Component
         session()->flash('message', __('Profile updated successfully'));
     }
 
+    public function removeAvatar(): void
+    {
+        $trainer = Auth::guard('trainer')->user();
+        $trainer?->clearMediaCollection('main');
+
+        $this->reset('newAvatar');
+        session()->flash('message', __('Profile picture removed'));
+    }
+
     public function openAttendance(int $sectionId): void
     {
         $this->activeTab = 'attendance';
@@ -233,7 +242,10 @@ class TrainerDashboard extends Component
 
     public function uploadMaterials(): void
     {
-        $this->validate(['newMaterials.*' => ['file', 'max:20480']]);
+        $this->validate([
+            'newMaterials' => ['required', 'array', 'min:1'],
+            'newMaterials.*' => ['file', 'max:20480'],
+        ]);
 
         $section = Section::find($this->materialsSectionId);
         $trainer = Auth::guard('trainer')->user();
@@ -352,10 +364,6 @@ class TrainerDashboard extends Component
             ? $trainer->complaints()->notArchived()->orderByDesc('created_at')->limit(50)->get()
             : collect();
 
-        $loginActivities = $trainer
-            ? $trainer->loginActivities()->orderByDesc('logged_in_at')->limit(10)->get()
-            : collect();
-
         $assignments = $trainer
             ? $trainer->assignments()->with('section')->withCount('submissions')->orderByDesc('due_date')->get()
             : collect();
@@ -367,7 +375,6 @@ class TrainerDashboard extends Component
             'attendanceSection' => $attendanceSection,
             'materialsSection' => $materialsSection,
             'complaints' => $complaints,
-            'loginActivities' => $loginActivities,
             'assignments' => $assignments,
         ]);
     }

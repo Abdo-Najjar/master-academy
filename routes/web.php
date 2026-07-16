@@ -6,9 +6,11 @@ use App\Livewire\Portal;
 use App\Livewire\StudentAssignmentSubmission;
 use App\Livewire\StudentDashboard;
 use App\Livewire\StudentLogin;
+use App\Livewire\StudentLoginActivities;
 use App\Livewire\TrainerAssignmentSubmissions;
 use App\Livewire\TrainerDashboard;
 use App\Livewire\TrainerLogin;
+use App\Livewire\TrainerLoginActivities;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', Portal::class)->name('portal');
@@ -16,11 +18,13 @@ Route::get('/', Portal::class)->name('portal');
 Route::get('/trainer/login', TrainerLogin::class)->name('trainer.login');
 Route::get('/trainer/dashboard', TrainerDashboard::class)->name('trainer.dashboard')->middleware('trainer.auth');
 Route::get('/trainer/assignments/{assignment}', TrainerAssignmentSubmissions::class)->name('trainer.assignments.show')->middleware('trainer.auth');
+Route::get('/trainer/login-activities', TrainerLoginActivities::class)->name('trainer.login-activities')->middleware('trainer.auth');
 
 Route::get('/student/login', StudentLogin::class)->name('student.login');
 Route::get('/student/dashboard', StudentDashboard::class)->name('student.dashboard')->middleware('student.auth');
 Route::get('/student/assignments/{assignment}', StudentAssignmentSubmission::class)->name('student.assignments.show')->middleware('student.auth');
 Route::get('/student/certificates/{certificate}/download', [PdfController::class, 'studentCertificateImage'])->name('student.certificates.download')->middleware('student.auth');
+Route::get('/student/login-activities', StudentLoginActivities::class)->name('student.login-activities')->middleware('student.auth');
 
 Route::get('/certificates/verify/{token}', function (string $token) {
     $cert = \App\Models\Certificate::where('verification_token', $token)->with(['student', 'section.subject', 'template'])->firstOrFail();

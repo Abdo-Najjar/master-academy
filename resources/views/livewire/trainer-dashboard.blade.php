@@ -26,12 +26,16 @@
                 </div>
             </div>
             <nav class="p-4 space-y-1">
-                @foreach (['sections' => __('My Sections'), 'attendance' => __('Attendance'), 'assignments' => __('Assignments'), 'transactions' => __('Transactions'), 'complaints' => __('Complaints'), 'login_activities' => __('Login History'), 'profile' => __('Edit Profile')] as $tab => $label)
+                @foreach (['sections' => __('My Sections'), 'attendance' => __('Attendance'), 'assignments' => __('Assignments'), 'transactions' => __('Transactions'), 'complaints' => __('Complaints'), 'profile' => __('Edit Profile')] as $tab => $label)
                     <button wire:click="setActiveTab('{{ $tab }}')" @click="sidebarOpen = false"
                             class="w-full text-start px-4 py-2.5 rounded-lg transition {{ $activeTab === $tab ? 'bg-emerald-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700' }}">
                         {{ $label }}
                     </button>
                 @endforeach
+                <a href="{{ route('trainer.login-activities') }}" wire:navigate @click="sidebarOpen = false"
+                   class="block w-full text-start px-4 py-2.5 rounded-lg transition hover:bg-gray-100 dark:hover:bg-gray-700">
+                    {{ __('Login History') }}
+                </a>
             </nav>
             <div class="p-4 border-t border-gray-200 dark:border-gray-700">
                 <button type="button" @click="confirmBox = { open: true, message: '{{ __('Are you sure you want to logout?') }}', action: () => $wire.logout() }"
@@ -196,9 +200,31 @@
 
                     @if ($materialsSection)
                         <form wire:submit="uploadMaterials" class="mb-4 space-y-2">
-                            <input type="file" wire:model="newMaterials" multiple class="block w-full text-sm">
+                            <label class="flex flex-col items-center justify-center gap-2 w-full px-4 py-8 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-emerald-500 dark:hover:border-emerald-500 cursor-pointer text-center transition">
+                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3-3m0 0l3 3m-3-3v9"/></svg>
+                                <span class="text-sm text-gray-600 dark:text-gray-300">{{ __('Click to choose files') }}</span>
+                                <input type="file" wire:model="newMaterials" multiple class="hidden">
+                            </label>
+
+                            <div wire:loading wire:target="newMaterials" class="text-sm text-gray-500">{{ __('Uploading...') }}</div>
+
+                            @if ($newMaterials)
+                                <ul class="space-y-1">
+                                    @foreach ($newMaterials as $file)
+                                        <li class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                                            <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                            {{ $file->getClientOriginalName() }}
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+
+                            @error('newMaterials') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                             @error('newMaterials.*') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
-                            <button class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm">{{ __('Upload') }}</button>
+
+                            @if ($newMaterials)
+                                <button class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm">{{ __('Upload') }}</button>
+                            @endif
                         </form>
                         <div class="space-y-2">
                             @forelse ($materialsSection->getMedia('materials') as $media)
@@ -372,41 +398,6 @@
                 </div>
             @endif
 
-            @if ($activeTab === 'login_activities')
-                <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                    <h3 class="text-lg font-semibold mb-1">{{ __('Recent Logins') }}</h3>
-                    <p class="text-xs text-gray-500 mb-4">{{ __('Your last :count sign-in events.', ['count' => $loginActivities->count()]) }}</p>
-                    @if ($loginActivities->isEmpty())
-                        <p class="text-sm text-gray-500">{{ __('No records found') }}</p>
-                    @else
-                        <div class="overflow-x-auto">
-                            <table class="min-w-[600px] w-full text-sm">
-                                <thead class="text-xs text-gray-500 border-b border-gray-200 dark:border-gray-700">
-                                    <tr>
-                                        <th class="py-2 text-start">{{ __('When') }}</th>
-                                        <th class="py-2 text-start">{{ __('IP') }}</th>
-                                        <th class="py-2 text-start">{{ __('Browser') }}</th>
-                                        <th class="py-2 text-start">{{ __('Platform') }}</th>
-                                        <th class="py-2 text-start">{{ __('Device') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                                    @foreach ($loginActivities as $activity)
-                                        <tr>
-                                            <td class="py-2">{{ $activity->logged_in_at?->format('Y-m-d H:i') }}</td>
-                                            <td class="py-2 font-mono text-xs">{{ $activity->ip ?? '—' }}</td>
-                                            <td class="py-2">{{ $activity->browser ?? '—' }}</td>
-                                            <td class="py-2">{{ $activity->platform ?? '—' }}</td>
-                                            <td class="py-2">{{ $activity->device ?? '—' }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
-                </div>
-            @endif
-
             @if ($activeTab === 'profile')
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
@@ -429,7 +420,16 @@
                                     </span>
                                     <input type="file" wire:model="newAvatar" accept="image/*" style="display:none;">
                                 </label>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Click the photo to choose a new image') }}</p>
+                                <div>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Click the photo to choose a new image') }}</p>
+                                    @if ($avatarUrl && ! $newAvatar)
+                                        <button type="button"
+                                                @click="confirmBox = { open: true, message: '{{ __('Delete profile picture?') }}', action: () => $wire.removeAvatar() }"
+                                                class="mt-1 text-sm text-red-600 hover:underline">
+                                            {{ __('Remove Photo') }}
+                                        </button>
+                                    @endif
+                                </div>
                             </div>
                             @error('newAvatar') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                             <div wire:loading wire:target="newAvatar" class="text-sm text-gray-500">{{ __('Uploading...') }}</div>

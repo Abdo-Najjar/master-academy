@@ -26,12 +26,16 @@
                 </div>
             </div>
             <nav class="p-4 space-y-1">
-                @foreach (['registrations' => __('My Sections'), 'schedule' => __('Schedule'), 'materials' => __('Materials'), 'assignments' => __('Assignments'), 'grades' => __('Grades'), 'transactions' => __('Transactions'), 'certificates' => __('Certificates'), 'complaints' => __('Complaints'), 'login_activities' => __('Login History'), 'profile' => __('Edit Profile')] as $tab => $label)
+                @foreach (['registrations' => __('My Sections'), 'schedule' => __('Schedule'), 'materials' => __('Materials'), 'assignments' => __('Assignments'), 'grades' => __('Grades'), 'transactions' => __('Transactions'), 'certificates' => __('Certificates'), 'complaints' => __('Complaints'), 'profile' => __('Edit Profile')] as $tab => $label)
                     <button wire:click="setActiveTab('{{ $tab }}')" @click="sidebarOpen = false"
                             class="w-full text-start px-4 py-2.5 rounded-lg transition {{ $activeTab === $tab ? 'bg-purple-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700' }}">
                         {{ $label }}
                     </button>
                 @endforeach
+                <a href="{{ route('student.login-activities') }}" wire:navigate @click="sidebarOpen = false"
+                   class="block w-full text-start px-4 py-2.5 rounded-lg transition hover:bg-gray-100 dark:hover:bg-gray-700">
+                    {{ __('Login History') }}
+                </a>
             </nav>
             <div class="p-4 border-t border-gray-200 dark:border-gray-700">
                 <button type="button" @click="confirmBox = { open: true, message: '{{ __('Are you sure you want to logout?') }}', action: () => $wire.logout() }"
@@ -373,41 +377,6 @@
                 </div>
             @endif
 
-            @if ($activeTab === 'login_activities')
-                <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                    <h3 class="text-lg font-semibold mb-1">{{ __('Recent Logins') }}</h3>
-                    <p class="text-xs text-gray-500 mb-4">{{ __('Your last :count sign-in events.', ['count' => $loginActivities->count()]) }}</p>
-                    @if ($loginActivities->isEmpty())
-                        <p class="text-sm text-gray-500">{{ __('No records found') }}</p>
-                    @else
-                        <div class="overflow-x-auto">
-                            <table class="min-w-[600px] w-full text-sm">
-                                <thead class="text-xs text-gray-500 border-b border-gray-200 dark:border-gray-700">
-                                    <tr>
-                                        <th class="py-2 text-start">{{ __('When') }}</th>
-                                        <th class="py-2 text-start">{{ __('IP') }}</th>
-                                        <th class="py-2 text-start">{{ __('Browser') }}</th>
-                                        <th class="py-2 text-start">{{ __('Platform') }}</th>
-                                        <th class="py-2 text-start">{{ __('Device') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                                    @foreach ($loginActivities as $activity)
-                                        <tr>
-                                            <td class="py-2">{{ $activity->logged_in_at?->format('Y-m-d H:i') }}</td>
-                                            <td class="py-2 font-mono text-xs">{{ $activity->ip ?? '—' }}</td>
-                                            <td class="py-2">{{ $activity->browser ?? '—' }}</td>
-                                            <td class="py-2">{{ $activity->platform ?? '—' }}</td>
-                                            <td class="py-2">{{ $activity->device ?? '—' }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
-                </div>
-            @endif
-
             @if ($activeTab === 'profile')
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
@@ -430,7 +399,16 @@
                                     </span>
                                     <input type="file" wire:model="newAvatar" accept="image/*" style="display:none;">
                                 </label>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Click the photo to choose a new image') }}</p>
+                                <div>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Click the photo to choose a new image') }}</p>
+                                    @if ($avatarUrl && ! $newAvatar)
+                                        <button type="button"
+                                                @click="confirmBox = { open: true, message: '{{ __('Delete profile picture?') }}', action: () => $wire.removeAvatar() }"
+                                                class="mt-1 text-sm text-red-600 hover:underline">
+                                            {{ __('Remove Photo') }}
+                                        </button>
+                                    @endif
+                                </div>
                             </div>
                             @error('newAvatar') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                             <div wire:loading wire:target="newAvatar" class="text-sm text-gray-500">{{ __('Uploading...') }}</div>
