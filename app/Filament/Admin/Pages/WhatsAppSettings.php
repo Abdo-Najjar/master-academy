@@ -28,9 +28,12 @@ class WhatsAppSettings extends Page
 
     public string $testMessage = '';
 
+    /** @var array<string, mixed>|null */
+    public ?array $diagnostics = null;
+
     public static function getNavigationGroup(): ?string
     {
-        return __('Administration');
+        return __('Settings');
     }
 
     public static function getNavigationLabel(): string
@@ -88,6 +91,11 @@ class WhatsAppSettings extends Page
         }
     }
 
+    public function runDiagnostics(): void
+    {
+        $this->diagnostics = WhatsappLinkService::diagnose();
+    }
+
     public function logout(): void
     {
         if (! $this->session) {
@@ -124,6 +132,12 @@ class WhatsAppSettings extends Page
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('runDiagnostics')
+                ->label(__('Diagnose Connection'))
+                ->icon('heroicon-o-wrench-screwdriver')
+                ->color('gray')
+                ->action('runDiagnostics'),
+
             Action::make('startLink')
                 ->label(__('Link WhatsApp Account'))
                 ->icon('heroicon-o-link')

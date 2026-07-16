@@ -2,6 +2,8 @@
 
 namespace App\Livewire;
 
+use App\Models\Assignment;
+use App\Models\AssignmentSubmission;
 use App\Models\Attendance;
 use App\Models\Complaint;
 use App\Models\Section;
@@ -51,6 +53,25 @@ class TrainerDashboard extends Component
     public string $complaintSubject = '';
 
     public string $complaintBody = '';
+
+    /** @var int|null */
+    public ?int $assignmentDetailId = null;
+
+    public ?int $newAssignmentSectionId = null;
+
+    public string $newAssignmentTitle = '';
+
+    public string $newAssignmentDescription = '';
+
+    public string $newAssignmentDueDate = '';
+
+    public ?float $newAssignmentMaxPoints = null;
+
+    /** @var array<int, string|float|null> submission_id => grade */
+    public array $gradeInputs = [];
+
+    /** @var array<int, string> submission_id => feedback */
+    public array $feedbackInputs = [];
 
     public function mount(): void
     {
@@ -256,6 +277,79 @@ class TrainerDashboard extends Component
         $media?->delete();
     }
 
+    public function createAssignment(): void
+    {
+        $trainer = Auth::guard('trainer')->user();
+
+        $this->validate([
+            'newAssignmentSectionId' => ['required', 'integer'],
+            'newAssignmentTitle' => ['required', 'string', 'max:255'],
+            'newAssignmentDescription' => ['nullable', 'string'],
+            'newAssignmentDueDate' => ['nullable', 'date'],
+            'newAssignmentMaxPoints' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $section = $trainer?->sections()->find($this->newAssignmentSectionId);
+        if (! $section) {
+            return;
+        }
+
+        Assignment::create([
+            'section_id' => $section->id,
+            'trainer_id' => $trainer->id,
+            'title' => $this->newAssignmentTitle,
+            'description' => $this->newAssignmentDescription ?: null,
+            'due_date' => $this->newAssignmentDueDate ?: null,
+            'max_points' => $this->newAssignmentMaxPoints,
+        ]);
+
+        $this->reset(['newAssignmentSectionId', 'newAssignmentTitle', 'newAssignmentDescription', 'newAssignmentDueDate', 'newAssignmentMaxPoints']);
+        session()->flash('message', __('Assignment created'));
+    }
+
+    public function openAssignmentDetail(int $assignmentId): void
+    {
+        $trainer = Auth::guard('trainer')->user();
+        $assignment = $trainer?->assignments()->whereKey($assignmentId)->first();
+
+        if (! $assignment) {
+            return;
+        }
+
+        $this->assignmentDetailId = $assignmentId;
+        $this->gradeInputs = [];
+        $this->feedbackInputs = [];
+
+        foreach ($assignment->submissions as $submission) {
+            $this->gradeInputs[$submission->id] = $submission->grade;
+            $this->feedbackInputs[$submission->id] = $submission->feedback ?? '';
+        }
+    }
+
+    public function saveGrade(int $submissionId): void
+    {
+        $trainer = Auth::guard('trainer')->user();
+        $assignmentIds = $trainer?->assignments()->pluck('assignments.id') ?? collect();
+
+        $submission = AssignmentSubmission::query()
+            ->whereKey($submissionId)
+            ->whereIn('assignment_id', $assignmentIds)
+            ->first();
+
+        if (! $submission) {
+            return;
+        }
+
+        $grade = $this->gradeInputs[$submissionId] ?? null;
+
+        $submission->update([
+            'grade' => $grade !== '' && $grade !== null ? (float) $grade : null,
+            'feedback' => $this->feedbackInputs[$submissionId] ?? null,
+        ]);
+
+        session()->flash('message', __('Grade saved'));
+    }
+
     public function render()
     {
         $trainer = Auth::guard('trainer')->user();
@@ -294,6 +388,18 @@ class TrainerDashboard extends Component
             ? $trainer->loginActivities()->orderByDesc('logged_in_at')->limit(10)->get()
             : collect();
 
+        $assignments = $trainer
+            ? $trainer->assignments()->with('section')->withCount('submissions')->orderByDesc('due_date')->get()
+            : collect();
+
+        $assignmentDetail = null;
+        if ($this->assignmentDetailId) {
+            $assignmentDetail = $trainer?->assignments()
+                ->with(['submissions.student'])
+                ->whereKey($this->assignmentDetailId)
+                ->first();
+        }
+
         return view('livewire.trainer-dashboard', [
             'trainer' => $trainer,
             'sections' => $sections,
@@ -302,6 +408,8 @@ class TrainerDashboard extends Component
             'materialsSection' => $materialsSection,
             'complaints' => $complaints,
             'loginActivities' => $loginActivities,
+            'assignments' => $assignments,
+            'assignmentDetail' => $assignmentDetail,
         ]);
     }
 }

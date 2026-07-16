@@ -3,7 +3,7 @@ import qrcode from 'qrcode-terminal';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { makeWASocket, DisconnectReason, useMultiFileAuthState, jidNormalizedUser } from 'baileys';
+import { makeWASocket, DisconnectReason, useMultiFileAuthState, jidNormalizedUser, fetchLatestBaileysVersion } from 'baileys';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
@@ -59,11 +59,13 @@ class WhatsAppConsole {
     try {
       console.log('Starting WhatsApp...');
       const { state, saveCreds } = await useMultiFileAuthState(this.authDir);
+      const { version, isLatest } = await fetchLatestBaileysVersion();
+      console.log(`Using WA version ${version.join('.')}, isLatest: ${isLatest}`);
 
       this.socket = makeWASocket({
         auth: state,
         printQRInTerminal: false,
-        version: [2, 3000, 1033893291],
+        version,
         markOnlineOnConnect: false,
         shouldIgnoreJid: () => false,
         shouldSyncHistoryMessage: () => true,
@@ -115,6 +117,7 @@ class WhatsAppConsole {
 
         const statusCode = lastDisconnect?.error?.output?.statusCode;
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut && statusCode !== 401;
+        console.log(`Connection closed (statusCode=${statusCode ?? 'unknown'}): ${lastDisconnect?.error?.message || 'no message'}`);
 
         if (shouldReconnect) {
           console.log('Reconnecting...');

@@ -114,6 +114,16 @@ class WalletTransactions extends Page implements HasTable
                     ->label(__('Note'))
                     ->limit(30)
                     ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('receipt')
+                    ->label(__('Receipt'))
+                    ->state(fn (Transaction $record): ?string => ($record->meta['receipt_path'] ?? null) ? __('View') : null)
+                    ->badge()
+                    ->color('info')
+                    ->icon('heroicon-o-paper-clip')
+                    ->url(fn (Transaction $record): ?string => ($p = $record->meta['receipt_path'] ?? null)
+                        ? \Illuminate\Support\Facades\Storage::disk('public')->url($p)
+                        : null, shouldOpenInNewTab: true)
+                    ->placeholder(__('N/A')),
                 TextColumn::make('created_at')
                     ->label(__('Date'))
                     ->dateTime('Y-m-d H:i')

@@ -38,12 +38,12 @@ class UserResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return __('Employee');
+        return __('Administrator');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return __('Employees');
+        return __('Administrators');
     }
 
     public static function canAccess(): bool

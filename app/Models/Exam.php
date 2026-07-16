@@ -12,13 +12,14 @@ class Exam extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['section_id', 'name', 'date', 'max_score', 'note'];
+    protected $fillable = ['section_id', 'name', 'date', 'max_score', 'note', 'grades_published_at'];
 
     protected function casts(): array
     {
         return [
             'date' => 'date',
             'max_score' => 'decimal:2',
+            'grades_published_at' => 'datetime',
         ];
     }
 
@@ -30,5 +31,10 @@ class Exam extends Model
     public function grades(): HasMany
     {
         return $this->hasMany(ExamGrade::class);
+    }
+
+    public function isGradesPublished(): bool
+    {
+        return $this->grades_published_at !== null;
     }
 }

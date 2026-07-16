@@ -38,17 +38,68 @@ class WhatsappLinkService
         }
 
         $command = self::cliCommand('link');
+        $logFile = self::logFilePath();
 
         if (PHP_OS_FAMILY === 'Windows') {
             // "start /B" detaches without a console window; popen returns immediately.
-            pclose(popen('start /B "" ' . $command . ' > NUL 2>&1', 'r'));
+            pclose(popen('start /B "" ' . $command . ' > "' . $logFile . '" 2>&1', 'r'));
         } else {
-            exec($command . ' > /dev/null 2>&1 &');
+            exec($command . ' > ' . escapeshellarg($logFile) . ' 2>&1 &');
         }
 
         Log::info('WhatsApp link started', ['session_id' => $session->id]);
 
         return $session;
+    }
+
+    /**
+     * Check the local environment for the pieces the Baileys CLI needs to run
+     * (Node binary, cli.js, node_modules) and surface the last lines of its
+     * stdout/stderr log — so a stuck "initializing" state on production can be
+     * diagnosed without shell access.
+     *
+     * @return array{node_found: bool, node_version: ?string, cli_exists: bool, node_modules_exists: bool, log_tail: ?string}
+     */
+    public static function diagnose(): array
+    {
+        $nodeVersion = null;
+        $nodeFound = false;
+        exec('node --version 2>&1', $output, $exitCode);
+        if ($exitCode === 0 && ! empty($output)) {
+            $nodeFound = true;
+            $nodeVersion = trim($output[0]);
+        }
+
+        return [
+            'node_found' => $nodeFound,
+            'node_version' => $nodeVersion,
+            'cli_exists' => is_file(base_path('whatsapp/cli.js')),
+            'node_modules_exists' => is_dir(base_path('whatsapp/node_modules')) && count(scandir(base_path('whatsapp/node_modules'))) > 2,
+            'log_tail' => self::readLogTail(),
+        ];
+    }
+
+    private static function logFilePath(): string
+    {
+        return base_path('whatsapp/link.log');
+    }
+
+    /** Last ~40 lines of the CLI's stdout/stderr log, if present. */
+    private static function readLogTail(): ?string
+    {
+        $file = self::logFilePath();
+        if (! is_file($file)) {
+            return null;
+        }
+
+        $raw = @file_get_contents($file);
+        if ($raw === false || $raw === '') {
+            return null;
+        }
+
+        $lines = preg_split('/\r\n|\r|\n/', trim($raw));
+
+        return implode("\n", array_slice($lines, -40));
     }
 
     /**

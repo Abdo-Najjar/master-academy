@@ -3,6 +3,8 @@
 namespace App\Livewire;
 
 use App\Models\Announcement;
+use App\Models\Assignment;
+use App\Models\AssignmentSubmission;
 use App\Models\Complaint;
 use Bavix\Wallet\Models\Transaction;
 use Carbon\Carbon;
@@ -33,6 +35,12 @@ class StudentDashboard extends Component
     public string $complaintSubject = '';
 
     public string $complaintBody = '';
+
+    public ?int $submitAssignmentId = null;
+
+    public string $submissionContent = '';
+
+    public TemporaryUploadedFile|UploadedFile|null $submissionFile = null;
 
     public function logout(): void
     {
@@ -120,14 +128,80 @@ class StudentDashboard extends Component
         session()->flash('message', __('Profile updated successfully'));
     }
 
+    public function openSubmit(int $assignmentId): void
+    {
+        $student = Auth::guard('student')->user();
+        $sectionIds = $student?->registrations()->pluck('section_id') ?? collect();
+
+        $assignment = Assignment::query()->whereKey($assignmentId)->whereIn('section_id', $sectionIds)->first();
+        if (! $assignment) {
+            return;
+        }
+
+        $this->submitAssignmentId = $assignmentId;
+
+        $existing = AssignmentSubmission::query()
+            ->where('assignment_id', $assignmentId)
+            ->where('student_id', $student->id)
+            ->first();
+
+        $this->submissionContent = $existing?->content ?? '';
+        $this->submissionFile = null;
+    }
+
+    public function submitAssignment(): void
+    {
+        $student = Auth::guard('student')->user();
+        $sectionIds = $student?->registrations()->pluck('section_id') ?? collect();
+
+        $assignment = Assignment::query()->whereKey($this->submitAssignmentId)->whereIn('section_id', $sectionIds)->first();
+        if (! $assignment) {
+            return;
+        }
+
+        $this->validate([
+            'submissionContent' => ['nullable', 'string'],
+            'submissionFile' => ['nullable', 'file', 'max:20480'],
+        ]);
+
+        $submission = AssignmentSubmission::query()->updateOrCreate(
+            ['assignment_id' => $assignment->id, 'student_id' => $student->id],
+            ['content' => $this->submissionContent ?: null, 'submitted_at' => now()]
+        );
+
+        if ($this->submissionFile) {
+            $submission->addMedia($this->submissionFile->getRealPath())
+                ->usingFileName($this->submissionFile->getClientOriginalName())
+                ->toMediaCollection('attachment');
+        }
+
+        $this->reset(['submitAssignmentId', 'submissionContent', 'submissionFile']);
+        session()->flash('message', __('Assignment submitted successfully'));
+    }
+
     public function render()
     {
         $student = Auth::guard('student')->user();
 
         $registrations = $student->registrations()
-            ->with(['section.subject', 'section.trainer', 'section.times.room'])
+            ->with(['section.subject', 'section.trainer', 'section.times.room', 'section.media'])
             ->orderBy('created_at', 'desc')
             ->get();
+
+        // Learning materials the trainers uploaded to the student's sections.
+        $materials = collect();
+        foreach ($registrations as $reg) {
+            $section = $reg->section;
+            if (! $section) {
+                continue;
+            }
+            foreach ($section->getMedia('materials') as $media) {
+                $materials->push([
+                    'section' => $section,
+                    'media' => $media,
+                ]);
+            }
+        }
 
         $dayOrder = ['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
         $scheduleGrid = array_fill_keys($dayOrder, []);
@@ -187,15 +261,42 @@ class StudentDashboard extends Component
             ? $student->certificates()->with(['template', 'section.subject'])->orderByDesc('issued_at')->get()
             : collect();
 
+        $grades = $student
+            ? $student->examGrades()
+                ->whereHas('exam', fn ($q) => $q->whereNotNull('grades_published_at'))
+                ->with(['exam.section.subject'])
+                ->get()
+                ->sortByDesc(fn ($g) => $g->exam?->date)
+                ->values()
+            : collect();
+
+        $sectionIds = $registrations->pluck('section_id');
+        $mySubmissions = $student
+            ? $student->assignmentSubmissions()->get()->keyBy('assignment_id')
+            : collect();
+
+        $assignments = Assignment::query()
+            ->whereIn('section_id', $sectionIds)
+            ->with('section.subject')
+            ->orderByDesc('due_date')
+            ->get()
+            ->map(fn (Assignment $a) => [
+                'assignment' => $a,
+                'submission' => $mySubmissions->get($a->id),
+            ]);
+
         return view('livewire.student-dashboard', [
             'student' => $student,
             'registrations' => $registrations,
+            'materials' => $materials,
             'schedule' => $scheduleGrid,
             'transactions' => $transactions,
             'complaints' => $complaints,
             'loginActivities' => $loginActivities,
             'announcements' => $announcements,
             'certificates' => $certificates,
+            'grades' => $grades,
+            'assignments' => $assignments,
         ]);
     }
 }

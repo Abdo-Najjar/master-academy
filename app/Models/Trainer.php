@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -95,6 +96,18 @@ class Trainer extends Authenticatable implements HasMedia, Wallet, WalletFloat
     public function sections(): HasMany
     {
         return $this->hasMany(Section::class);
+    }
+
+    /** Exams created for this trainer's sections. */
+    public function exams(): HasManyThrough
+    {
+        return $this->hasManyThrough(Exam::class, Section::class);
+    }
+
+    /** Assignments created for this trainer's sections. */
+    public function assignments(): HasManyThrough
+    {
+        return $this->hasManyThrough(Assignment::class, Section::class);
     }
 
     public function complaints(): MorphMany

@@ -7,6 +7,7 @@ use App\Filament\Admin\Resources\Exams\Pages\EditExam;
 use App\Filament\Admin\Resources\Exams\Pages\ListExams;
 use App\Filament\Admin\Resources\Exams\Pages\ViewExam;
 use App\Filament\Admin\Resources\Exams\Schemas\ExamForm;
+use App\Filament\Admin\Resources\Exams\Schemas\ExamInfolist;
 use App\Filament\Admin\Resources\Exams\Tables\ExamsTable;
 use App\Models\Exam;
 use BackedEnum;
@@ -61,6 +62,11 @@ class ExamResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return ExamForm::configure($schema);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return ExamInfolist::configure($schema);
     }
 
     public static function table(Table $table): Table

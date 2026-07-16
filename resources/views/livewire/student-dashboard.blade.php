@@ -26,7 +26,7 @@
                 </div>
             </div>
             <nav class="p-4 space-y-1">
-                @foreach (['registrations' => __('My Sections'), 'schedule' => __('Schedule'), 'transactions' => __('Transactions'), 'certificates' => __('Certificates'), 'complaints' => __('Complaints'), 'profile' => __('Edit Profile')] as $tab => $label)
+                @foreach (['registrations' => __('My Sections'), 'schedule' => __('Schedule'), 'materials' => __('Materials'), 'assignments' => __('Assignments'), 'grades' => __('Grades'), 'transactions' => __('Transactions'), 'certificates' => __('Certificates'), 'complaints' => __('Complaints'), 'profile' => __('Edit Profile')] as $tab => $label)
                     <button wire:click="setActiveTab('{{ $tab }}')" @click="sidebarOpen = false"
                             class="w-full text-start px-4 py-2.5 rounded-lg transition {{ $activeTab === $tab ? 'bg-purple-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700' }}">
                         {{ $label }}
@@ -140,6 +140,142 @@
                 </div>
             @endif
 
+            @if ($activeTab === 'materials')
+                <div class="space-y-3">
+                    @forelse ($materials as $item)
+                        @php
+                            $media = $item['media'];
+                            $section = $item['section'];
+                            $ext = strtolower(pathinfo($media->file_name, PATHINFO_EXTENSION));
+                            $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                        @endphp
+                        <div wire:key="material-{{ $media->id }}" class="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-4">
+                            <div class="shrink-0 w-11 h-11 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="font-medium truncate">{{ $media->name }}</p>
+                                <p class="text-xs text-gray-500 truncate">
+                                    {{ $section?->getTranslation('name', app()->getLocale(), false) }}
+                                    · {{ strtoupper($ext) }} · {{ number_format($media->size / 1024, 0) }} KB
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <a href="{{ $media->getUrl() }}" target="_blank"
+                                   class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs whitespace-nowrap">{{ __('Open') }}</a>
+                                <a href="{{ $media->getUrl() }}" download="{{ $media->file_name }}"
+                                   class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-xs whitespace-nowrap hover:bg-gray-100 dark:hover:bg-gray-700">{{ __('Download') }}</a>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="p-6 text-center text-gray-500">{{ __('No materials available yet') }}</div>
+                    @endforelse
+                </div>
+            @endif
+
+            @if ($activeTab === 'assignments')
+                <div class="space-y-3">
+                    @forelse ($assignments as $row)
+                        @php
+                            $a = $row['assignment'];
+                            $sub = $row['submission'];
+                            $isPastDue = $a->due_date && $a->due_date->isPast();
+                        @endphp
+                        <div wire:key="assignment-{{ $a->id }}" class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
+                            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                <div>
+                                    <h3 class="text-lg font-semibold">{{ $a->title }}</h3>
+                                    <p class="text-sm text-gray-500">
+                                        {{ $a->section?->getTranslation('name', app()->getLocale(), false) }}
+                                        @if ($a->due_date)
+                                            · {{ __('Due') }}: {{ $a->due_date->format('Y-m-d H:i') }}
+                                            @if ($isPastDue) <span class="text-red-500">({{ __('Past due') }})</span> @endif
+                                        @endif
+                                    </p>
+                                    @if ($a->description)
+                                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 whitespace-pre-line">{{ $a->description }}</p>
+                                    @endif
+                                </div>
+                                <div class="flex flex-col items-end gap-2 shrink-0">
+                                    @if ($sub?->isGraded())
+                                        <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold whitespace-nowrap">
+                                            {{ __('Grade') }}: {{ rtrim(rtrim((string) $sub->grade, '0'), '.') }}@if ($a->max_points) / {{ rtrim(rtrim((string) $a->max_points, '0'), '.') }} @endif
+                                        </span>
+                                    @elseif ($sub)
+                                        <span class="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold whitespace-nowrap">{{ __('Submitted') }}</span>
+                                    @else
+                                        <span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold whitespace-nowrap">{{ __('Not submitted') }}</span>
+                                    @endif
+                                    <button wire:click="openSubmit({{ $a->id }})"
+                                            class="px-3 py-1.5 text-sm rounded-lg bg-purple-600 hover:bg-purple-700 text-white whitespace-nowrap">
+                                        {{ $sub ? __('Edit Submission') : __('Submit') }}
+                                    </button>
+                                </div>
+                            </div>
+
+                            @if ($submitAssignmentId === $a->id)
+                                <form wire:submit="submitAssignment" class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 space-y-3">
+                                    <textarea wire:model="submissionContent" rows="4" placeholder="{{ __('Write your answer here') }}"
+                                              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700"></textarea>
+                                    @error('submissionContent') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+
+                                    @if ($sub?->getFirstMedia('attachment'))
+                                        <p class="text-xs text-gray-500">
+                                            {{ __('Current file') }}:
+                                            <a href="{{ $sub->getFirstMedia('attachment')->getUrl() }}" target="_blank" class="text-purple-600 hover:underline">{{ $sub->getFirstMedia('attachment')->file_name }}</a>
+                                        </p>
+                                    @endif
+
+                                    <input type="file" wire:model="submissionFile" class="block w-full text-sm">
+                                    <p class="text-xs text-gray-400">{{ __('Maximum file size: 20 MB') }}</p>
+                                    @error('submissionFile') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                                    <div wire:loading wire:target="submissionFile" class="text-sm text-gray-500">{{ __('Uploading...') }}</div>
+
+                                    <div class="flex gap-2">
+                                        <button class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm">{{ __('Submit') }}</button>
+                                        <button type="button" wire:click="$set('submitAssignmentId', null)"
+                                                class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm">{{ __('Cancel') }}</button>
+                                    </div>
+                                </form>
+                            @endif
+                        </div>
+                    @empty
+                        <div class="p-6 text-center text-gray-500">{{ __('No records found') }}</div>
+                    @endforelse
+                </div>
+            @endif
+
+            @if ($activeTab === 'grades')
+                <div class="overflow-x-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+                    <table class="min-w-[640px] w-full text-sm">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-4 py-3 text-start">{{ __('Exam') }}</th>
+                                <th class="px-4 py-3 text-start">{{ __('Section') }}</th>
+                                <th class="px-4 py-3 text-start">{{ __('Date') }}</th>
+                                <th class="px-4 py-3 text-start">{{ __('Score') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            @forelse ($grades as $g)
+                                <tr>
+                                    <td class="px-4 py-3 font-medium">{{ $g->exam?->name }}</td>
+                                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ $g->exam?->section?->getTranslation('name', app()->getLocale(), false) }}</td>
+                                    <td class="px-4 py-3">{{ optional($g->exam?->date)->format('Y-m-d') }}</td>
+                                    <td class="px-4 py-3">
+                                        <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
+                                            {{ rtrim(rtrim((string) $g->score, '0'), '.') }} / {{ rtrim(rtrim((string) $g->exam?->max_score, '0'), '.') }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">{{ __('No records found') }}</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+
             @if ($activeTab === 'transactions')
                 <div class="overflow-x-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
                     <table class="min-w-[640px] w-full text-sm">
@@ -149,6 +285,7 @@
                                 <th class="px-4 py-3 text-start">{{ __('Type') }}</th>
                                 <th class="px-4 py-3 text-start">{{ __('Amount') }}</th>
                                 <th class="px-4 py-3 text-start">{{ __('Description') }}</th>
+                                <th class="px-4 py-3 text-start">{{ __('Receipt') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -162,9 +299,21 @@
                                     </td>
                                     <td class="px-4 py-3 font-medium">{{ number_format((float) $tx->amountFloat, 2) }} ₪</td>
                                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ $tx->meta['description'] ?? '-' }}</td>
+                                    <td class="px-4 py-3">
+                                        @php $rp = $tx->meta['receipt_path'] ?? null; @endphp
+                                        @if ($rp)
+                                            <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($rp) }}" target="_blank"
+                                               class="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs hover:bg-blue-200">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                                                {{ __('View') }}
+                                            </a>
+                                        @else
+                                            <span class="text-gray-400">—</span>
+                                        @endif
+                                    </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">{{ __('No records found') }}</td></tr>
+                                <tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">{{ __('No records found') }}</td></tr>
                             @endforelse
                         </tbody>
                     </table>

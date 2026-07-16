@@ -26,7 +26,7 @@
                 </div>
             </div>
             <nav class="p-4 space-y-1">
-                @foreach (['sections' => __('My Sections'), 'attendance' => __('Attendance'), 'transactions' => __('Transactions'), 'complaints' => __('Complaints'), 'profile' => __('Edit Profile')] as $tab => $label)
+                @foreach (['sections' => __('My Sections'), 'attendance' => __('Attendance'), 'assignments' => __('Assignments'), 'transactions' => __('Transactions'), 'complaints' => __('Complaints'), 'profile' => __('Edit Profile')] as $tab => $label)
                     <button wire:click="setActiveTab('{{ $tab }}')" @click="sidebarOpen = false"
                             class="w-full text-start px-4 py-2.5 rounded-lg transition {{ $activeTab === $tab ? 'bg-emerald-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700' }}">
                         {{ $label }}
@@ -214,6 +214,94 @@
                 </div>
             @endif
 
+            @if ($activeTab === 'assignments')
+                <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-4">
+                    <h3 class="text-lg font-semibold mb-4">{{ __('New Assignment') }}</h3>
+                    <form wire:submit="createAssignment" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <select wire:model="newAssignmentSectionId" class="px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                            <option value="">{{ __('Select section') }}</option>
+                            @foreach ($sections as $s)
+                                <option value="{{ $s->id }}">{{ $s->getTranslation('name', app()->getLocale(), false) }}</option>
+                            @endforeach
+                        </select>
+                        @error('newAssignmentSectionId') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+
+                        <input wire:model="newAssignmentTitle" type="text" placeholder="{{ __('Title') }}"
+                               class="px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                        @error('newAssignmentTitle') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+
+                        <input wire:model="newAssignmentDueDate" type="datetime-local"
+                               class="px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                        @error('newAssignmentDueDate') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+
+                        <input wire:model="newAssignmentMaxPoints" type="number" step="0.01" min="0" placeholder="{{ __('Max Points') }}"
+                               class="px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                        @error('newAssignmentMaxPoints') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+
+                        <textarea wire:model="newAssignmentDescription" rows="3" placeholder="{{ __('Description') }}"
+                                  class="md:col-span-2 px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700"></textarea>
+                        @error('newAssignmentDescription') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+
+                        <button class="md:col-span-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm w-fit">{{ __('Create') }}</button>
+                    </form>
+                </div>
+
+                <div class="space-y-3">
+                    @forelse ($assignments as $a)
+                        <div wire:key="assignment-{{ $a->id }}" class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
+                            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                <div>
+                                    <h3 class="text-lg font-semibold">{{ $a->title }}</h3>
+                                    <p class="text-sm text-gray-500">
+                                        {{ $a->section?->getTranslation('name', app()->getLocale(), false) }}
+                                        @if ($a->due_date) · {{ __('Due') }}: {{ $a->due_date->format('Y-m-d H:i') }} @endif
+                                        @if ($a->max_points) · {{ __('Max Points') }}: {{ rtrim(rtrim((string) $a->max_points, '0'), '.') }} @endif
+                                    </p>
+                                </div>
+                                <button wire:click="openAssignmentDetail({{ $a->id }})"
+                                        class="px-3 py-1.5 text-sm rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 whitespace-nowrap">
+                                    {{ __('Submissions') }} ({{ $a->submissions_count }})
+                                </button>
+                            </div>
+
+                            @if ($assignmentDetail && $assignmentDetail->id === $a->id)
+                                <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 space-y-3">
+                                    @forelse ($assignmentDetail->submissions as $sub)
+                                        <div wire:key="submission-{{ $sub->id }}" class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+                                            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                                <div>
+                                                    <p class="font-medium">{{ $sub->student?->getTranslation('name', app()->getLocale(), false) }}</p>
+                                                    <p class="text-xs text-gray-500">{{ $sub->submitted_at?->format('Y-m-d H:i') ?? __('Not submitted') }}</p>
+                                                </div>
+                                                @if ($sub->getFirstMedia('attachment'))
+                                                    <a href="{{ $sub->getFirstMedia('attachment')->getUrl() }}" target="_blank"
+                                                       class="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200">{{ __('File') }}</a>
+                                                @endif
+                                            </div>
+                                            @if ($sub->content)
+                                                <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line mb-2">{{ $sub->content }}</p>
+                                            @endif
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <input type="number" step="0.01" min="0" wire:model="gradeInputs.{{ $sub->id }}" placeholder="{{ __('Grade') }}"
+                                                       class="w-28 px-2 py-1.5 text-sm border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                                                <input type="text" wire:model="feedbackInputs.{{ $sub->id }}" placeholder="{{ __('Feedback') }}"
+                                                       class="flex-1 min-w-[160px] px-2 py-1.5 text-sm border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                                                <button wire:click="saveGrade({{ $sub->id }})"
+                                                        class="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">{{ __('Save') }}</button>
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <p class="text-gray-500 text-sm">{{ __('No submissions yet') }}</p>
+                                    @endforelse
+                                </div>
+                            @endif
+                        </div>
+                    @empty
+                        <p class="text-gray-500">{{ __('No records found') }}</p>
+                    @endforelse
+                </div>
+            @endif
+
             @if ($activeTab === 'transactions')
                 <div class="overflow-x-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
                     <table class="min-w-[640px] w-full text-sm">
@@ -223,6 +311,7 @@
                                 <th class="px-4 py-3 text-start">{{ __('Type') }}</th>
                                 <th class="px-4 py-3 text-start">{{ __('Amount') }}</th>
                                 <th class="px-4 py-3 text-start">{{ __('Description') }}</th>
+                                <th class="px-4 py-3 text-start">{{ __('Receipt') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -236,9 +325,21 @@
                                     </td>
                                     <td class="px-4 py-3 font-medium">{{ number_format((float) $tx->amountFloat, 2) }} ₪</td>
                                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ $tx->meta['description'] ?? '-' }}</td>
+                                    <td class="px-4 py-3">
+                                        @php $rp = $tx->meta['receipt_path'] ?? null; @endphp
+                                        @if ($rp)
+                                            <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($rp) }}" target="_blank"
+                                               class="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs hover:bg-blue-200">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                                                {{ __('View') }}
+                                            </a>
+                                        @else
+                                            <span class="text-gray-400">—</span>
+                                        @endif
+                                    </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">{{ __('No records found') }}</td></tr>
+                                <tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">{{ __('No records found') }}</td></tr>
                             @endforelse
                         </tbody>
                     </table>

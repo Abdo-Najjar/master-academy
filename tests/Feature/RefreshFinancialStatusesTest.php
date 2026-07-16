@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Attendance;
 use App\Models\PaymentType;
 use App\Models\Registration;
 use App\Models\Section;
@@ -11,53 +10,41 @@ use App\Models\Trainer;
 beforeEach(function () {
     $trainer = Trainer::create([
         'name'     => ['en' => 'Cmd Trainer', 'ar' => 'مدرب'],
-        'username' => 'cmd_trainer_' . uniqid(),
+        'username' => 'cmd_trainer_'.uniqid(),
         'password' => 'password',
     ]);
 
     $subject = Subject::create(['name' => ['en' => 'Science', 'ar' => 'علوم']]);
 
     $this->section = Section::create([
-        'name'                   => ['en' => 'Cmd Section', 'ar' => 'قسم'],
-        'subject_id'             => $subject->id,
-        'trainer_id'             => $trainer->id,
-        'price'                  => 100,
-        'trainer_rate'           => 40,
-        'fee_type'               => 'per_session',
-        'sessions_per_fee_cycle' => 3,
+        'name'       => ['en' => 'Cmd Section', 'ar' => 'قسم'],
+        'subject_id' => $subject->id,
+        'trainer_id' => $trainer->id,
+        'price'      => 100,
     ]);
 
     $this->student = Student::create([
         'name'     => ['en' => 'Cmd Student', 'ar' => 'طالب'],
-        'username' => 'cmd_stu_' . uniqid(),
+        'username' => 'cmd_stu_'.uniqid(),
         'password' => 'password',
     ]);
 
     $pt = PaymentType::create(['name' => 'Cash']);
 
+    // RegistrationObserver::creating() computes financial_status automatically — fully
+    // paid lands as "ok". We then bypass the observer to make it stale for the command
+    // to fix, the same way a manual DB edit or a refund elsewhere could leave it stale.
     $this->reg = Registration::create([
-        'student_id'           => $this->student->id,
-        'section_id'           => $this->section->id,
-        'payment_type_id'      => $pt->id,
-        'amount_due'           => 100,
-        'amount_paid'          => 100,
-        'exemption_amount'     => 0,
-        'trainer_amount'       => 40,
-        'session_offset'       => 0,
-        'paid_through_session' => 0,
-        'financial_status'     => 'ok',
+        'student_id'      => $this->student->id,
+        'section_id'      => $this->section->id,
+        'payment_type_id' => $pt->id,
+        'amount_due'      => 100,
+        'amount_paid'     => 100,
+        'exemption_amount' => 0,
+        'trainer_amount'  => 40,
     ]);
 
-    // 4 attendances >= cycle of 3 → should become 'due' or 'overdue'
-    // Use future dates so they are after the registration's created_at
-    for ($i = 0; $i < 4; $i++) {
-        Attendance::create([
-            'section_id' => $this->section->id,
-            'student_id' => $this->student->id,
-            'status'     => 'present',
-            'date'       => now()->addDays($i)->toDateString(),
-        ]);
-    }
+    $this->reg->updateQuietly(['amount_paid' => 0]);
 });
 
 it('artisan finances:refresh updates financial status', function () {
@@ -66,7 +53,7 @@ it('artisan finances:refresh updates financial status', function () {
         ->expectsOutputToContain('updated');
 
     $this->reg->refresh();
-    expect($this->reg->financial_status)->toBeIn(['due', 'overdue', 'warning']);
+    expect($this->reg->financial_status)->toBe('overdue');
 });
 
 it('artisan finances:refresh --dry-run does not update', function () {

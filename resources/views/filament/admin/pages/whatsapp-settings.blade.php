@@ -100,6 +100,40 @@
         @endif
     </div>
 
+    @if ($diagnostics)
+        <div class="wa-card" style="margin-top:1.5rem;">
+            <h3 style="font-weight:600;margin-bottom:1rem;">{{ __('Connection Diagnostics') }}</h3>
+            <div style="display:flex;flex-direction:column;gap:.5rem;font-size:.85rem;">
+                <div style="display:flex;justify-content:space-between;gap:1rem;">
+                    <span>{{ __('Node.js available') }}</span>
+                    <span style="font-weight:600;color:{{ $diagnostics['node_found'] ? '#16a34a' : '#dc2626' }};">
+                        {{ $diagnostics['node_found'] ? ('✅ '.$diagnostics['node_version']) : '❌ '.__('Not found') }}
+                    </span>
+                </div>
+                <div style="display:flex;justify-content:space-between;gap:1rem;">
+                    <span>{{ __('CLI script (whatsapp/cli.js)') }}</span>
+                    <span style="font-weight:600;color:{{ $diagnostics['cli_exists'] ? '#16a34a' : '#dc2626' }};">
+                        {{ $diagnostics['cli_exists'] ? '✅ '.__('Found') : '❌ '.__('Missing') }}
+                    </span>
+                </div>
+                <div style="display:flex;justify-content:space-between;gap:1rem;">
+                    <span>{{ __('Dependencies (whatsapp/node_modules)') }}</span>
+                    <span style="font-weight:600;color:{{ $diagnostics['node_modules_exists'] ? '#16a34a' : '#dc2626' }};">
+                        {{ $diagnostics['node_modules_exists'] ? '✅ '.__('Installed') : '❌ '.__('Missing — run npm install inside whatsapp/') }}
+                    </span>
+                </div>
+            </div>
+            @if ($diagnostics['log_tail'])
+                <div style="margin-top:1rem;">
+                    <p style="font-size:.8rem;font-weight:600;margin-bottom:.375rem;">{{ __('Last CLI output') }}</p>
+                    <pre style="background:#0f172a;color:#e2e8f0;padding:.75rem;border-radius:.5rem;font-size:.7rem;overflow-x:auto;white-space:pre-wrap;max-height:220px;overflow-y:auto;">{{ $diagnostics['log_tail'] }}</pre>
+                </div>
+            @else
+                <p style="margin-top:.75rem;font-size:.75rem;color:#94a3b8;">{{ __('No CLI output logged yet.') }}</p>
+            @endif
+        </div>
+    @endif
+
     @if ($status === \App\Models\WhatsappSession::STATUS_READY)
         {{-- Quick send test --}}
         <div class="wa-card" style="margin-top:1.5rem;">

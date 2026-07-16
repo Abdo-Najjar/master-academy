@@ -45,7 +45,7 @@
             const btn = document.getElementById('dl');
             btn.style.display = 'inline-block';
             btn.onclick = trigger;
-            trigger(); // auto-download once
+            // No auto-download: the file downloads only when the user clicks the button.
         }
 
         function render() {

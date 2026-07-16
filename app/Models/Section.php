@@ -91,6 +91,11 @@ class Section extends Model implements HasMedia
         return $this->hasMany(Exam::class);
     }
 
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(Assignment::class);
+    }
+
     protected function status(): Attribute
     {
         return Attribute::make(

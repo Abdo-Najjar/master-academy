@@ -124,6 +124,11 @@ class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
         return $this->hasMany(ExamGrade::class);
     }
 
+    public function assignmentSubmissions(): HasMany
+    {
+        return $this->hasMany(AssignmentSubmission::class);
+    }
+
     public function certificates(): HasMany
     {
         return $this->hasMany(Certificate::class);
@@ -143,5 +148,10 @@ class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
     {
         return $this->belongsToMany(Announcement::class, 'announcement_dismissals')
             ->withPivot('dismissed_at');
+    }
+
+    public function groups(): BelongsToMany
+    {
+        return $this->belongsToMany(StudentGroup::class, 'student_group_student');
     }
 }

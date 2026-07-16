@@ -6,6 +6,7 @@ use App\Models\PaymentType;
 use App\Models\Student;
 use Bavix\Wallet\Models\Wallet;
 use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -82,6 +83,16 @@ class WalletActions
                 ->rows(3)
                 ->maxLength(500)
                 ->columnSpanFull(),
+            FileUpload::make('receipt')
+                ->label(__('Payment Receipt'))
+                ->helperText(__('Attach the transfer/notification receipt (optional).'))
+                ->disk('public')
+                ->directory('payment-receipts')
+                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+                ->maxSize(5120)
+                ->downloadable()
+                ->openable()
+                ->columnSpanFull(),
         ];
     }
 
@@ -91,6 +102,7 @@ class WalletActions
             'description' => $description,
             'note' => $data['note'] ?? null,
             'payment_type_id' => $data['payment_type_id'] ?? null,
+            'receipt_path' => $data['receipt'] ?? null,
         ];
     }
 

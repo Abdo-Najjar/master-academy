@@ -83,6 +83,8 @@ class TrainerResource extends Resource
     {
         return [
             SectionsRelationManager::class,
+            \App\Filament\Admin\Resources\Trainers\RelationManagers\ExamsRelationManager::class,
+            \App\Filament\Admin\Resources\Trainers\RelationManagers\AssignmentsRelationManager::class,
             TransactionsRelationManager::class,
             \App\Filament\Admin\Resources\Users\RelationManagers\LoginActivitiesRelationManager::class,
         ];
