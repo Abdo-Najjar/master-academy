@@ -102,7 +102,7 @@ class ExemptionTypeResource extends Resource
                             ->suffix(fn (Get $get): string => $get('discount_type') === 'percentage' ? '%' : '₪')
                             ->helperText(__('Auto-filled as the exemption amount when this type is selected at registration.')),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ]);
     }

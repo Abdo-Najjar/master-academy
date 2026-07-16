@@ -91,7 +91,7 @@ class RoomResource extends Resource
                             ->maxLength(255)
                             ->columnSpanFull(),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ]);
     }

@@ -38,7 +38,7 @@ class StudentForm
                             ->unique(table: 'students', column: 'ssn', ignoreRecord: true, modifyRuleUsing: fn (Unique $rule) => $rule->whereNull('deleted_at'))
                             ->maxLength(255),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 Section::make('')
                     ->schema([
@@ -67,7 +67,7 @@ class StudentForm
                             ->dehydrated(fn ($state) => filled($state))
                             ->dehydrateStateUsing(fn ($state) => filled($state) ? Hash::make($state) : null),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 Section::make('')
                     ->schema([
@@ -103,7 +103,7 @@ class StudentForm
                             ->native(false)
                             ->visible(fn (callable $get) => in_array($get('status'), ['withdrawn', 'archived'])),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 Section::make('')
                     ->schema([
@@ -146,7 +146,7 @@ class StudentForm
                             ->inline(false)
                             ->columnSpanFull(),
                     ])
-                    ->columns(2),
+                    ->columns(1),
             ]);
     }
 }

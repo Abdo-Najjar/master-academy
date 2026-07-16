@@ -122,6 +122,12 @@
                         {{ $diagnostics['node_modules_exists'] ? '✅ '.__('Installed') : '❌ '.__('Missing — run npm install inside whatsapp/') }}
                     </span>
                 </div>
+                <div style="display:flex;justify-content:space-between;gap:1rem;">
+                    <span>{{ __('Link process currently running') }}</span>
+                    <span style="font-weight:600;color:{{ $diagnostics['link_process_running'] ? '#d97706' : '#16a34a' }};">
+                        {{ $diagnostics['link_process_running'] ? '⚠️ '.__('Yes') : '— '.__('No') }}
+                    </span>
+                </div>
             </div>
             @if ($diagnostics['log_tail'])
                 <div style="margin-top:1rem;">

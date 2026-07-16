@@ -56,7 +56,7 @@ class SectionForm
                                 }
                             }),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 Section::make('')
                     ->schema([
@@ -68,7 +68,7 @@ class SectionForm
                             ->native(false)
                             ->afterOrEqual('start_date'),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 Section::make('')
                     ->schema([
@@ -86,7 +86,7 @@ class SectionForm
                             ->numeric()
                             ->minValue(1),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 Section::make(__('Pricing'))
                     ->schema([
@@ -122,7 +122,7 @@ class SectionForm
                             ->visible(fn (callable $get) => filled($get('seat_reservation_type')))
                             ->prefix(fn (callable $get) => $get('seat_reservation_type') === 'percentage' ? '%' : '₪'),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 Section::make('')
                     ->schema([
@@ -156,7 +156,7 @@ class SectionForm
                                     ->searchable()
                                     ->preload(),
                             ])
-                            ->columns(4)
+                            ->columns(1)
                             ->columnSpanFull()
                             ->defaultItems(0)
                             ->addActionLabel(__('Add Time')),

@@ -35,7 +35,7 @@ class UserInfolist
                             ->dateTime()
                             ->visible(fn (User $record): bool => $record->trashed()),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ]);
     }

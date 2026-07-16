@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\Assignments\RelationManagers;
 
 use App\Models\AssignmentSubmission;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -35,16 +36,29 @@ class SubmissionsRelationManager extends RelationManager
                 TextColumn::make('student.student_number')->label(__('Student Number')),
                 TextColumn::make('submitted_at')->label(__('Submitted At'))->dateTime()->sortable()->placeholder('—'),
                 TextColumn::make('grade')->label(__('Grade'))->placeholder('—')->badge()->color('info'),
-                TextColumn::make('content')->label(__('Content'))->limit(40)->placeholder('—'),
+                TextColumn::make('content')
+                    ->label(__('Content'))
+                    ->limit(40)
+                    ->tooltip(fn (AssignmentSubmission $record): ?string => $record->content)
+                    ->placeholder('—'),
             ])
             ->recordActions([
-                Action::make('viewAttachment')
-                    ->label(__('File'))
-                    ->icon('heroicon-o-paper-clip')
+                Action::make('viewSubmission')
+                    ->label(__('View'))
+                    ->icon('heroicon-o-eye')
                     ->color('gray')
-                    ->visible(fn (AssignmentSubmission $record): bool => (bool) $record->getFirstMedia('attachment'))
-                    ->url(fn (AssignmentSubmission $record): ?string => $record->getFirstMedia('attachment')?->getUrl())
-                    ->openUrlInNewTab(),
+                    ->modalHeading(fn (AssignmentSubmission $record): string => (string) ($record->student?->getTranslation('name', app()->getLocale(), false) ?? '#'.$record->student_id))
+                    ->schema(fn (AssignmentSubmission $record): array => [
+                        Placeholder::make('content')
+                            ->label(__('Content'))
+                            ->content(fn (): string => $record->content ?: '—'),
+                        Placeholder::make('attachment')
+                            ->label(__('Attachment'))
+                            ->content(fn (): \Illuminate\Contracts\Support\Htmlable => str(($media = $record->getFirstMedia('attachment')) ? '<a href="'.e($media->getUrl()).'" target="_blank" style="color:#7c3aed;text-decoration:underline;">'.e($media->file_name).'</a>' : '—')->toHtmlString())
+                            ->visible(fn (): bool => (bool) $record->getFirstMedia('attachment')),
+                    ])
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel(__('Close')),
                 Action::make('grade')
                     ->label(__('Grade'))
                     ->icon('heroicon-o-pencil-square')

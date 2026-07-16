@@ -111,7 +111,7 @@ class ManageAppSettings extends Page implements HasForms
                             ->label(__('Secondary Color'))
                             ->required(),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
 
                 Section::make(__('Reminders & Alerts'))
@@ -138,7 +138,7 @@ class ManageAppSettings extends Page implements HasForms
                             ->required()
                             ->helperText(__('Send an alert when a student attends this many lectures while their registration has an unpaid balance.')),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
 
                 Section::make(__('Discounts'))

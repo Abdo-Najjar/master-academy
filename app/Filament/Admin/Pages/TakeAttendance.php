@@ -116,7 +116,7 @@ class TakeAttendance extends Page implements HasForms
                                 $this->loadAttendance();
                             }),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ])
             ->statePath('data');

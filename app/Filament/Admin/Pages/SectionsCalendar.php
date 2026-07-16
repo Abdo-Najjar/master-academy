@@ -94,7 +94,7 @@ class SectionsCalendar extends Page implements HasForms
                             ->preload()
                             ->live(),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ])
             ->statePath('filters');

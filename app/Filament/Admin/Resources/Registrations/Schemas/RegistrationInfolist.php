@@ -40,7 +40,7 @@ class RegistrationInfolist
                             ->dateTime()
                             ->visible(fn (Registration $record): bool => $record->trashed()),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ]);
     }

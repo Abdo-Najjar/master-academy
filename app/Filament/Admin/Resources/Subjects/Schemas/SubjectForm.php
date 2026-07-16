@@ -26,7 +26,7 @@ class SubjectForm
                         ColorPicker::make('color')
                             ->label(__('Color')),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ]);
     }

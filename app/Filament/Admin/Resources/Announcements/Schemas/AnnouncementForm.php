@@ -63,7 +63,7 @@ class AnnouncementForm
                             ->visible(false)
                             ->dehydrated(fn ($state) => filled($state)),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ]);
     }

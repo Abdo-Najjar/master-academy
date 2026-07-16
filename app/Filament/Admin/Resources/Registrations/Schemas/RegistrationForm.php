@@ -119,7 +119,7 @@ class RegistrationForm
                             ->searchable()
                             ->preload(),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 FormSection::make('')
                     ->schema([
@@ -182,7 +182,7 @@ class RegistrationForm
                             ->required()
                             ->helperText(__('Will be auto-deducted from the student wallet on save.')),
                     ])
-                    ->columns(3),
+                    ->columns(1),
 
                 FormSection::make('')
                     ->schema([

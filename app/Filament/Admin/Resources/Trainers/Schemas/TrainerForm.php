@@ -40,7 +40,7 @@ class TrainerForm
                             ->unique(table: 'trainers', column: 'ssn', ignoreRecord: true, modifyRuleUsing: fn (Unique $rule) => $rule->whereNull('deleted_at'))
                             ->maxLength(255),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 Section::make('')
                     ->schema([
@@ -67,7 +67,7 @@ class TrainerForm
                             ->dehydrated(fn ($state) => filled($state))
                             ->dehydrateStateUsing(fn ($state) => filled($state) ? Hash::make($state) : null),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 Section::make('')
                     ->schema([
@@ -93,7 +93,7 @@ class TrainerForm
                             ->preload()
                             ->disabled(fn (callable $get) => empty($get('governorate_id'))),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 Section::make('')
                     ->schema([
@@ -123,7 +123,7 @@ class TrainerForm
                             ->inline(false)
                             ->columnSpanFull(),
                     ])
-                    ->columns(2),
+                    ->columns(1),
             ]);
     }
 }

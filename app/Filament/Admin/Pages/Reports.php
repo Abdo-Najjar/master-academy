@@ -95,7 +95,7 @@ class Reports extends Page implements HasForms
                             ->preload()
                             ->live(),
                     ])
-                    ->columns(3)
+                    ->columns(1)
                     ->columnSpanFull(),
             ])
             ->statePath('filters');

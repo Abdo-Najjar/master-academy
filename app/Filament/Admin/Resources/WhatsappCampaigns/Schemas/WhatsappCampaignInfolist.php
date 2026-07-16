@@ -40,7 +40,7 @@ class WhatsappCampaignInfolist
                         TextEntry::make('message')->label(__('Message'))->columnSpanFull(),
                         TextEntry::make('created_at')->label(__('Created'))->dateTime(),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ]);
     }

@@ -39,7 +39,7 @@ class ComplaintInfolist
                             ->label(__('Body'))
                             ->columnSpanFull(),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 Section::make(__('Admin Reply'))
                     ->schema([
@@ -55,7 +55,7 @@ class ComplaintInfolist
                             ->dateTime()
                             ->placeholder('—'),
                     ])
-                    ->columns(2),
+                    ->columns(1),
             ]);
     }
 }

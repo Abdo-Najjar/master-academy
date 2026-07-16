@@ -59,7 +59,7 @@ class AssignmentForm
                             ->maxSize(20 * 1024)
                             ->columnSpanFull(),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ]);
     }

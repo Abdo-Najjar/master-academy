@@ -86,7 +86,7 @@ class CityResource extends Resource
                             ->preload()
                             ->required(),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ]);
     }

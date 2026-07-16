@@ -176,7 +176,7 @@ class QuickEnroll extends Page implements HasForms
                             ->preload()
                             ->disabled(fn (callable $get) => empty($get('governorate_id'))),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
 
                 FormSection::make(__('Registration'))
@@ -278,7 +278,7 @@ class QuickEnroll extends Page implements HasForms
                             ->rows(2)
                             ->columnSpanFull(),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ])
             ->statePath('data');

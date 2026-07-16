@@ -1463,5 +1463,6 @@
     "Campaign launched": "تم إطلاق الحملة",
     "Campaign will stop after the current message": "ستتوقف الحملة بعد الرسالة الحالية",
     "This will send the message to :count recipient(s), 40-60 seconds apart. It cannot be undone.": "سيتم إرسال الرسالة إلى :count مستلم، بفاصل 40-60 ثانية بين كل رسالة. لا يمكن التراجع عن هذا الإجراء.",
-    ":count message(s) queued for sending.": "تم جدولة :count رسالة للإرسال."
+    ":count message(s) queued for sending.": "تم جدولة :count رسالة للإرسال.",
+    "Link process currently running": "عملية ربط قيد التشغيل حالياً"
 }

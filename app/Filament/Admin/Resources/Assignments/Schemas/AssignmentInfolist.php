@@ -33,7 +33,7 @@ class AssignmentInfolist
                             ->dateTime()
                             ->visible(fn (Assignment $record): bool => $record->trashed()),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ]);
     }

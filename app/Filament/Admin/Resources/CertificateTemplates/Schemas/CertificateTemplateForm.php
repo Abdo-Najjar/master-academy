@@ -60,7 +60,7 @@ class CertificateTemplateForm
                             ->required()
                             ->helperText(__('Auto-filled from the background image.')),
                     ])
-                    ->columns(2),
+                    ->columns(1),
             ]);
     }
 }

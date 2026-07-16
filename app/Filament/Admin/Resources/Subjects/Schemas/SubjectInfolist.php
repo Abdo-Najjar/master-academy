@@ -29,7 +29,7 @@ class SubjectInfolist
                             ->dateTime()
                             ->visible(fn (Subject $record): bool => $record->trashed()),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ]);
     }

@@ -19,6 +19,22 @@ class WhatsappLinkService
      */
     public static function startLink(): WhatsappSession
     {
+        // Kill any process left over from a previous link attempt (a stuck
+        // reconnect loop, or the admin clicking "Link" more than once) before
+        // touching anything else. Two Baileys clients racing over the same
+        // auth_info_baileys folder corrupt/invalidate each other's session —
+        // the browser can end up polling a QR that no longer matches the
+        // process actually holding the connection, so scanning it fails even
+        // though the panel showed a code.
+        if (! app()->runningUnitTests()) {
+            self::killExistingLinkProcess();
+            // Give the OS a moment to release the killed process's file handles
+            // (log file, auth_info_baileys) before we reopen/rewrite them —
+            // without this pause the fresh spawn can hit a sharing violation
+            // (Windows) or a truncated write racing the dying process (Linux).
+            usleep(500_000);
+        }
+
         // Ensure only one active session at a time
         WhatsappSession::whereNull('deleted_at')
             ->whereIn('status', [WhatsappSession::STATUS_INITIALIZING, WhatsappSession::STATUS_QR_READY])
@@ -75,8 +91,72 @@ class WhatsappLinkService
             'node_version' => $nodeVersion,
             'cli_exists' => is_file(base_path('whatsapp/cli.js')),
             'node_modules_exists' => is_dir(base_path('whatsapp/node_modules')) && count(scandir(base_path('whatsapp/node_modules'))) > 2,
+            'link_process_running' => self::isLinkProcessRunning(),
             'log_tail' => self::readLogTail(),
         ];
+    }
+
+    /** Whether a `node cli.js link` process is currently alive on this host. */
+    private static function isLinkProcessRunning(): bool
+    {
+        $cliPath = base_path('whatsapp/cli.js');
+
+        if (PHP_OS_FAMILY === 'Windows') {
+            exec(self::windowsFindLinkProcessCommand($cliPath), $output, $exitCode);
+
+            return $exitCode === 0 && trim(implode('', $output)) !== '';
+        }
+
+        // cliCommand() wraps the path in escapeshellarg() quotes, so the raw
+        // command line reads `node 'path/cli.js' link` — a `.*` between the
+        // path and "link" absorbs that quote character instead of assuming
+        // an exact space.
+        exec('pgrep -f ' . escapeshellarg(preg_quote($cliPath, '/').'.*link') . ' 2>&1', $output, $exitCode);
+
+        return $exitCode === 0 && ! empty($output);
+    }
+
+    /**
+     * Kill any still-running `node cli.js link` process from a previous
+     * attempt. Matched on the script's absolute path so this can't touch an
+     * unrelated node process on the host.
+     */
+    private static function killExistingLinkProcess(): void
+    {
+        $cliPath = base_path('whatsapp/cli.js');
+
+        if (PHP_OS_FAMILY === 'Windows') {
+            exec(self::windowsKillLinkProcessCommand($cliPath) . ' 2>&1');
+        } else {
+            exec('pkill -f ' . escapeshellarg(preg_quote($cliPath, '/').'.*link') . ' 2>&1');
+        }
+    }
+
+    /**
+     * PowerShell command line to list matching PIDs. Uses -like (not WQL LIKE)
+     * so a Windows path's backslashes need no special escaping — only the
+     * single-quoted string's own quotes matter. The path and "link" are
+     * matched as separate wildcard segments since escapeshellarg() quotes
+     * the path in the real command line (`node "path\cli.js" link`), so
+     * there's a `"` between them rather than a plain space.
+     */
+    private static function windowsFindLinkProcessCommand(string $cliPath): string
+    {
+        $pattern = '*'.str_replace("'", "''", $cliPath).'*link*';
+        // Restrict to node.exe: the PowerShell command line invoking this very
+        // search also contains the pattern text, so without a name filter the
+        // search process would (falsely) match itself.
+        $script = "(Get-CimInstance Win32_Process | Where-Object { \$_.Name -eq 'node.exe' -and \$_.CommandLine -like '{$pattern}' }).ProcessId";
+
+        return 'powershell -NoProfile -Command "'.str_replace('"', '\\"', $script).'"';
+    }
+
+    private static function windowsKillLinkProcessCommand(string $cliPath): string
+    {
+        $pattern = '*'.str_replace("'", "''", $cliPath).'*link*';
+        $script = "Get-CimInstance Win32_Process | Where-Object { \$_.Name -eq 'node.exe' -and \$_.CommandLine -like '{$pattern}' } | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force }";
+
+        return 'powershell -NoProfile -Command "'.str_replace('"', '\\"', $script).'"';
     }
 
     private static function logFilePath(): string

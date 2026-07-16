@@ -37,7 +37,7 @@ class SectionInfolist
                             ->dateTime()
                             ->visible(fn (Section $record): bool => $record->trashed()),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ]);
     }
