@@ -1468,5 +1468,8 @@
     "All Statuses": "كل الحالات",
     "Search by student name or number": "بحث باسم الطالب أو رقمه",
     "This student has not submitted yet.": "هذا الطالب لم يسلّم بعد.",
-    "Content": "المحتوى"
+    "Content": "المحتوى",
+    "Recipients": "المستلمون",
+    "Send a one-off message to confirm the connection works end to end.": "أرسل رسالة تجريبية للتأكد من أن الاتصال يعمل بشكل كامل.",
+    "Login History": "سجل الدخول"
 }

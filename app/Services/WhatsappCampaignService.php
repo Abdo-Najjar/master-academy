@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\StudentGroup;
 use App\Models\WhatsappCampaign;
 use App\Models\WhatsappCampaignRecipient;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 
 class WhatsappCampaignService
@@ -52,29 +53,23 @@ class WhatsappCampaignService
         return $count;
     }
 
-    /** Spawn the throttled sender as a detached background process. */
+    /**
+     * Dispatch the throttled sender onto Laravel's queue so it runs in the
+     * background without blocking the request. This replaces an earlier
+     * approach that shelled out directly (exec()/popen() spawning
+     * `php artisan ...`) — that broke in production because PHP_BINARY under
+     * php-fpm resolves to the php-fpm binary, not a usable CLI interpreter,
+     * so the spawn silently did nothing. Artisan::queue() sidesteps shell
+     * spawning entirely and relies on the app's own queue worker instead.
+     */
     public static function launch(WhatsappCampaign $campaign): void
     {
-        $command = self::cliCommand($campaign->id);
-
         if (app()->runningUnitTests()) {
             return;
         }
 
-        if (PHP_OS_FAMILY === 'Windows') {
-            pclose(popen('start /B "" ' . $command . ' > NUL 2>&1', 'r'));
-        } else {
-            exec($command . ' > /dev/null 2>&1 &');
-        }
+        Artisan::queue('whatsapp:campaign:send', ['campaign' => $campaign->id]);
 
-        Log::info('WhatsApp campaign launched', ['campaign_id' => $campaign->id]);
-    }
-
-    private static function cliCommand(int $campaignId): string
-    {
-        $php = escapeshellarg(PHP_BINARY);
-        $artisan = escapeshellarg(base_path('artisan'));
-
-        return $php . ' ' . $artisan . ' whatsapp:campaign:send ' . $campaignId;
+        Log::info('WhatsApp campaign queued', ['campaign_id' => $campaign->id]);
     }
 }

@@ -20,6 +20,7 @@ Route::get('/trainer/assignments/{assignment}', TrainerAssignmentSubmissions::cl
 Route::get('/student/login', StudentLogin::class)->name('student.login');
 Route::get('/student/dashboard', StudentDashboard::class)->name('student.dashboard')->middleware('student.auth');
 Route::get('/student/assignments/{assignment}', StudentAssignmentSubmission::class)->name('student.assignments.show')->middleware('student.auth');
+Route::get('/student/certificates/{certificate}/download', [PdfController::class, 'studentCertificateImage'])->name('student.certificates.download')->middleware('student.auth');
 
 Route::get('/certificates/verify/{token}', function (string $token) {
     $cert = \App\Models\Certificate::where('verification_token', $token)->with(['student', 'section.subject', 'template'])->firstOrFail();

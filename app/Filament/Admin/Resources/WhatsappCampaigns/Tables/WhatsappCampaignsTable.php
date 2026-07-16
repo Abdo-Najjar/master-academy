@@ -67,6 +67,12 @@ class WhatsappCampaignsTable
                             return;
                         }
 
+                        // Flip to "running" here rather than waiting for the spawned
+                        // background process to boot and do it — that boot can take a
+                        // few seconds, during which the table would still show the
+                        // "Launch" button as if nothing happened.
+                        $record->update(['status' => WhatsappCampaign::STATUS_RUNNING, 'started_at' => now()]);
+
                         \App\Services\WhatsappCampaignService::launch($record);
 
                         Notification::make()->success()->title(__('Campaign launched'))->body(__(':count message(s) queued for sending.', ['count' => $count]))->send();
@@ -87,7 +93,7 @@ class WhatsappCampaignsTable
                         ->visible(fn (WhatsappCampaign $record): bool => $record->status !== WhatsappCampaign::STATUS_RUNNING),
                 ]),
             ])
-            ->poll('10s')
+            ->poll('5s')
             ->defaultSort('id', 'desc')
             ->emptyStateHeading(__('No records found'));
     }

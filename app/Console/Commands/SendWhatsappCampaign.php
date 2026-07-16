@@ -6,14 +6,18 @@ use App\Models\WhatsappCampaign;
 use App\Models\WhatsappCampaignRecipient;
 use App\Services\WhatsAppService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Sends every pending recipient of a campaign one at a time, sleeping a
  * random 40-60s between each send so the linked WhatsApp number isn't
- * flagged/blocked for bulk messaging. Launched as a detached background
- * process (see WhatsappCampaignService::launch()) so the admin UI stays
- * responsive while the campaign runs — mirrors how WhatsappLinkService
- * spawns the linking CLI.
+ * flagged/blocked for bulk messaging. Dispatched onto the queue (see
+ * WhatsappCampaignService::launch()) so the admin UI stays responsive
+ * while the campaign runs.
+ *
+ * Runs as a queued job, not an interactive console command, so $this->info()
+ * etc. never reach anyone — every meaningful step is also logged via Log::
+ * so progress/failures are visible in storage/logs without shell access.
  */
 class SendWhatsappCampaign extends Command
 {
@@ -26,7 +30,7 @@ class SendWhatsappCampaign extends Command
         $campaign = WhatsappCampaign::find((int) $this->argument('campaign'));
 
         if (! $campaign) {
-            $this->error('Campaign not found.');
+            Log::warning('WhatsApp campaign send: campaign not found', ['campaign_id' => $this->argument('campaign')]);
             return self::FAILURE;
         }
 
@@ -39,13 +43,13 @@ class SendWhatsappCampaign extends Command
             ->where('status', WhatsappCampaignRecipient::STATUS_PENDING)
             ->get();
 
-        $this->info("Sending campaign #{$campaign->id} to {$recipients->count()} recipient(s)...");
+        Log::info('WhatsApp campaign send started', ['campaign_id' => $campaign->id, 'recipient_count' => $recipients->count()]);
 
         foreach ($recipients as $index => $recipient) {
             // Re-check status each iteration in case the campaign was cancelled mid-run.
             $campaign->refresh();
             if ($campaign->status === WhatsappCampaign::STATUS_CANCELLED) {
-                $this->warn('Campaign cancelled — stopping.');
+                Log::info('WhatsApp campaign cancelled mid-run', ['campaign_id' => $campaign->id]);
                 break;
             }
 
@@ -58,7 +62,11 @@ class SendWhatsappCampaign extends Command
 
             $campaign->increment($ok ? 'sent_count' : 'failed_count');
 
-            $this->line(($ok ? '✓ sent' : '✗ failed') . " to {$recipient->name} ({$recipient->phone})");
+            Log::info('WhatsApp campaign recipient processed', [
+                'campaign_id' => $campaign->id,
+                'recipient_id' => $recipient->id,
+                'ok' => $ok,
+            ]);
 
             $isLast = $index === $recipients->count() - 1;
             if (! $isLast) {
@@ -74,7 +82,7 @@ class SendWhatsappCampaign extends Command
             'completed_at' => now(),
         ]);
 
-        $this->info('Campaign finished.');
+        Log::info('WhatsApp campaign send finished', ['campaign_id' => $campaign->id]);
 
         return self::SUCCESS;
     }

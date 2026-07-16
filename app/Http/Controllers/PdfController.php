@@ -34,6 +34,17 @@ class PdfController extends Controller
         ]);
     }
 
+    /** Same export as certificateImage(), scoped to the student's own certificates. */
+    public function studentCertificateImage(Request $request, Certificate $certificate): ViewContract
+    {
+        $student = Auth::guard('student')->user();
+        abort_unless($student && $certificate->student_id === $student->id, 403);
+
+        return View::make('pdf.certificate-image', [
+            'payload' => CertificateService::imagePayload($certificate),
+        ]);
+    }
+
     /**
      * Printable receipt for a single registration. mPDF is used because
      * dompdf does not shape Arabic glyphs / RTL correctly.

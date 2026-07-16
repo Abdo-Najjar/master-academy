@@ -142,6 +142,7 @@ class TrainerDashboard extends Component
 
     public function openAttendance(int $sectionId): void
     {
+        $this->activeTab = 'attendance';
         $this->attendanceSectionId = $sectionId;
         $this->loadAttendance();
     }
@@ -226,6 +227,7 @@ class TrainerDashboard extends Component
 
     public function openMaterials(int $sectionId): void
     {
+        $this->activeTab = 'materials';
         $this->materialsSectionId = $sectionId;
     }
 

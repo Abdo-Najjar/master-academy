@@ -55,7 +55,7 @@ class RecipientsRelationManager extends RelationManager
                         WhatsappCampaignRecipient::STATUS_FAILED => __('Failed'),
                     ]),
             ])
-            ->poll('10s')
+            ->poll('5s')
             ->defaultSort('id')
             ->emptyStateHeading(__('No records found'));
     }

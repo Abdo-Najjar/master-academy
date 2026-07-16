@@ -143,24 +143,27 @@
     @if ($status === \App\Models\WhatsappSession::STATUS_READY)
         {{-- Quick send test --}}
         <div class="wa-card" style="margin-top:1.5rem;">
-            <h3 style="font-weight:600;margin-bottom:1rem;">{{ __('Send Test Message') }}</h3>
-            <form wire:submit.prevent="sendTest" style="display:flex;flex-direction:column;gap:.75rem;">
+            <h3 style="font-weight:600;font-size:1.05rem;margin-bottom:.25rem;">{{ __('Send Test Message') }}</h3>
+            <p class="wa-tip" style="margin-bottom:1.25rem;">{{ __('Send a one-off message to confirm the connection works end to end.') }}</p>
+            <form wire:submit.prevent="sendTest" style="display:flex;flex-direction:column;gap:1.1rem;">
                 <div>
-                    <label style="font-size:.875rem;font-weight:500;">{{ __('Phone Number') }}</label>
-                    <input wire:model="testPhone" type="text" placeholder="05XXXXXXXX"
-                           class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm dark:bg-gray-800">
+                    <label style="display:block;font-size:.875rem;font-weight:600;margin-bottom:.375rem;">{{ __('Phone Number') }}</label>
+                    <input wire:model="testPhone" type="text" placeholder="05XXXXXXXX" dir="ltr"
+                           class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3.5 py-2.5 text-sm dark:bg-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition">
+                    @error('testPhone') <p style="color:#dc2626;font-size:.8rem;margin-top:.375rem;">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label style="font-size:.875rem;font-weight:500;">{{ __('Message') }}</label>
+                    <label style="display:block;font-size:.875rem;font-weight:600;margin-bottom:.375rem;">{{ __('Message') }}</label>
                     <textarea wire:model="testMessage" rows="3" placeholder="{{ __('Test message from Manba center…') }}"
-                              class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm dark:bg-gray-800"></textarea>
+                              class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3.5 py-2.5 text-sm dark:bg-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"></textarea>
+                    @error('testMessage') <p style="color:#dc2626;font-size:.8rem;margin-top:.375rem;">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <button type="submit"
-                            class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium"
-                            wire:loading.attr="disabled">
-                        <span wire:loading.remove>{{ __('Send') }}</span>
-                        <span wire:loading>{{ __('Sending…') }}</span>
+                            class="px-5 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition disabled:opacity-60"
+                            wire:loading.attr="disabled" wire:target="sendTest">
+                        <span wire:loading.remove wire:target="sendTest">{{ __('Send') }}</span>
+                        <span wire:loading wire:target="sendTest">{{ __('Sending…') }}</span>
                     </button>
                 </div>
             </form>

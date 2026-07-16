@@ -86,3 +86,20 @@ it('processes a campaign end to end via the send command, throttled between send
         ->and($campaign->sent_count + $campaign->failed_count)->toBe(2)
         ->and($campaign->recipients()->where('status', WhatsappCampaignRecipient::STATUS_PENDING)->count())->toBe(0);
 });
+
+it('flips the campaign status to running immediately when launched, before the background process runs', function () {
+    $group = StudentGroup::create(['name' => 'مجموعة تشغيل فوري']);
+    $group->students()->attach([$this->student1->id]);
+
+    $campaign = WhatsappCampaign::create([
+        'name' => 'حملة تشغيل فوري',
+        'message' => 'رسالة',
+        'student_group_id' => $group->id,
+    ]);
+
+    Livewire::test(ListWhatsappCampaigns::class)
+        ->callTableAction('launch', record: $campaign);
+
+    expect($campaign->fresh()->status)->toBe(WhatsappCampaign::STATUS_RUNNING)
+        ->and($campaign->fresh()->started_at)->not->toBeNull();
+});

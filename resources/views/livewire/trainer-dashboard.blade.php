@@ -26,7 +26,7 @@
                 </div>
             </div>
             <nav class="p-4 space-y-1">
-                @foreach (['sections' => __('My Sections'), 'attendance' => __('Attendance'), 'assignments' => __('Assignments'), 'transactions' => __('Transactions'), 'complaints' => __('Complaints'), 'profile' => __('Edit Profile')] as $tab => $label)
+                @foreach (['sections' => __('My Sections'), 'attendance' => __('Attendance'), 'assignments' => __('Assignments'), 'transactions' => __('Transactions'), 'complaints' => __('Complaints'), 'login_activities' => __('Login History'), 'profile' => __('Edit Profile')] as $tab => $label)
                     <button wire:click="setActiveTab('{{ $tab }}')" @click="sidebarOpen = false"
                             class="w-full text-start px-4 py-2.5 rounded-lg transition {{ $activeTab === $tab ? 'bg-emerald-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700' }}">
                         {{ $label }}
@@ -238,8 +238,8 @@
 
                         <div>
                             <label class="block text-sm font-medium mb-1">{{ __('Due Date') }}</label>
-                            <input wire:model="newAssignmentDueDate" type="datetime-local"
-                                   class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                            <x-date-input time="true" wire:model="newAssignmentDueDate"
+                                   class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700" />
                             @error('newAssignmentDueDate') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                         </div>
 
@@ -372,8 +372,8 @@
                 </div>
             @endif
 
-            @if ($activeTab === 'profile')
-                <div class="mb-6 p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+            @if ($activeTab === 'login_activities')
+                <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                     <h3 class="text-lg font-semibold mb-1">{{ __('Recent Logins') }}</h3>
                     <p class="text-xs text-gray-500 mb-4">{{ __('Your last :count sign-in events.', ['count' => $loginActivities->count()]) }}</p>
                     @if ($loginActivities->isEmpty())
@@ -405,6 +405,9 @@
                         </div>
                     @endif
                 </div>
+            @endif
+
+            @if ($activeTab === 'profile')
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold mb-4">{{ __('Profile Picture') }}</h3>
