@@ -62,7 +62,7 @@
 
     <div class="mp-wrap">
         <div class="mp-hero">
-            <img src="{{ \App\Support\AppBranding::logoUrl() }}" alt="{{ __('Logo') }}" class="mp-logo" onerror="this.style.display='none'">
+            <img src="{{ \App\Support\AppBranding::logoUrl('dark') }}" alt="{{ __('Logo') }}" class="mp-logo" onerror="this.style.display='none'">
             <h1 class="mp-title">منبع التميز</h1>
             <div class="mp-sub-line"></div>
         </div>

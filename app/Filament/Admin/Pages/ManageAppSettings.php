@@ -5,7 +5,6 @@ namespace App\Filament\Admin\Pages;
 use App\Settings\AppSettings;
 use BackedEnum;
 use Filament\Forms\Components\ColorPicker;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -17,7 +16,6 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
 
 class ManageAppSettings extends Page implements HasForms
 {
@@ -69,7 +67,6 @@ class ManageAppSettings extends Page implements HasForms
 
         $this->form->fill([
             'app_name' => $settings->app_name,
-            'logo_path' => $settings->logo_path,
             'primary_color' => $settings->primary_color,
             'secondary_color' => $settings->secondary_color,
             'enable_absence_alerts' => $settings->enable_absence_alerts,
@@ -91,17 +88,6 @@ class ManageAppSettings extends Page implements HasForms
                             ->label(__('App Name'))
                             ->required()
                             ->maxLength(255)
-                            ->columnSpanFull(),
-
-                        FileUpload::make('logo_path')
-                            ->label(__('Logo'))
-                            ->image()
-                            ->imageEditor()
-                            ->disk('public')
-                            ->directory('settings')
-                            ->visibility('public')
-                            ->maxSize(2048)
-                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'])
                             ->columnSpanFull(),
 
                         ColorPicker::make('primary_color')
@@ -165,17 +151,7 @@ class ManageAppSettings extends Page implements HasForms
 
         $settings = app(AppSettings::class);
 
-        // Delete old logo if replaced
-        if (
-            isset($data['logo_path'])
-            && $data['logo_path'] !== $settings->logo_path
-            && $settings->logo_path
-        ) {
-            Storage::disk('public')->delete($settings->logo_path);
-        }
-
         $settings->app_name = $data['app_name'];
-        $settings->logo_path = $data['logo_path'] ?? null;
         $settings->primary_color = $data['primary_color'];
         $settings->secondary_color = $data['secondary_color'];
         $settings->enable_absence_alerts = (bool) ($data['enable_absence_alerts'] ?? false);

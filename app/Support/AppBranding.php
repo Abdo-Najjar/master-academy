@@ -4,7 +4,6 @@ namespace App\Support;
 
 use App\Settings\AppSettings;
 use Filament\Support\Colors\Color;
-use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 class AppBranding
@@ -19,29 +18,36 @@ class AppBranding
 
             return [
                 'app_name' => $settings->app_name,
-                'logo_path' => $settings->logo_path,
                 'primary_color' => $settings->primary_color,
                 'secondary_color' => $settings->secondary_color,
             ];
         } catch (Throwable) {
             return [
                 'app_name' => config('app.name', 'منبع التميز'),
-                'logo_path' => null,
                 'primary_color' => '#dc2626',
                 'secondary_color' => '#f59e0b',
             ];
         }
     }
 
-    public static function logoUrl(): string
+    /**
+     * Static per-theme logo, generated once and stored in public/images/{light,dark}.
+     */
+    public static function logoUrl(string $theme = 'light'): string
     {
-        $logo = self::settings()['logo_path'];
+        $theme = $theme === 'dark' ? 'dark' : 'light';
 
-        if ($logo && Storage::disk('public')->exists($logo)) {
-            return Storage::disk('public')->url($logo);
-        }
+        return asset("images/{$theme}/android-chrome-512x512.png");
+    }
 
-        return asset('logo/logo.png');
+    /**
+     * Static per-theme favicon, generated once and stored in public/images/{light,dark}.
+     */
+    public static function faviconUrl(string $theme = 'light'): string
+    {
+        $theme = $theme === 'dark' ? 'dark' : 'light';
+
+        return asset("images/{$theme}/favicon.ico");
     }
 
     public static function appName(): string

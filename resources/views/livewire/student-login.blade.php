@@ -5,7 +5,7 @@
     <span class="pa-blob pa-blob--2"></span>
 
     <div class="pa-card">
-        <img src="{{ \App\Support\AppBranding::logoUrl() }}" alt="" class="pa-logo" onerror="this.style.display='none'">
+        <img src="{{ \App\Support\AppBranding::logoUrl('dark') }}" alt="" class="pa-logo" onerror="this.style.display='none'">
 
         <div class="pa-icon">
             <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">

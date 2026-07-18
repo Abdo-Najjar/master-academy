@@ -99,13 +99,11 @@ class PdfController extends Controller
             ?: (is_array($student->name) ? reset($student->name) : $student->name);
 
         // Embed the center logo as a data URI for reliable mPDF rendering.
+        // The card header is dark navy, so the light-on-dark logo variant is used.
         $logo = null;
-        $logoSetting = \App\Support\AppBranding::settings()['logo_path'] ?? null;
-        $logoFile = $logoSetting && \Illuminate\Support\Facades\Storage::disk('public')->exists($logoSetting)
-            ? \Illuminate\Support\Facades\Storage::disk('public')->path($logoSetting)
-            : public_path('logo/logo.png');
+        $logoFile = public_path('images/dark/android-chrome-512x512.png');
         if (is_file($logoFile)) {
-            $mime = str_ends_with(strtolower($logoFile), '.svg') ? 'image/svg+xml' : (mime_content_type($logoFile) ?: 'image/png');
+            $mime = mime_content_type($logoFile) ?: 'image/png';
             $logo = 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($logoFile));
         }
 
