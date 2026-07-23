@@ -28,7 +28,7 @@ class SectionForm
                             ->required()
                             ->maxLength(255),
                         Select::make('subject_id')
-                            ->label(__('Subject'))
+                            ->label(__('Course'))
                             ->relationship('subject', 'name')
                             ->searchable()
                             ->preload()

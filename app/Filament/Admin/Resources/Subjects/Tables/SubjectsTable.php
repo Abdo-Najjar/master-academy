@@ -32,6 +32,7 @@ class SubjectsTable
                     ->searchable()
                     ->sortable(),
                 ColorColumn::make('color')->label(__('Color')),
+                TextColumn::make('courseType.name')->label(__('Course Type'))->badge()->placeholder('—'),
                 TextColumn::make('trainers_count')->counts('trainers')->label(__('Trainers')),
                 TextColumn::make('sections_count')->counts('sections')->label(__('Sections')),
                 TextColumn::make('sort_order')->label(__('Sort Order'))->sortable(),

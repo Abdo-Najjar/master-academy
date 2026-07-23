@@ -15,7 +15,7 @@ class SubjectsRelationManager extends RelationManager
 {
     public static function getTitle(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): string
     {
-        return __('Subjects');
+        return __('Courses');
     }
 
     protected static string $relationship = 'subjects';

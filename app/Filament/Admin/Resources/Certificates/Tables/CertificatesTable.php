@@ -30,7 +30,7 @@ class CertificatesTable
                 TextColumn::make('serial_number')->label(__('Serial'))->searchable()->sortable(),
                 TextColumn::make('student.name')->label(__('Student'))->searchable(),
                 TextColumn::make('section.name')->label(__('Section'))->searchable()->placeholder('—'),
-                TextColumn::make('section.subject.name')->label(__('Subject'))->placeholder('—'),
+                TextColumn::make('section.subject.name')->label(__('Course'))->placeholder('—'),
                 TextColumn::make('template.name')->label(__('Template')),
                 TextColumn::make('issued_at')->label(__('Issued'))->dateTime()->sortable(),
                 TextColumn::make('issuedBy.name')->label(__('Issued By'))->placeholder('—'),

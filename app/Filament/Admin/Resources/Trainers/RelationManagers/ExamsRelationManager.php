@@ -49,7 +49,7 @@ class ExamsRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('name')->label(__('Exam Name'))->searchable()->sortable(),
                 TextColumn::make('section.name')->label(__('Section'))->searchable(),
-                TextColumn::make('section.subject.name')->label(__('Subject'))->toggleable(),
+                TextColumn::make('section.subject.name')->label(__('Course'))->toggleable(),
                 TextColumn::make('date')->label(__('Date'))->date()->sortable(),
                 TextColumn::make('max_score')->label(__('Max Score')),
                 TextColumn::make('grades_count')->counts('grades')->label(__('Graded')),

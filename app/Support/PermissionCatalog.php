@@ -41,6 +41,12 @@ class PermissionCatalog
                 'subject.update' => __('Update'),
                 'subject.delete' => __('Delete'),
             ],
+            'course_type' => [
+                'course_type.index' => __('View'),
+                'course_type.create' => __('Create'),
+                'course_type.update' => __('Update'),
+                'course_type.delete' => __('Delete'),
+            ],
             'section' => [
                 'section.index' => __('View'),
                 'section.create' => __('Create'),
@@ -179,7 +185,8 @@ class PermissionCatalog
             'employee' => __('Employees'),
             'student' => __('Students'),
             'trainer' => __('Trainers'),
-            'subject' => __('Subjects'),
+            'subject' => __('Courses'),
+            'course_type' => __('Course Types'),
             'section' => __('Sections'),
             'registration' => __('Registrations'),
             'attendance' => __('Attendance'),

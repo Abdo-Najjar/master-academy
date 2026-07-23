@@ -33,7 +33,7 @@ class TrainerInfolist
                             ->formatStateUsing(fn ($state) => number_format((float) $state, 2).' ₪')
                             ->color(fn ($state) => ((float) $state) < 0 ? 'danger' : 'success'),
                         TextEntry::make('subjects_badges')
-                            ->label(__('Subjects'))
+                            ->label(__('Courses'))
                             ->state(fn (Trainer $record): string => $record->subjects
                                 ->map(function ($subject): string {
                                     $hex = ltrim((string) ($subject->color ?: '#6b7280'), '#');

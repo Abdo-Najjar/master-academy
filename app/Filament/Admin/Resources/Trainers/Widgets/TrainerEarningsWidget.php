@@ -30,7 +30,7 @@ class TrainerEarningsWidget extends BaseWidget
                     ->label(__('Section'))
                     ->searchable(),
                 TextColumn::make('section.subject.name')
-                    ->label(__('Subject')),
+                    ->label(__('Course')),
                 TextColumn::make('amount_paid')
                     ->label(__('Student Paid'))
                     ->money('ILS', decimalPlaces: 0)

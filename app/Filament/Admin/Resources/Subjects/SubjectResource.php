@@ -35,12 +35,12 @@ class SubjectResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return __('Subject');
+        return __('Course');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return __('Subjects');
+        return __('Courses');
     }
 
     public static function canAccess(): bool

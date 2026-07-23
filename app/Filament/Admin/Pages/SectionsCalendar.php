@@ -68,7 +68,7 @@ class SectionsCalendar extends Page implements HasForms
                 FormSection::make('')
                     ->schema([
                         Select::make('subject_id')
-                            ->label(__('Subject'))
+                            ->label(__('Course'))
                             ->options(fn () => Subject::query()->get()
                                 ->mapWithKeys(fn (Subject $s) => [$s->id => $s->getTranslation('name', app()->getLocale(), false)]))
                             ->searchable()

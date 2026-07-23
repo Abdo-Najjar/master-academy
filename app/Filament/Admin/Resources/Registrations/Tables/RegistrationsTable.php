@@ -28,7 +28,7 @@ class RegistrationsTable
                 TextColumn::make('student.name')->label(__('Student'))->searchable()->sortable(),
                 TextColumn::make('section.name')->label(__('Section'))->searchable()->sortable(),
                 TextColumn::make('section.subject.name')
-                    ->label(__('Subject'))
+                    ->label(__('Course'))
                     ->badge()
                     ->color(fn ($record) => $record->section?->subject?->color ? \Filament\Support\Colors\Color::hex($record->section->subject->color) : 'gray')
                     ->toggleable(),

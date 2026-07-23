@@ -10,7 +10,8 @@ function applyTheme(theme) {
     document.documentElement.dataset.theme = theme;
 
     document.querySelectorAll('[data-theme-asset]').forEach((el) => {
-        el.href = el.href.replace(/\/images\/(light|dark)\//, `/images/${theme}/`);
+        const attr = el.hasAttribute('src') ? 'src' : 'href';
+        el[attr] = el[attr].replace(/\/images\/(light|dark)\//, `/images/${theme}/`);
     });
 }
 

@@ -35,7 +35,7 @@ class TrainersTable
                 TextColumn::make('email')->label(__('Email'))->searchable()->toggleable(),
                 TextColumn::make('phone_number')->label(__('Phone'))->searchable(),
                 TextColumn::make('default_rate')->label(__('Default Rate'))->formatStateUsing(fn ($state) => $state === null ? null : rtrim(rtrim(number_format((float) $state, 2, '.', ''), '0'), '.').' %')->sortable(),
-                TextColumn::make('subjects_count')->counts('subjects')->label(__('Subjects')),
+                TextColumn::make('subjects_count')->counts('subjects')->label(__('Courses')),
                 TextColumn::make('sections_count')->counts('sections')->label(__('Sections')),
                 TextColumn::make('balanceFloat')->label(__('Wallet Balance'))->money('ILS', decimalPlaces: 0)->getStateUsing(fn ($record) => $record->balanceFloat),
                 IconColumn::make('is_active')->label(__('Active'))->boolean()->sortable(),

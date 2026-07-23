@@ -22,7 +22,7 @@ class AssignmentsTable
                 TextColumn::make('id')->label('#')->sortable(),
                 TextColumn::make('title')->label(__('Title'))->searchable()->sortable(),
                 TextColumn::make('section.name')->label(__('Section'))->searchable()->sortable(),
-                TextColumn::make('section.subject.name')->label(__('Subject'))->toggleable(),
+                TextColumn::make('section.subject.name')->label(__('Course'))->toggleable(),
                 TextColumn::make('trainer.name')->label(__('Trainer'))->searchable()->toggleable(),
                 TextColumn::make('due_date')->label(__('Due Date'))->dateTime()->sortable(),
                 TextColumn::make('max_points')->label(__('Max Points'))->sortable(),

@@ -17,7 +17,7 @@ class AssignmentInfolist
                     ->schema([
                         TextEntry::make('title')->label(__('Title'))->columnSpanFull(),
                         TextEntry::make('section.name')->label(__('Section'))->placeholder('—'),
-                        TextEntry::make('section.subject.name')->label(__('Subject'))->placeholder('—'),
+                        TextEntry::make('section.subject.name')->label(__('Course'))->placeholder('—'),
                         TextEntry::make('trainer.name')->label(__('Trainer'))->placeholder('—'),
                         TextEntry::make('due_date')->label(__('Due Date'))->dateTime()->placeholder('—'),
                         TextEntry::make('max_points')->label(__('Max Points'))->placeholder('—'),

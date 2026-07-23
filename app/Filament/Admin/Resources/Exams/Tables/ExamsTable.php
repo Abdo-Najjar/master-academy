@@ -25,7 +25,7 @@ class ExamsTable
                 TextColumn::make('id')->label('#')->sortable(),
                 TextColumn::make('name')->label(__('Exam Name'))->searchable()->sortable(),
                 TextColumn::make('section.name')->label(__('Section'))->searchable()->sortable(),
-                TextColumn::make('section.subject.name')->label(__('Subject'))->toggleable(),
+                TextColumn::make('section.subject.name')->label(__('Course'))->toggleable(),
                 TextColumn::make('section.trainer.name')->label(__('Trainer'))->searchable()->toggleable(),
                 TextColumn::make('date')->label(__('Date'))->date()->sortable(),
                 TextColumn::make('max_score')->label(__('Max Score'))->sortable(),

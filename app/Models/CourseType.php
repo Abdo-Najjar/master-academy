@@ -5,18 +5,16 @@ namespace App\Models;
 use App\Models\Concerns\AutoTranslatesMissing;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Translatable\HasTranslations;
 
-class Subject extends Model
+class CourseType extends Model
 {
     use AutoTranslatesMissing, HasFactory, HasTranslations, SoftDeletes;
 
     /** @var list<string> */
-    protected $fillable = ['name', 'color', 'sort_order', 'course_type_id'];
+    protected $fillable = ['name', 'color', 'sort_order'];
 
     /** @var list<string> */
     public array $translatable = ['name'];
@@ -29,18 +27,8 @@ class Subject extends Model
         ];
     }
 
-    public function courseType(): BelongsTo
+    public function subjects(): HasMany
     {
-        return $this->belongsTo(CourseType::class);
-    }
-
-    public function trainers(): BelongsToMany
-    {
-        return $this->belongsToMany(Trainer::class, 'subject_trainer')->withTimestamps();
-    }
-
-    public function sections(): HasMany
-    {
-        return $this->hasMany(Section::class);
+        return $this->hasMany(Subject::class);
     }
 }

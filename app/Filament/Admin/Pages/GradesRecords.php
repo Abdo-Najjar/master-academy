@@ -73,7 +73,7 @@ class GradesRecords extends Page implements HasTable
                     ->label(__('Section'))
                     ->state(fn (ExamGrade $record): string => self::translated($record->exam?->section?->name)),
                 TextColumn::make('exam.section.subject.name')
-                    ->label(__('Subject'))
+                    ->label(__('Course'))
                     ->state(fn (ExamGrade $record): string => self::translated($record->exam?->section?->subject?->name)),
                 TextColumn::make('exam.section.trainer.name')
                     ->label(__('Trainer'))
@@ -157,7 +157,7 @@ class GradesRecords extends Page implements HasTable
                 __('Student Number'),
                 __('Exam'),
                 __('Section'),
-                __('Subject'),
+                __('Course'),
                 __('Trainer'),
                 __('Date'),
                 __('Score'),

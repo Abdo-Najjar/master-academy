@@ -17,11 +17,12 @@ class SubjectInfolist
                 Section::make('')
                     ->schema([
                         TextEntry::make('name')
-                            ->label(__('Subject'))
+                            ->label(__('Course'))
                             ->badge()
                             ->color(fn (Subject $record) => $record->color ? \Filament\Support\Colors\Color::hex($record->color) : 'gray')
                             ->columnSpanFull(),
                         ColorEntry::make('color')->label(__('Color'))->placeholder('—'),
+                        TextEntry::make('courseType.name')->label(__('Course Type'))->placeholder('—'),
                         TextEntry::make('sort_order')->label(__('Sort Order'))->numeric(),
                         TextEntry::make('created_at')->label(__('Created'))->dateTime()->placeholder('—'),
                         TextEntry::make('deleted_at')

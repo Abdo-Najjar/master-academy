@@ -2,15 +2,28 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
 
-        .mp-root { --mp-bg1: #0b1023; --mp-bg2: #131b3a; --mp-text: #eef1fb; --mp-muted: #9aa6cc; }
+        .mp-root {
+            --mp-bg1: #eef2ff; --mp-bg2: #f8fafc; --mp-bg3: #eef2f7;
+            --mp-text: #0f172a; --mp-muted: #64748b; --mp-footer: #64748b;
+            --mp-card-bg: rgba(255, 255, 255, .65); --mp-card-bg-hover: rgba(255, 255, 255, .9); --mp-card-border: rgba(15, 23, 42, .08);
+            --mp-blob-opacity: .16; --mp-blob-opacity-3: .10;
+            --mp-title-c1: #0f172a; --mp-title-c2: #2563eb; --mp-title-c3: #0d9488;
+        }
+        html.dark .mp-root {
+            --mp-bg1: #0b1023; --mp-bg2: #131b3a; --mp-bg3: #0e2433;
+            --mp-text: #eef1fb; --mp-muted: #9aa6cc; --mp-footer: #7484b3;
+            --mp-card-bg: rgba(255, 255, 255, .055); --mp-card-bg-hover: rgba(255, 255, 255, .085); --mp-card-border: rgba(255, 255, 255, .09);
+            --mp-blob-opacity: .35; --mp-blob-opacity-3: .22;
+            --mp-title-c1: #ffffff; --mp-title-c2: #93c5fd; --mp-title-c3: #5eead4;
+        }
         .mp-root * { box-sizing: border-box; }
-        .mp-root { font-family: 'Tajawal', ui-sans-serif, system-ui, sans-serif; min-height: 100vh; position: relative; overflow: hidden; background: linear-gradient(160deg, var(--mp-bg1) 0%, var(--mp-bg2) 55%, #0e2433 100%); color: var(--mp-text); display: flex; flex-direction: column; }
+        .mp-root { font-family: 'Tajawal', ui-sans-serif, system-ui, sans-serif; min-height: 100vh; position: relative; overflow: hidden; background: linear-gradient(160deg, var(--mp-bg1) 0%, var(--mp-bg2) 55%, var(--mp-bg3) 100%); color: var(--mp-text); display: flex; flex-direction: column; transition: background .3s ease, color .3s ease; }
 
         /* Animated background blobs */
-        .mp-blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .35; pointer-events: none; animation: mp-float 14s ease-in-out infinite alternate; }
+        .mp-blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: var(--mp-blob-opacity); pointer-events: none; animation: mp-float 14s ease-in-out infinite alternate; }
         .mp-blob--1 { width: 480px; height: 480px; background: #2563eb; top: -160px; inset-inline-start: -120px; }
         .mp-blob--2 { width: 420px; height: 420px; background: #0d9488; bottom: -140px; inset-inline-end: -100px; animation-delay: -5s; }
-        .mp-blob--3 { width: 300px; height: 300px; background: #7c3aed; top: 40%; inset-inline-start: 55%; opacity: .22; animation-delay: -9s; }
+        .mp-blob--3 { width: 300px; height: 300px; background: #7c3aed; top: 40%; inset-inline-start: 55%; opacity: var(--mp-blob-opacity-3); animation-delay: -9s; }
         @keyframes mp-float { from { transform: translateY(0) scale(1); } to { transform: translateY(50px) scale(1.12); } }
 
         .mp-wrap { position: relative; z-index: 1; width: 100%; max-width: 1180px; margin: 0 auto; padding: 48px 24px 32px; flex: 1; display: flex; flex-direction: column; justify-content: center; }
@@ -18,16 +31,16 @@
         /* Hero */
         .mp-hero { text-align: center; margin-bottom: 48px; }
         .mp-logo { height: 132px; width: auto; margin: 0 auto 18px; display: block; filter: drop-shadow(0 8px 28px rgba(37, 99, 235, .45)); }
-        .mp-title { font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 900; margin: 0 0 10px; background: linear-gradient(92deg, #ffffff 20%, #93c5fd 60%, #5eead4 100%); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -.5px; }
+        .mp-title { font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 900; margin: 0 0 10px; background: linear-gradient(92deg, var(--mp-title-c1) 20%, var(--mp-title-c2) 60%, var(--mp-title-c3) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -.5px; }
         .mp-sub { font-size: clamp(1rem, 2vw, 1.25rem); color: var(--mp-muted); margin: 0; font-weight: 500; }
         .mp-sub-line { width: 90px; height: 4px; border-radius: 999px; margin: 22px auto 0; background: linear-gradient(90deg, #2563eb, #14b8a6); }
 
         /* Cards grid */
         .mp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 22px; }
 
-        .mp-card { --mp-a1: #3b82f6; --mp-a2: #1d4ed8; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 38px 26px 30px; border-radius: 22px; text-decoration: none; color: var(--mp-text); background: rgba(255, 255, 255, .055); border: 1px solid rgba(255, 255, 255, .09); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease, background .3s ease; overflow: hidden; }
+        .mp-card { --mp-a1: #3b82f6; --mp-a2: #1d4ed8; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 38px 26px 30px; border-radius: 22px; text-decoration: none; color: var(--mp-text); background: var(--mp-card-bg); border: 1px solid var(--mp-card-border); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease, background .3s ease; overflow: hidden; }
         .mp-card::before { content: ''; position: absolute; inset: 0 0 auto; height: 4px; background: linear-gradient(90deg, var(--mp-a1), var(--mp-a2)); opacity: .85; }
-        .mp-card:hover { transform: translateY(-8px); background: rgba(255, 255, 255, .085); border-color: color-mix(in srgb, var(--mp-a1) 55%, transparent); box-shadow: 0 22px 50px -16px color-mix(in srgb, var(--mp-a1) 55%, transparent); }
+        .mp-card:hover { transform: translateY(-8px); background: var(--mp-card-bg-hover); border-color: color-mix(in srgb, var(--mp-a1) 55%, transparent); box-shadow: 0 22px 50px -16px color-mix(in srgb, var(--mp-a1) 55%, transparent); }
 
         .mp-icon { width: 78px; height: 78px; border-radius: 22px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; background: linear-gradient(135deg, var(--mp-a1), var(--mp-a2)); box-shadow: 0 12px 28px -8px color-mix(in srgb, var(--mp-a1) 70%, transparent); transition: transform .3s ease; }
         .mp-card:hover .mp-icon { transform: scale(1.1) rotate(-4deg); }
@@ -47,7 +60,7 @@
         .mp-card--trainers { --mp-a1: #10b981; --mp-a2: #047857; }
         .mp-card--students { --mp-a1: #8b5cf6; --mp-a2: #6d28d9; }
 
-        .mp-footer { position: relative; z-index: 1; text-align: center; padding: 18px 0 26px; color: #7484b3; font-size: .85rem; font-weight: 500; }
+        .mp-footer { position: relative; z-index: 1; text-align: center; padding: 18px 0 26px; color: var(--mp-footer); font-size: .85rem; font-weight: 500; }
 
         @media (max-width: 640px) {
             .mp-wrap { padding-top: 36px; }
@@ -62,7 +75,7 @@
 
     <div class="mp-wrap">
         <div class="mp-hero">
-            <img src="{{ \App\Support\AppBranding::logoUrl('dark') }}" alt="{{ __('Logo') }}" class="mp-logo" onerror="this.style.display='none'">
+            <img src="{{ \App\Support\AppBranding::logoUrl('light') }}" alt="{{ __('Logo') }}" class="mp-logo" data-theme-asset onerror="this.style.display='none'">
             <h1 class="mp-title">منبع التميز</h1>
             <div class="mp-sub-line"></div>
         </div>

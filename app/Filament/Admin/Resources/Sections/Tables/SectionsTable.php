@@ -24,7 +24,7 @@ class SectionsTable
                 TextColumn::make('id')->label('#')->sortable(),
                 TextColumn::make('name')->label(__('Name'))->searchable()->sortable(),
                 TextColumn::make('subject.name')
-                    ->label(__('Subject'))
+                    ->label(__('Course'))
                     ->badge()
                     ->color(fn ($record) => $record->subject?->color ? \Filament\Support\Colors\Color::hex($record->subject->color) : 'gray')
                     ->searchable()
@@ -49,7 +49,7 @@ class SectionsTable
             ])
             ->filters([
                 SelectFilter::make('subject_id')
-                    ->label(__('Subject'))
+                    ->label(__('Course'))
                     ->relationship('subject', 'name')
                     ->searchable()
                     ->preload(),

@@ -17,7 +17,7 @@ class ExamInfolist
                     ->schema([
                         TextEntry::make('name')->label(__('Exam Name'))->columnSpanFull(),
                         TextEntry::make('section.name')->label(__('Section'))->placeholder('—'),
-                        TextEntry::make('section.subject.name')->label(__('Subject'))->placeholder('—'),
+                        TextEntry::make('section.subject.name')->label(__('Course'))->placeholder('—'),
                         TextEntry::make('section.trainer.name')->label(__('Trainer'))->placeholder('—'),
                         TextEntry::make('date')->label(__('Date'))->date()->placeholder('—'),
                         TextEntry::make('max_score')->label(__('Max Score'))->placeholder('—'),

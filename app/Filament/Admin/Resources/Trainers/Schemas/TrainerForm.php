@@ -105,7 +105,7 @@ class TrainerForm
                 Section::make('')
                     ->schema([
                         Select::make('subjects')
-                            ->label(__('Subjects'))
+                            ->label(__('Courses'))
                             ->multiple()
                             ->relationship('subjects', 'name')
                             ->searchable()

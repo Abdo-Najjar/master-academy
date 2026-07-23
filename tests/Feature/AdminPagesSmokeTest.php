@@ -19,6 +19,7 @@ $pages = [
     '/admin/trainers',
     '/admin/parents',
     '/admin/subjects',
+    '/admin/course-types',
     '/admin/sections',
     '/admin/rooms',
     '/admin/quick-enroll',

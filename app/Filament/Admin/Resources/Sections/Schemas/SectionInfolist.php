@@ -17,7 +17,7 @@ class SectionInfolist
                     ->schema([
                         TextEntry::make('name')->label(__('Section Name'))->columnSpanFull(),
                         TextEntry::make('subject.name')
-                            ->label(__('Subject'))
+                            ->label(__('Course'))
                             ->badge()
                             ->color(fn ($record) => $record->subject?->color ? \Filament\Support\Colors\Color::hex($record->subject->color) : 'gray')
                             ->placeholder('—'),
