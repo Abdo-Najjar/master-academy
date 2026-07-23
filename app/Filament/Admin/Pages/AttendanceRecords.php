@@ -16,7 +16,6 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Writer;
@@ -24,7 +23,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttendanceRecords extends Page implements HasTable
 {
-    use HasHexaLite, InteractsWithTable;
+    use InteractsWithTable;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
@@ -49,12 +48,7 @@ class AttendanceRecords extends Page implements HasTable
 
     public static function canAccess(): bool
     {
-        return hexa()->can('attendance.index');
-    }
-
-    public function roleName(): string
-    {
-        return __('Attendance Records');
+        return (auth()->user()?->can('attendance.index') ?? false);
     }
 
     /** @return array<string, string> */

@@ -16,7 +16,6 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Writer;
@@ -24,7 +23,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class GradesRecords extends Page implements HasTable
 {
-    use HasHexaLite, InteractsWithTable;
+    use InteractsWithTable;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 
@@ -49,12 +48,7 @@ class GradesRecords extends Page implements HasTable
 
     public static function canAccess(): bool
     {
-        return hexa()->can('exam.index');
-    }
-
-    public function roleName(): string
-    {
-        return __('All Grades');
+        return (auth()->user()?->can('exam.index') ?? false);
     }
 
     public function table(Table $table): Table

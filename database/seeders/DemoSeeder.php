@@ -242,9 +242,6 @@ class DemoSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'phone_number' => $this->phone(),
                 'whatsapp_number' => $this->phone(),
-                'parent_name' => $this->arName(),
-                'parent_phone' => $this->phone(),
-                'parent_whatsapp' => $this->phone(),
                 'governorate_id' => $gov->id,
                 'city_id' => optional($cities->where('governorate_id', $gov->id)->first())->id ?? $cities->random()->id,
             ]));

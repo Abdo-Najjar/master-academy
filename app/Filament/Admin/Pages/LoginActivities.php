@@ -11,11 +11,10 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 
 class LoginActivities extends Page implements HasTable
 {
-    use HasHexaLite, InteractsWithTable;
+    use InteractsWithTable;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShieldCheck;
 
@@ -40,19 +39,7 @@ class LoginActivities extends Page implements HasTable
 
     public static function canAccess(): bool
     {
-        return hexa()->can('login_activity.index');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'login_activity.index' => __('View Login Activities'),
-        ];
-    }
-
-    public function roleName(): string
-    {
-        return __('Login Activities');
+        return (auth()->user()?->can('login_activity.index') ?? false);
     }
 
     public function table(Table $table): Table

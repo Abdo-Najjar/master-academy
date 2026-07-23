@@ -16,12 +16,9 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 
 class AssignmentResource extends Resource
 {
-    use HasHexaLite;
-
     protected static ?string $model = Assignment::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCheck;
@@ -47,17 +44,7 @@ class AssignmentResource extends Resource
 
     public static function canAccess(): bool
     {
-        return hexa()->can('assignment.index');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'assignment.index' => __('View'),
-            'assignment.create' => __('Create'),
-            'assignment.update' => __('Update'),
-            'assignment.delete' => __('Delete'),
-        ];
+        return (auth()->user()?->can('assignment.index') ?? false);
     }
 
     public static function form(Schema $schema): Schema

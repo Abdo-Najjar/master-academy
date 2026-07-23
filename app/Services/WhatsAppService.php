@@ -91,7 +91,7 @@ class WhatsAppService
     }
 
     /**
-     * Build contact list for all students/parents in a section.
+     * Build contact list for all students in a section.
      *
      * @return array<array{name: string, phone: string, url: string, type: string}>
      */
@@ -116,16 +116,6 @@ class WhatsAppService
                     'phone' => $phone,
                     'url'   => self::buildUrl($phone, $message),
                     'type'  => 'student',
-                ];
-            }
-
-            if (filled($student->parent_whatsapp) || filled($student->parent_phone)) {
-                $phone = $student->parent_whatsapp ?: $student->parent_phone;
-                $contacts[] = [
-                    'name'  => ($student->parent_name ?: __('Parent')) . ' (ولي أمر ' . $name . ')',
-                    'phone' => $phone,
-                    'url'   => self::buildUrl($phone, $message),
-                    'type'  => 'parent',
                 ];
             }
         }
@@ -157,7 +147,7 @@ class WhatsAppService
             ? ($student->name['ar'] ?? reset($student->name))
             : (string) $student->name;
 
-        return "💰 تذكير بالدفع\n\nعزيزنا ولي أمر الطالب/ة ({$name})\n\nنذكّركم بأن دفعة مجموعة ({$sectionName}) بقيمة (₪{$amount}) أصبحت مستحقة.\n\nيرجى التواصل مع الإدارة لإتمام الدفع.";
+        return "💰 تذكير بالدفع\n\nعزيزنا الطالب/ة ({$name})\n\nنذكّركم بأن دفعة مجموعة ({$sectionName}) بقيمة (₪{$amount}) أصبحت مستحقة.\n\nيرجى التواصل مع الإدارة لإتمام الدفع.";
     }
 
     public static function absenceMessage(Student $student, Section $section, string $date): string

@@ -16,6 +16,6 @@ class CreateAssignment extends CreateRecord
 
     public static function canAccess(array $parameters = []): bool
     {
-        return hexa()->can('assignment.create');
+        return (auth()->user()?->can('assignment.create') ?? false);
     }
 }

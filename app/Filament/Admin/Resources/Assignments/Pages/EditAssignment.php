@@ -17,13 +17,13 @@ class EditAssignment extends EditRecord
 
     public static function canAccess(array $parameters = []): bool
     {
-        return hexa()->can('assignment.update');
+        return (auth()->user()?->can('assignment.update') ?? false);
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make()->visible(fn () => hexa()->can('assignment.delete')),
+            DeleteAction::make()->visible(fn () => (auth()->user()?->can('assignment.delete') ?? false)),
         ];
     }
 }

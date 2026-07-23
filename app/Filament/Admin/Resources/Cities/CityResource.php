@@ -26,14 +26,11 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CityResource extends Resource
 {
-    use HasHexaLite;
-
     protected static ?string $model = City::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
@@ -59,17 +56,7 @@ class CityResource extends Resource
 
     public static function canAccess(): bool
     {
-        return hexa()->can('city.index');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'city.index' => __('View'),
-            'city.create' => __('Create'),
-            'city.update' => __('Update'),
-            'city.delete' => __('Delete'),
-        ];
+        return (auth()->user()?->can('city.index') ?? false);
     }
 
     public static function form(Schema $schema): Schema

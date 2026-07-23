@@ -25,14 +25,11 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class RoomResource extends Resource
 {
-    use HasHexaLite;
-
     protected static ?string $model = Room::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHomeModern;
@@ -58,17 +55,7 @@ class RoomResource extends Resource
 
     public static function canAccess(): bool
     {
-        return hexa()->can('room.index');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'room.index' => __('View'),
-            'room.create' => __('Create'),
-            'room.update' => __('Update'),
-            'room.delete' => __('Delete'),
-        ];
+        return (auth()->user()?->can('room.index') ?? false);
     }
 
     public static function form(Schema $schema): Schema

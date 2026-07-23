@@ -17,7 +17,7 @@ class ListAssignments extends ListRecords
     {
         return [
             $this->tableExportAction(),
-            CreateAction::make()->visible(fn () => hexa()->can('assignment.create')),
+            CreateAction::make()->visible(fn () => (auth()->user()?->can('assignment.create') ?? false)),
         ];
     }
 }

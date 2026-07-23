@@ -28,14 +28,11 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ExemptionTypeResource extends Resource
 {
-    use HasHexaLite;
-
     protected static ?string $model = ExemptionType::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptPercent;
@@ -61,17 +58,7 @@ class ExemptionTypeResource extends Resource
 
     public static function canAccess(): bool
     {
-        return hexa()->can('exemption_type.index');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'exemption_type.index' => __('View'),
-            'exemption_type.create' => __('Create'),
-            'exemption_type.update' => __('Update'),
-            'exemption_type.delete' => __('Delete'),
-        ];
+        return (auth()->user()?->can('exemption_type.index') ?? false);
     }
 
     public static function form(Schema $schema): Schema

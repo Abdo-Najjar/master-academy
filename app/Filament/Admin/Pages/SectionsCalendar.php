@@ -15,12 +15,11 @@ use Filament\Schemas\Components\Section as FormSection;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Support\Collection;
 
 class SectionsCalendar extends Page implements HasForms
 {
-    use HasHexaLite, InteractsWithForms;
+    use InteractsWithForms;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
 
@@ -49,12 +48,7 @@ class SectionsCalendar extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return hexa()->can('section.index');
-    }
-
-    public function roleName(): string
-    {
-        return __('Sections Calendar');
+        return (auth()->user()?->can('section.index') ?? false);
     }
 
     public function mount(): void

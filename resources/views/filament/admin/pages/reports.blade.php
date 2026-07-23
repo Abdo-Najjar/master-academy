@@ -173,7 +173,7 @@
                                 $sName = $reg->section?->getTranslation('name', app()->getLocale(), false);
                                 $sSubject = $reg->section?->subject?->getTranslation('name', app()->getLocale(), false);
                                 $studentName = is_array($student?->name) ? ($student->name[app()->getLocale()] ?? reset($student->name)) : $student?->name;
-                                $phone = preg_replace('/[^0-9]/', '', (string) ($student?->parent_whatsapp ?: $student?->parent_phone ?: $student?->whatsapp_number ?: $student?->phone_number));
+                                $phone = preg_replace('/[^0-9]/', '', (string) ($student?->whatsapp_number ?: $student?->phone_number));
                                 $waMsg = urlencode(__('Payment reminder for :name in :section', ['name' => $studentName, 'section' => $sName]));
                                 $waUrl = $phone ? "https://wa.me/{$phone}?text={$waMsg}" : null;
                             @endphp

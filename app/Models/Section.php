@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\AutoTranslatesMissing;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,7 +17,7 @@ use Spatie\Translatable\HasTranslations;
 
 class Section extends Model implements HasMedia
 {
-    use HasFactory, HasTranslations, InteractsWithMedia, LogsActivity, SoftDeletes;
+    use AutoTranslatesMissing, HasFactory, HasTranslations, InteractsWithMedia, LogsActivity, SoftDeletes;
 
     /** @var list<string> */
     protected $fillable = [

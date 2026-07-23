@@ -20,8 +20,6 @@ class AppSettings extends Settings
 
     public int $unpaid_attendance_alert_threshold;
 
-    public int $sibling_discount_percent;
-
     public static function group(): string
     {
         return 'app';

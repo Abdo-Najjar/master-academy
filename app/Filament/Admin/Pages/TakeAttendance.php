@@ -16,12 +16,11 @@ use Filament\Pages\Page;
 use Filament\Schemas\Components\Section as FormSection;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Hexters\HexaLite\HasHexaLite;
 use Livewire\Attributes\Computed;
 
 class TakeAttendance extends Page implements HasForms
 {
-    use HasHexaLite, InteractsWithForms;
+    use InteractsWithForms;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCheckBadge;
 
@@ -58,21 +57,7 @@ class TakeAttendance extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return hexa()->can('attendance.update');
-    }
-
-    public function roleName(): string
-    {
-        return __('Take Attendance');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'attendance.index' => __('View'),
-            'attendance.update' => __('Update'),
-            'attendance.delete' => __('Delete'),
-        ];
+        return (auth()->user()?->can('attendance.update') ?? false);
     }
 
     public function mount(): void

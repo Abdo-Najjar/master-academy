@@ -3,10 +3,10 @@
 use App\Models\Student;
 use App\Models\Trainer;
 use App\Models\User;
-use Hexters\HexaLite\Models\HexaRole;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -50,35 +50,25 @@ test('authenticated admin can load the dashboard', function () {
     $response->assertStatus(200);
 });
 
-test('authenticated admin with HexaLite role can load all resource pages', function () {
+test('authenticated admin with a role can load all resource pages', function () {
     $admin = User::query()->firstOrCreate(
         ['email' => 'test-admin@ma.test'],
         ['name' => 'Tester', 'password' => Hash::make('password'), 'email_verified_at' => now(), 'is_active' => true]
     );
 
-    $groupedGates = [
-        'student' => ['student.index'],
-        'trainer' => ['trainer.index'],
-        'subject' => ['subject.index'],
-        'section' => ['section.index'],
-        'registration' => ['registration.index'],
-        'room' => ['room.index'],
-        'governorate' => ['governorate.index'],
-        'city' => ['city.index'],
-        'payment_type' => ['payment_type.index'],
-        'user' => ['user.index'],
-        'attendance' => ['attendance.index'],
+    $gates = [
+        'student.index', 'trainer.index', 'subject.index', 'section.index',
+        'registration.index', 'room.index', 'governorate.index', 'city.index',
+        'payment_type.index', 'user.index', 'attendance.index',
     ];
 
-    $role = HexaRole::create([
-        'uuid' => (string) Str::uuid(),
-        'name' => 'Test Admin',
-        'guard' => 'web',
-        'access' => $groupedGates,
-        'gates' => $groupedGates,
-        'checkall' => [],
-    ]);
-    $role->users()->attach($admin->id);
+    foreach ($gates as $gate) {
+        Permission::firstOrCreate(['name' => $gate, 'guard_name' => 'web']);
+    }
+
+    $role = Role::firstOrCreate(['name' => 'Test Admin', 'guard_name' => 'web']);
+    $role->syncPermissions($gates);
+    $admin->assignRole($role);
 
     foreach ([
         '/admin/students',

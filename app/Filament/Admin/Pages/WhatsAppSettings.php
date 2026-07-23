@@ -9,13 +9,10 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
-use Hexters\HexaLite\HasHexaLite;
 use Livewire\Attributes\On;
 
 class WhatsAppSettings extends Page
 {
-    use HasHexaLite;
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftEllipsis;
 
     protected string $view = 'filament.admin.pages.whatsapp-settings';
@@ -48,14 +45,7 @@ class WhatsAppSettings extends Page
 
     public static function canAccess(): bool
     {
-        return hexa()->can('whatsapp.manage');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'whatsapp.manage' => __('Manage WhatsApp'),
-        ];
+        return (auth()->user()?->can('whatsapp.manage') ?? false);
     }
 
     public function mount(): void

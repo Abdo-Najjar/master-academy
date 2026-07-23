@@ -24,14 +24,11 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class PaymentTypeResource extends Resource
 {
-    use HasHexaLite;
-
     protected static ?string $model = PaymentType::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
@@ -57,17 +54,7 @@ class PaymentTypeResource extends Resource
 
     public static function canAccess(): bool
     {
-        return hexa()->can('payment_type.index');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'payment_type.index' => __('View'),
-            'payment_type.create' => __('Create'),
-            'payment_type.update' => __('Update'),
-            'payment_type.delete' => __('Delete'),
-        ];
+        return (auth()->user()?->can('payment_type.index') ?? false);
     }
 
     public static function form(Schema $schema): Schema

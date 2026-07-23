@@ -17,14 +17,11 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TrainerResource extends Resource
 {
-    use HasHexaLite;
-
     protected static ?string $model = Trainer::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
@@ -50,18 +47,7 @@ class TrainerResource extends Resource
 
     public static function canAccess(): bool
     {
-        return hexa()->can('trainer.index');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'trainer.index' => __('View'),
-            'trainer.create' => __('Create'),
-            'trainer.update' => __('Update'),
-            'trainer.delete' => __('Delete'),
-            'trainer.wallet' => __('Manage Wallet'),
-        ];
+        return (auth()->user()?->can('trainer.index') ?? false);
     }
 
     public static function form(Schema $schema): Schema

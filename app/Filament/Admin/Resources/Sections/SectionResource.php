@@ -17,14 +17,11 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SectionResource extends Resource
 {
-    use HasHexaLite;
-
     protected static ?string $model = Section::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleGroup;
@@ -50,17 +47,7 @@ class SectionResource extends Resource
 
     public static function canAccess(): bool
     {
-        return hexa()->can('section.index');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'section.index' => __('View'),
-            'section.create' => __('Create'),
-            'section.update' => __('Update'),
-            'section.delete' => __('Delete'),
-        ];
+        return (auth()->user()?->can('section.index') ?? false);
     }
 
     public static function form(Schema $schema): Schema

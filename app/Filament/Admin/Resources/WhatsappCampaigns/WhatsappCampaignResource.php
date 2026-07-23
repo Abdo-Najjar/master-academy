@@ -15,12 +15,9 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 
 class WhatsappCampaignResource extends Resource
 {
-    use HasHexaLite;
-
     protected static ?string $model = WhatsappCampaign::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMegaphone;
@@ -46,16 +43,7 @@ class WhatsappCampaignResource extends Resource
 
     public static function canAccess(): bool
     {
-        return hexa()->can('whatsapp_campaign.index');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'whatsapp_campaign.index' => __('View'),
-            'whatsapp_campaign.create' => __('Create'),
-            'whatsapp_campaign.delete' => __('Delete'),
-        ];
+        return (auth()->user()?->can('whatsapp_campaign.index') ?? false);
     }
 
     public static function form(Schema $schema): Schema

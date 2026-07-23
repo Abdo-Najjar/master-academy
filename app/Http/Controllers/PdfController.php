@@ -27,7 +27,7 @@ class PdfController extends Controller
      */
     public function certificateImage(Request $request, Certificate $certificate): ViewContract
     {
-        $this->authorizeHexaGate($request, 'certificate.index');
+        abort_unless($request->user()?->can('certificate.index'), 403);
 
         return View::make('pdf.certificate-image', [
             'payload' => CertificateService::imagePayload($certificate),
@@ -51,7 +51,7 @@ class PdfController extends Controller
      */
     public function receipt(Request $request, Registration $registration): Response
     {
-        $this->authorizeHexaGate($request, 'registration.index');
+        abort_unless($request->user()?->can('registration.index'), 403);
 
         $registration->loadMissing(['student', 'section.subject', 'section.trainer', 'paymentType']);
 
@@ -79,7 +79,7 @@ class PdfController extends Controller
      */
     public function studentCard(Request $request, Student $student): Response
     {
-        $this->authorizeHexaGate($request, 'student.index');
+        abort_unless($request->user()?->can('student.index'), 403);
 
         $student->loadMissing(['governorate', 'city']);
 
@@ -140,7 +140,7 @@ class PdfController extends Controller
      */
     public function attendanceSheet(Request $request, Section $section): Response
     {
-        $this->authorizeHexaGate($request, 'attendance.index');
+        abort_unless($request->user()?->can('attendance.index'), 403);
 
         $data = $request->validate(['date' => 'required|date']);
         $date = Carbon::parse($data['date']);

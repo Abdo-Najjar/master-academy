@@ -24,14 +24,11 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class GovernorateResource extends Resource
 {
-    use HasHexaLite;
-
     protected static ?string $model = Governorate::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMap;
@@ -57,17 +54,7 @@ class GovernorateResource extends Resource
 
     public static function canAccess(): bool
     {
-        return hexa()->can('governorate.index');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'governorate.index' => __('View'),
-            'governorate.create' => __('Create'),
-            'governorate.update' => __('Update'),
-            'governorate.delete' => __('Delete'),
-        ];
+        return (auth()->user()?->can('governorate.index') ?? false);
     }
 
     public static function form(Schema $schema): Schema

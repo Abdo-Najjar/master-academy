@@ -10,14 +10,11 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class SystemBackup extends Page
 {
-    use HasHexaLite;
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArchiveBox;
 
     protected string $view = 'filament.pages.system-backup';
@@ -41,23 +38,9 @@ class SystemBackup extends Page
 
     public static function canAccess(): bool
     {
-        return hexa()->can('backup.run')
-            || hexa()->can('backup.download')
-            || hexa()->can('backup.delete');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'backup.run' => __('Create Backup'),
-            'backup.download' => __('Download Backup'),
-            'backup.delete' => __('Delete Backup'),
-        ];
-    }
-
-    public function roleName(): string
-    {
-        return __('System Backup');
+        return (auth()->user()?->can('backup.run') ?? false)
+            || (auth()->user()?->can('backup.download') ?? false)
+            || (auth()->user()?->can('backup.delete') ?? false);
     }
 
     protected function getHeaderWidgets(): array
@@ -186,17 +169,17 @@ class SystemBackup extends Page
 
     public function canRun(): bool
     {
-        return hexa()->can('backup.run');
+        return (auth()->user()?->can('backup.run') ?? false);
     }
 
     public function canDownload(): bool
     {
-        return hexa()->can('backup.download');
+        return (auth()->user()?->can('backup.download') ?? false);
     }
 
     public function canDelete(): bool
     {
-        return hexa()->can('backup.delete');
+        return (auth()->user()?->can('backup.delete') ?? false);
     }
 
     protected function diskName(): string

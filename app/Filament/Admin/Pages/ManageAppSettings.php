@@ -14,12 +14,11 @@ use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Support\Facades\Cache;
 
 class ManageAppSettings extends Page implements HasForms
 {
-    use HasHexaLite, InteractsWithForms;
+    use InteractsWithForms;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
@@ -46,19 +45,7 @@ class ManageAppSettings extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return hexa()->can('settings.manage');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'settings.manage' => __('Manage App Settings'),
-        ];
-    }
-
-    public function roleName(): string
-    {
-        return __('App Settings');
+        return (auth()->user()?->can('settings.manage') ?? false);
     }
 
     public function mount(): void
@@ -73,7 +60,6 @@ class ManageAppSettings extends Page implements HasForms
             'absence_alert_threshold' => $settings->absence_alert_threshold,
             'enable_unpaid_attendance_alerts' => $settings->enable_unpaid_attendance_alerts,
             'unpaid_attendance_alert_threshold' => $settings->unpaid_attendance_alert_threshold,
-            'sibling_discount_percent' => $settings->sibling_discount_percent,
         ]);
     }
 
@@ -127,20 +113,6 @@ class ManageAppSettings extends Page implements HasForms
                     ])
                     ->columns(1)
                     ->columnSpanFull(),
-
-                Section::make(__('Discounts'))
-                    ->description(__('Auto-applied discounts during enrollment.'))
-                    ->schema([
-                        TextInput::make('sibling_discount_percent')
-                            ->label(__('Sibling Discount (%)'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(100)
-                            ->required()
-                            ->suffix('%')
-                            ->helperText(__('Auto-applied when the new student\'s parent phone matches another student\'s parent phone. Set to 0 to disable.')),
-                    ])
-                    ->columnSpanFull(),
             ])
             ->statePath('data');
     }
@@ -158,7 +130,6 @@ class ManageAppSettings extends Page implements HasForms
         $settings->absence_alert_threshold = (int) ($data['absence_alert_threshold'] ?? 3);
         $settings->enable_unpaid_attendance_alerts = (bool) ($data['enable_unpaid_attendance_alerts'] ?? false);
         $settings->unpaid_attendance_alert_threshold = (int) ($data['unpaid_attendance_alert_threshold'] ?? 5);
-        $settings->sibling_discount_percent = (int) ($data['sibling_discount_percent'] ?? 0);
         $settings->save();
 
         Cache::forget('app_settings_css');

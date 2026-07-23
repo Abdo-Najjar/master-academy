@@ -23,8 +23,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Event::listen(Login::class, RecordLoginActivity::class);
 
-        // Super admin: the admin User with ID 1 bypasses every permission gate
-        // (HexaLite gates resolve through the Gate facade, so this covers them too).
+        // Super admin: the admin User with ID 1 bypasses every permission gate.
         // Scoped to the User model so a Student/Trainer that happens to have id 1
         // on another guard does not gain access.
         Gate::before(function ($user) {

@@ -83,6 +83,16 @@ class StudentDashboard extends Component
         session()->flash('message', __('Password updated successfully'));
     }
 
+    public function markNotificationRead(string $notificationId): void
+    {
+        Auth::guard('student')->user()?->notifications()->where('id', $notificationId)->first()?->markAsRead();
+    }
+
+    public function markAllNotificationsRead(): void
+    {
+        Auth::guard('student')->user()?->unreadNotifications()->update(['read_at' => now()]);
+    }
+
     public function dismissAnnouncement(int $announcementId): void
     {
         $student = Auth::guard('student')->user();
@@ -247,6 +257,8 @@ class StudentDashboard extends Component
 
         return view('livewire.student-dashboard', [
             'student' => $student,
+            'notifications' => $student->notifications()->limit(15)->get(),
+            'unreadNotificationsCount' => $student->unreadNotifications()->count(),
             'registrations' => $registrations,
             'materials' => $materials,
             'schedule' => $scheduleGrid,

@@ -48,7 +48,6 @@ class StudentsTable
                     })
                     ->formatStateUsing(fn ($state) => __($state))
                     ->sortable(),
-                TextColumn::make('grade_level')->label(__('Grade'))->searchable()->toggleable(),
                 TextColumn::make('registrations_count')->counts('registrations')->label(__('Registrations')),
                 TextColumn::make('balanceFloat')->label(__('Wallet Balance'))->money('ILS', decimalPlaces: 0)->getStateUsing(fn ($record) => $record->balanceFloat),
                 IconColumn::make('is_active')->label(__('Active'))->boolean()->sortable(),

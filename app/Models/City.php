@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\AutoTranslatesMissing;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ use Spatie\Translatable\HasTranslations;
 
 class City extends Model
 {
-    use HasFactory, HasTranslations, SoftDeletes;
+    use AutoTranslatesMissing, HasFactory, HasTranslations, SoftDeletes;
 
     /** @var list<string> */
     protected $fillable = ['name', 'governorate_id'];

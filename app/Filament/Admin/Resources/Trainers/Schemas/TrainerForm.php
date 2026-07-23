@@ -75,7 +75,13 @@ class TrainerForm
                         TextInput::make('phone_number')
                             ->label(__('Phone Number'))
                             ->tel()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, callable $get, callable $set) {
+                                if (filled($state) && blank($get('whatsapp_number'))) {
+                                    $set('whatsapp_number', $state);
+                                }
+                            }),
                         TextInput::make('whatsapp_number')
                             ->label(__('WhatsApp Number'))
                             ->tel()

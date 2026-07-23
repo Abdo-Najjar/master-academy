@@ -27,19 +27,6 @@ class ViewStudent extends ViewRecord
                 ->icon('heroicon-o-identification')
                 ->color('gray')
                 ->url(fn (Student $record): string => route('admin.pdf.student-card', $record), shouldOpenInNewTab: true),
-            Action::make('notifyParent')
-                ->label(__('Notify Parent (WhatsApp)'))
-                ->icon('heroicon-o-chat-bubble-left-ellipsis')
-                ->color('success')
-                ->visible(fn (Student $record): bool => filled($record->parent_whatsapp) || filled($record->parent_phone))
-                ->url(function (Student $record): string {
-                    $phone = preg_replace('/[^0-9]/', '', (string) ($record->parent_whatsapp ?: $record->parent_phone));
-                    $msg = urlencode(__(':app — about your child :name', [
-                        'app' => \App\Support\AppBranding::appName(),
-                        'name' => is_array($record->name) ? ($record->name[app()->getLocale()] ?? reset($record->name)) : $record->name,
-                    ]));
-                    return "https://wa.me/{$phone}?text={$msg}";
-                }, shouldOpenInNewTab: true),
             Action::make('issueCertificate')
                 ->label(__('Issue Certificate'))
                 ->icon('heroicon-o-academic-cap')

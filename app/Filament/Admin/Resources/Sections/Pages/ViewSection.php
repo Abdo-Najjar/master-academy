@@ -10,7 +10,6 @@ use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\Pages\ViewRecord;
 use OpenSpout\Common\Entity\Row;
@@ -29,15 +28,6 @@ class ViewSection extends ViewRecord
                 ->icon('heroicon-o-chat-bubble-left-ellipsis')
                 ->color('success')
                 ->schema([
-                    Select::make('contacts')
-                        ->label(__('Send to'))
-                        ->options([
-                            'all' => __('Students and Parents'),
-                            'parents' => __('Parents only'),
-                            'students' => __('Students only'),
-                        ])
-                        ->default('all')
-                        ->required(),
                     Textarea::make('message')
                         ->label(__('Message'))
                         ->rows(4)
@@ -45,13 +35,7 @@ class ViewSection extends ViewRecord
                         ->placeholder(__('Type your message…')),
                 ])
                 ->action(function (Section $record, array $data): StreamedResponse {
-                    $allContacts = WhatsAppService::sectionContacts($record, $data['message']);
-
-                    $contacts = match ($data['contacts']) {
-                        'parents' => array_filter($allContacts, fn ($c) => $c['type'] === 'parent'),
-                        'students' => array_filter($allContacts, fn ($c) => $c['type'] === 'student'),
-                        default => $allContacts,
-                    };
+                    $contacts = WhatsAppService::sectionContacts($record, $data['message']);
 
                     $sectionName = $record->getTranslation('name', app()->getLocale(), false);
                     $html = self::buildContactsHtml($sectionName, array_values($contacts), $data['message']);

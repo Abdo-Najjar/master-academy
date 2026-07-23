@@ -13,12 +13,9 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 
 class AnnouncementResource extends Resource
 {
-    use HasHexaLite;
-
     protected static ?string $model = Announcement::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMegaphone;
@@ -44,17 +41,7 @@ class AnnouncementResource extends Resource
 
     public static function canAccess(): bool
     {
-        return hexa()->can('announcement.index');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'announcement.index' => __('View'),
-            'announcement.create' => __('Create'),
-            'announcement.update' => __('Update'),
-            'announcement.delete' => __('Delete'),
-        ];
+        return (auth()->user()?->can('announcement.index') ?? false);
     }
 
     public static function form(Schema $schema): Schema

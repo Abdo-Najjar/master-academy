@@ -9,14 +9,6 @@
     // Academic year: Sep–Dec → Y/Y+1, Jan–Aug → Y-1/Y
     $y = now()->month >= 9 ? now()->year : now()->year - 1;
     $academicYear = $y . '/' . ($y + 1);
-
-    $gradeLabels = [
-        'grade_1' => 'الصف الأول', 'grade_2' => 'الصف الثاني', 'grade_3' => 'الصف الثالث',
-        'grade_4' => 'الصف الرابع', 'grade_5' => 'الصف الخامس', 'grade_6' => 'الصف السادس',
-        'grade_7' => 'الصف السابع', 'grade_8' => 'الصف الثامن', 'grade_9' => 'الصف التاسع',
-        'grade_10' => 'الصف العاشر', 'grade_11' => 'الصف الحادي عشر', 'grade_12' => 'الثانوية العامة',
-    ];
-    $grade = $student->grade_level ? ($gradeLabels[$student->grade_level] ?? $student->grade_level) : null;
 @endphp
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -120,12 +112,6 @@
                 <div class="name">{{ $name }}</div>
                 <div style="margin: 2pt 0 5pt;"><span class="num">{{ $student->student_number ?? ('#' . $student->id) }}</span></div>
                 <table class="info">
-                    @if ($grade)
-                        <tr><td class="label">{{ __('Grade Level') }}</td><td class="value">{{ $grade }}</td></tr>
-                    @endif
-                    @if ($student->school)
-                        <tr><td class="label">{{ __('School') }}</td><td class="value">{{ $student->school }}</td></tr>
-                    @endif
                     @if ($student->dob)
                         <tr><td class="label">{{ __('Date of Birth') }}</td><td class="value">{{ $student->dob->format('Y-m-d') }}</td></tr>
                     @endif

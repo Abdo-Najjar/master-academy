@@ -17,7 +17,7 @@ class ListWhatsappCampaigns extends ListRecords
     {
         return [
             $this->tableExportAction(),
-            CreateAction::make()->visible(fn () => hexa()->can('whatsapp_campaign.create')),
+            CreateAction::make()->visible(fn () => (auth()->user()?->can('whatsapp_campaign.create') ?? false)),
         ];
     }
 }

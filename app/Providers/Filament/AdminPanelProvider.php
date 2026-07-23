@@ -4,7 +4,6 @@ namespace App\Providers\Filament;
 
 use App\Support\AppBranding;
 use Filament\Http\Middleware\Authenticate;
-use Hexters\HexaLite\HexaLite;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -85,9 +84,6 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
             ->authGuard('web')
-            ->plugins([
-                HexaLite::make(),
-            ])
             ->renderHook(
                 PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
                 fn (): string => Blade::render(<<<'BLADE'

@@ -1,4 +1,6 @@
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900" x-data="{ sidebarOpen: false, confirmBox: { open: false, message: '', action: null } }">
+    <x-notification-bell :notifications="$notifications" :unread-count="$unreadNotificationsCount" />
+
     <div class="md:hidden sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
         <h1 class="text-lg font-semibold">{{ __('Student Portal') }}</h1>
         <button @click="sidebarOpen = !sidebarOpen" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">

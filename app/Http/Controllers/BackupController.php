@@ -13,7 +13,7 @@ class BackupController extends Controller
      */
     public function download(Request $request, string $filename): StreamedResponse
     {
-        $this->authorizeHexaGate($request, 'backup.download');
+        abort_unless($request->user()?->can('backup.download'), 403);
 
         $this->guardFilename($filename);
 
@@ -30,7 +30,7 @@ class BackupController extends Controller
      */
     public function destroy(Request $request, string $filename)
     {
-        $this->authorizeHexaGate($request, 'backup.delete');
+        abort_unless($request->user()?->can('backup.delete'), 403);
 
         $this->guardFilename($filename);
 

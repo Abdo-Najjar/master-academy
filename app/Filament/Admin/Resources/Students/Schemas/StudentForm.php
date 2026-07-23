@@ -89,12 +89,6 @@ class StudentForm
                                 'male' => __('Male'),
                                 'female' => __('Female'),
                             ]),
-                        TextInput::make('school')
-                            ->label(__('School'))
-                            ->maxLength(255),
-                        TextInput::make('grade_level')
-                            ->label(__('Grade Level'))
-                            ->maxLength(255),
                         TextInput::make('withdrawal_reason')
                             ->label(__('Withdrawal Reason'))
                             ->maxLength(255)
@@ -111,20 +105,15 @@ class StudentForm
                         TextInput::make('phone_number')
                             ->label(__('Phone Number'))
                             ->tel()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, callable $get, callable $set) {
+                                if (filled($state) && blank($get('whatsapp_number'))) {
+                                    $set('whatsapp_number', $state);
+                                }
+                            }),
                         TextInput::make('whatsapp_number')
                             ->label(__('WhatsApp Number'))
-                            ->tel()
-                            ->maxLength(255),
-                        TextInput::make('parent_name')
-                            ->label(__('Parent Name'))
-                            ->maxLength(255),
-                        TextInput::make('parent_phone')
-                            ->label(__('Parent Phone'))
-                            ->tel()
-                            ->maxLength(255),
-                        TextInput::make('parent_whatsapp')
-                            ->label(__('Parent WhatsApp'))
                             ->tel()
                             ->maxLength(255),
                         Select::make('governorate_id')

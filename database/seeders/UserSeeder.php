@@ -19,6 +19,6 @@ class UserSeeder extends Seeder
             ]
         );
 
-        // Role assignment is handled by PermissionSeeder (HexaLite).
+        // Role assignment is handled by PermissionSeeder.
     }
 }

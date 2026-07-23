@@ -17,7 +17,7 @@ class ManageStudentGroups extends ManageRecords
     {
         return [
             $this->tableExportAction(),
-            CreateAction::make()->visible(fn () => hexa()->can('student_group.create')),
+            CreateAction::make()->visible(fn () => (auth()->user()?->can('student_group.create') ?? false)),
         ];
     }
 }

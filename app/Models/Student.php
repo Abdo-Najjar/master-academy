@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\AutoTranslatesMissing;
 use Bavix\Wallet\Interfaces\Wallet;
 use Bavix\Wallet\Interfaces\WalletFloat;
 use Bavix\Wallet\Traits\HasWalletFloat;
@@ -21,7 +22,7 @@ use Spatie\Translatable\HasTranslations;
 
 class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
 {
-    use HasFactory, HasTranslations, HasWalletFloat, InteractsWithMedia, LogsActivity, Notifiable, SoftDeletes;
+    use AutoTranslatesMissing, HasFactory, HasTranslations, HasWalletFloat, InteractsWithMedia, LogsActivity, Notifiable, SoftDeletes;
 
     /** @var list<string> */
     protected $fillable = [
@@ -34,16 +35,11 @@ class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
         'password',
         'phone_number',
         'whatsapp_number',
-        'parent_name',
-        'parent_phone',
-        'parent_whatsapp',
         'governorate_id',
         'city_id',
         'is_active',
         'status',
         'gender',
-        'school',
-        'grade_level',
         'withdrawal_reason',
         'withdrawal_date',
     ];
@@ -83,7 +79,7 @@ class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'dob', 'ssn', 'username', 'email', 'phone_number', 'whatsapp_number', 'parent_name', 'parent_phone', 'parent_whatsapp', 'governorate_id', 'city_id', 'student_number'])
+            ->logOnly(['name', 'dob', 'ssn', 'username', 'email', 'phone_number', 'whatsapp_number', 'governorate_id', 'city_id', 'student_number'])
             ->logOnlyDirty();
     }
 

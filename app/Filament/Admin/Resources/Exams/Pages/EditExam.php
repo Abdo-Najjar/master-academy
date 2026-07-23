@@ -17,13 +17,13 @@ class EditExam extends EditRecord
 
     public static function canAccess(array $parameters = []): bool
     {
-        return hexa()->can('exam.update');
+        return (auth()->user()?->can('exam.update') ?? false);
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make()->visible(fn () => hexa()->can('exam.delete')),
+            DeleteAction::make()->visible(fn () => (auth()->user()?->can('exam.delete') ?? false)),
         ];
     }
 }

@@ -13,12 +13,9 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 
 class ComplaintResource extends Resource
 {
-    use HasHexaLite;
-
     protected static ?string $model = Complaint::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedExclamationTriangle;
@@ -62,21 +59,12 @@ class ComplaintResource extends Resource
 
     public static function canAccess(): bool
     {
-        return hexa()->can('complaint.index');
+        return (auth()->user()?->can('complaint.index') ?? false);
     }
 
     public static function canCreate(): bool
     {
         return false;
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'complaint.index' => __('View'),
-            'complaint.update' => __('Update / Respond'),
-            'complaint.delete' => __('Delete'),
-        ];
     }
 
     public static function form(Schema $schema): Schema

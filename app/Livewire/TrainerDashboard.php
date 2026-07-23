@@ -149,6 +149,16 @@ class TrainerDashboard extends Component
         session()->flash('message', __('Profile picture removed'));
     }
 
+    public function markNotificationRead(string $notificationId): void
+    {
+        Auth::guard('trainer')->user()?->notifications()->where('id', $notificationId)->first()?->markAsRead();
+    }
+
+    public function markAllNotificationsRead(): void
+    {
+        Auth::guard('trainer')->user()?->unreadNotifications()->update(['read_at' => now()]);
+    }
+
     public function openAttendance(int $sectionId): void
     {
         $this->activeTab = 'attendance';
@@ -370,6 +380,8 @@ class TrainerDashboard extends Component
 
         return view('livewire.trainer-dashboard', [
             'trainer' => $trainer,
+            'notifications' => $trainer->notifications()->limit(15)->get(),
+            'unreadNotificationsCount' => $trainer->unreadNotifications()->count(),
             'sections' => $sections,
             'transactions' => $transactions,
             'attendanceSection' => $attendanceSection,

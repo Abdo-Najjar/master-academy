@@ -15,14 +15,11 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SubjectResource extends Resource
 {
-    use HasHexaLite;
-
     protected static ?string $model = Subject::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
@@ -48,17 +45,7 @@ class SubjectResource extends Resource
 
     public static function canAccess(): bool
     {
-        return hexa()->can('subject.index');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'subject.index' => __('View'),
-            'subject.create' => __('Create'),
-            'subject.update' => __('Update'),
-            'subject.delete' => __('Delete'),
-        ];
+        return (auth()->user()?->can('subject.index') ?? false);
     }
 
     public static function form(Schema $schema): Schema

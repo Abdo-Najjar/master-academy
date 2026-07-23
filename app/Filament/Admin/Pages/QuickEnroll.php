@@ -8,7 +8,6 @@ use App\Models\Registration;
 use App\Models\Section;
 use App\Models\SectionTime;
 use App\Models\Student;
-use App\Settings\AppSettings;
 use BackedEnum;
 use Closure;
 use Filament\Forms\Components\DatePicker;
@@ -22,7 +21,6 @@ use Filament\Pages\Page;
 use Filament\Schemas\Components\Section as FormSection;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Unique;
@@ -31,7 +29,7 @@ use Filament\Schemas\Components\Utilities\Get;
 
 class QuickEnroll extends Page implements HasForms
 {
-    use HasHexaLite, InteractsWithForms;
+    use InteractsWithForms;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserPlus;
 
@@ -58,19 +56,7 @@ class QuickEnroll extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return hexa()->can('quick-enroll.access');
-    }
-
-    public function roleName(): string
-    {
-        return __('Quick Enroll');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'quick-enroll.access' => __('Access'),
-        ];
+        return (auth()->user()?->can('quick-enroll.access') ?? false);
     }
 
     public function mount(): void
@@ -121,44 +107,6 @@ class QuickEnroll extends Page implements HasForms
                             ->maxLength(255),
                         TextInput::make('whatsapp_number')
                             ->label(__('WhatsApp Number'))
-                            ->tel()
-                            ->maxLength(255),
-                        TextInput::make('parent_name')
-                            ->label(__('Parent Name'))
-                            ->maxLength(255),
-                        TextInput::make('parent_phone')
-                            ->label(__('Parent Phone'))
-                            ->tel()
-                            ->maxLength(255)
-                            ->live(debounce: 500)
-                            ->afterStateUpdated(function ($state, Get $get, Set $set) {
-                                if (! $state) {
-                                    return;
-                                }
-                                $settings = app(AppSettings::class);
-                                $pct = (int) $settings->sibling_discount_percent;
-                                if ($pct <= 0) {
-                                    return;
-                                }
-                                $hasSibling = Student::query()->where('parent_phone', $state)->exists();
-                                if (! $hasSibling) {
-                                    return;
-                                }
-                                $due = (float) ($get('amount_due') ?? 0);
-                                if ($due <= 0) {
-                                    return;
-                                }
-                                $discount = round($due * $pct / 100, 2);
-                                $set('exemption_amount', $discount);
-                                $set('amount_paid', max(0, $due - $discount));
-                                Notification::make()
-                                    ->success()
-                                    ->title(__('Sibling discount applied'))
-                                    ->body(__(':percent% discount auto-applied (:amount)', ['percent' => $pct, 'amount' => number_format($discount, 2).' ₪']))
-                                    ->send();
-                            }),
-                        TextInput::make('parent_whatsapp')
-                            ->label(__('Parent WhatsApp'))
                             ->tel()
                             ->maxLength(255),
                         Select::make('governorate_id')
@@ -303,9 +251,6 @@ class QuickEnroll extends Page implements HasForms
                     'dob' => $data['dob'] ?? null,
                     'phone_number' => $data['phone_number'] ?? null,
                     'whatsapp_number' => $data['whatsapp_number'] ?? null,
-                    'parent_name' => $data['parent_name'] ?? null,
-                    'parent_phone' => $data['parent_phone'] ?? null,
-                    'parent_whatsapp' => $data['parent_whatsapp'] ?? null,
                     'governorate_id' => $data['governorate_id'] ?? null,
                     'city_id' => $data['city_id'] ?? null,
                     'is_active' => true,

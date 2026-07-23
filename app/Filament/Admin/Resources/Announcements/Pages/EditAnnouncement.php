@@ -17,13 +17,13 @@ class EditAnnouncement extends EditRecord
 
     public static function canAccess(array $parameters = []): bool
     {
-        return hexa()->can('announcement.update');
+        return (auth()->user()?->can('announcement.update') ?? false);
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make()->visible(fn () => hexa()->can('announcement.delete')),
+            DeleteAction::make()->visible(fn () => (auth()->user()?->can('announcement.delete') ?? false)),
         ];
     }
 }

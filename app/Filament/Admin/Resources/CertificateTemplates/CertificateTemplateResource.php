@@ -14,14 +14,11 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CertificateTemplateResource extends Resource
 {
-    use HasHexaLite;
-
     protected static ?string $model = CertificateTemplate::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
@@ -47,17 +44,7 @@ class CertificateTemplateResource extends Resource
 
     public static function canAccess(): bool
     {
-        return hexa()->can('certificate_template.index');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'certificate_template.index' => __('View'),
-            'certificate_template.create' => __('Create'),
-            'certificate_template.update' => __('Update'),
-            'certificate_template.delete' => __('Delete'),
-        ];
+        return (auth()->user()?->can('certificate_template.index') ?? false);
     }
 
     public static function form(Schema $schema): Schema

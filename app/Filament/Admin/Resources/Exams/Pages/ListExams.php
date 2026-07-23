@@ -17,7 +17,7 @@ class ListExams extends ListRecords
     {
         return [
             $this->tableExportAction(),
-            CreateAction::make()->visible(fn () => hexa()->can('exam.create')),
+            CreateAction::make()->visible(fn () => (auth()->user()?->can('exam.create') ?? false)),
         ];
     }
 }

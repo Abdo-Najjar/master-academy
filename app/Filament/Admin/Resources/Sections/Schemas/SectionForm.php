@@ -23,7 +23,10 @@ class SectionForm
             ->components([
                 Section::make('')
                     ->schema([
-                        \App\Filament\Support\TranslatableInput::make('name', __('Section Name')),
+                        TextInput::make('name')
+                            ->label(__('Section Name'))
+                            ->required()
+                            ->maxLength(255),
                         Select::make('subject_id')
                             ->label(__('Subject'))
                             ->relationship('subject', 'name')

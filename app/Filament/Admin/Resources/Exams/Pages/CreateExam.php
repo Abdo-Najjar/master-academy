@@ -16,6 +16,6 @@ class CreateExam extends CreateRecord
 
     public static function canAccess(array $parameters = []): bool
     {
-        return hexa()->can('exam.create');
+        return (auth()->user()?->can('exam.create') ?? false);
     }
 }

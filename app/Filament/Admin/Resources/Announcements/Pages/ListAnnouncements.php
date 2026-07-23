@@ -18,7 +18,7 @@ class ListAnnouncements extends ListRecords
         return [
             $this->tableExportAction(),
             CreateAction::make()
-                ->visible(fn () => hexa()->can('announcement.create')),
+                ->visible(fn () => (auth()->user()?->can('announcement.create') ?? false)),
         ];
     }
 }

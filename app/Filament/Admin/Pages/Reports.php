@@ -17,11 +17,10 @@ use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Hexters\HexaLite\HasHexaLite;
 
 class Reports extends Page implements HasForms
 {
-    use HasHexaLite, InteractsWithForms;
+    use InteractsWithForms;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
 
@@ -48,19 +47,7 @@ class Reports extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return hexa()->can('reports.view');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'reports.view' => __('View Reports'),
-        ];
-    }
-
-    public function roleName(): string
-    {
-        return __('Reports');
+        return (auth()->user()?->can('reports.view') ?? false);
     }
 
     public function mount(): void

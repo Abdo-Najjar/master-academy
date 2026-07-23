@@ -17,14 +17,11 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class StudentResource extends Resource
 {
-    use HasHexaLite;
-
     protected static ?string $model = Student::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
@@ -50,18 +47,7 @@ class StudentResource extends Resource
 
     public static function canAccess(): bool
     {
-        return hexa()->can('student.index');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'student.index' => __('View'),
-            'student.create' => __('Create'),
-            'student.update' => __('Update'),
-            'student.delete' => __('Delete'),
-            'student.wallet' => __('Manage Wallet'),
-        ];
+        return (auth()->user()?->can('student.index') ?? false);
     }
 
     public static function form(Schema $schema): Schema

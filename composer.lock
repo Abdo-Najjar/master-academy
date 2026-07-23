@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "289a39d707e0ba1cd4a6f8511430c255",
+    "content-hash": "488b74597b5cb8c7d88de967e521ba39",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -2371,90 +2371,6 @@
                 }
             ],
             "time": "2025-08-22T14:27:06+00:00"
-        },
-        {
-            "name": "hexters/hexa-lite",
-            "version": "3.0.5",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/hexters/hexa-lite.git",
-                "reference": "3533fe8608a6aaee71670d41644989494aa2eca0"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/hexters/hexa-lite/zipball/3533fe8608a6aaee71670d41644989494aa2eca0",
-                "reference": "3533fe8608a6aaee71670d41644989494aa2eca0",
-                "shasum": ""
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "providers": [
-                        "Hexters\\HexaLite\\HexaLiteServiceProvider"
-                    ]
-                },
-                "branch-alias": {
-                    "dev-main": "2.x-dev"
-                }
-            },
-            "autoload": {
-                "files": [
-                    "src/functions.php"
-                ],
-                "psr-4": {
-                    "Hexters\\HexaLite\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Asep",
-                    "email": "hexters@gmail.com"
-                }
-            ],
-            "description": "Filament Hexa Lite is a effortless role and permission management plugin for Filament",
-            "keywords": [
-                "Filament access control",
-                "Filament integration",
-                "Filament panel",
-                "Filament permission setup",
-                "Filament resource access",
-                "Filament widget permissions",
-                "Hexa Filament",
-                "Hexa installation",
-                "Hexa plugin",
-                "access permissions Filament",
-                "hexters ladmin",
-                "role and permission Filament",
-                "role management Filament",
-                "role management PHP"
-            ],
-            "support": {
-                "issues": "https://github.com/hexters/hexa-lite/issues",
-                "source": "https://github.com/hexters/hexa-lite/tree/3.0.5"
-            },
-            "funding": [
-                {
-                    "url": "https://www.buymeacoffee.com/hexters",
-                    "type": "buy_me_a_coffee"
-                },
-                {
-                    "url": "https://github.com/hexters",
-                    "type": "github"
-                },
-                {
-                    "url": "https://ko-fi.com/hexters",
-                    "type": "ko_fi"
-                },
-                {
-                    "url": "https://www.patreon.com/hexters",
-                    "type": "patreon"
-                }
-            ],
-            "time": "2026-01-13T08:30:32+00:00"
         },
         {
             "name": "kirschbaum-development/eloquent-power-joins",
@@ -6802,6 +6718,94 @@
             "time": "2026-02-21T12:49:54+00:00"
         },
         {
+            "name": "spatie/laravel-permission",
+            "version": "8.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/spatie/laravel-permission.git",
+                "reference": "60e8ed5b2fbf043c2264433fc2680c76b8b66aa6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/spatie/laravel-permission/zipball/60e8ed5b2fbf043c2264433fc2680c76b8b66aa6",
+                "reference": "60e8ed5b2fbf043c2264433fc2680c76b8b66aa6",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/auth": "^12.0|^13.0",
+                "illuminate/container": "^12.0|^13.0",
+                "illuminate/contracts": "^12.0|^13.0",
+                "illuminate/database": "^12.0|^13.0",
+                "php": "^8.3",
+                "spatie/laravel-package-tools": "^1.0"
+            },
+            "require-dev": {
+                "larastan/larastan": "^3.9",
+                "laravel/octane": "^2.0",
+                "laravel/passport": "^13.0",
+                "laravel/pint": "^1.0",
+                "orchestra/testbench": "^10.0|^11.0",
+                "pestphp/pest": "^3.0|^4.0",
+                "pestphp/pest-plugin-laravel": "^3.0|^4.1",
+                "phpstan/phpstan": "^2.1"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Spatie\\Permission\\PermissionServiceProvider"
+                    ]
+                },
+                "branch-alias": {
+                    "dev-main": "8.x-dev",
+                    "dev-master": "8.x-dev"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "Spatie\\Permission\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Freek Van der Herten",
+                    "email": "freek@spatie.be",
+                    "homepage": "https://spatie.be",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Permission handling for Laravel 12 and up",
+            "homepage": "https://github.com/spatie/laravel-permission",
+            "keywords": [
+                "acl",
+                "laravel",
+                "permission",
+                "permissions",
+                "rbac",
+                "roles",
+                "security",
+                "spatie"
+            ],
+            "support": {
+                "issues": "https://github.com/spatie/laravel-permission/issues",
+                "source": "https://github.com/spatie/laravel-permission/tree/8.3.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/spatie",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-07-03T15:36:01+00:00"
+        },
+        {
             "name": "spatie/laravel-settings",
             "version": "3.8.1",
             "source": {
@@ -7169,6 +7173,87 @@
                 }
             ],
             "time": "2026-01-12T07:42:22+00:00"
+        },
+        {
+            "name": "stichoza/google-translate-php",
+            "version": "v5.3.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Stichoza/google-translate-php.git",
+                "reference": "4d9a267ac063c16967df67dcba30a71fbfb5f550"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Stichoza/google-translate-php/zipball/4d9a267ac063c16967df67dcba30a71fbfb5f550",
+                "reference": "4d9a267ac063c16967df67dcba30a71fbfb5f550",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "guzzlehttp/guzzle": "^7.0",
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.5.10"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Stichoza\\GoogleTranslate\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Levan Velijanashvili",
+                    "email": "me@stichoza.com"
+                }
+            ],
+            "description": "Free Google Translate API PHP Package",
+            "homepage": "https://github.com/Stichoza/google-translate-php",
+            "keywords": [
+                "google",
+                "php",
+                "translate",
+                "translating",
+                "translator"
+            ],
+            "support": {
+                "issues": "https://github.com/Stichoza/google-translate-php/issues",
+                "source": "https://github.com/Stichoza/google-translate-php/tree/v5.3.1"
+            },
+            "funding": [
+                {
+                    "url": "https://btc.com/bc1qc25j4x7yahghm8nnn6lypnw59nptylsw32nkfl",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://www.paypal.me/stichoza",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://ko-fi.com/stichoza",
+                    "type": "ko_fi"
+                },
+                {
+                    "url": "https://liberapay.com/stichoza",
+                    "type": "liberapay"
+                },
+                {
+                    "url": "https://opencollective.com/stichoza",
+                    "type": "open_collective"
+                },
+                {
+                    "url": "https://www.patreon.com/stichoza",
+                    "type": "patreon"
+                }
+            ],
+            "time": "2025-11-01T22:45:28+00:00"
         },
         {
             "name": "symfony/clock",

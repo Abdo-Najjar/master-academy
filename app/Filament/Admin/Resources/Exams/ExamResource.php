@@ -15,12 +15,9 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Hexters\HexaLite\HasHexaLite;
 
 class ExamResource extends Resource
 {
-    use HasHexaLite;
-
     protected static ?string $model = Exam::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
@@ -46,17 +43,7 @@ class ExamResource extends Resource
 
     public static function canAccess(): bool
     {
-        return hexa()->can('exam.index');
-    }
-
-    public function defineGates(): array
-    {
-        return [
-            'exam.index' => __('View'),
-            'exam.create' => __('Create'),
-            'exam.update' => __('Update'),
-            'exam.delete' => __('Delete'),
-        ];
+        return (auth()->user()?->can('exam.index') ?? false);
     }
 
     public static function form(Schema $schema): Schema

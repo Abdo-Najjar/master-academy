@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\AutoTranslatesMissing;
 use Bavix\Wallet\Interfaces\Wallet;
 use Bavix\Wallet\Interfaces\WalletFloat;
 use Bavix\Wallet\Traits\HasWalletFloat;
@@ -22,7 +23,7 @@ use Spatie\Translatable\HasTranslations;
 
 class Trainer extends Authenticatable implements HasMedia, Wallet, WalletFloat
 {
-    use HasFactory, HasTranslations, HasWalletFloat, InteractsWithMedia, LogsActivity, Notifiable, SoftDeletes;
+    use AutoTranslatesMissing, HasFactory, HasTranslations, HasWalletFloat, InteractsWithMedia, LogsActivity, Notifiable, SoftDeletes;
 
     /** @var list<string> */
     protected $fillable = [

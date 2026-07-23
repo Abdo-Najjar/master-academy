@@ -17,7 +17,7 @@ class CreateAnnouncement extends CreateRecord
 
     public static function canAccess(array $parameters = []): bool
     {
-        return hexa()->can('announcement.create');
+        return (auth()->user()?->can('announcement.create') ?? false);
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
