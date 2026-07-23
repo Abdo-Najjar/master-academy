@@ -40,9 +40,10 @@ it('charges the student wallet for amount_paid on registration', function () {
     expect((float) $student->fresh()->balanceFloat)->toBe(-800.0);
 });
 
-it('credits the trainer wallet for trainer_amount on registration', function () {
+it('credits the trainer wallet for trainer_amount when the student already has enough funds', function () {
     $section = makeSection();
     $student = Student::create(['name' => ['en' => 'S', 'ar' => 'ط'], 'username' => 'st_'.uniqid()]);
+    $student->depositFloat(1000, ['description' => 'top up']);
 
     Registration::create([
         'student_id' => $student->id,
@@ -53,6 +54,62 @@ it('credits the trainer wallet for trainer_amount on registration', function () 
     ]);
 
     expect((float) $section->trainer->fresh()->balanceFloat)->toBe(250.0);
+});
+
+it('does not credit the trainer when the student has no funds to cover the charge', function () {
+    $section = makeSection();
+    $student = Student::create(['name' => ['en' => 'S', 'ar' => 'ط'], 'username' => 'st_'.uniqid()]);
+
+    $registration = Registration::create([
+        'student_id' => $student->id,
+        'section_id' => $section->id,
+        'amount_due' => 1000,
+        'amount_paid' => 1000,
+        'trainer_amount' => 250,
+    ]);
+
+    expect((float) $student->fresh()->balanceFloat)->toBe(-1000.0)
+        ->and((float) $section->trainer->fresh()->balanceFloat)->toBe(0.0)
+        ->and((float) $registration->fresh()->trainer_credited_amount)->toBe(0.0);
+});
+
+it('credits the trainer only for the funded portion when the student partially covers the charge', function () {
+    $section = makeSection();
+    $student = Student::create(['name' => ['en' => 'S', 'ar' => 'ط'], 'username' => 'st_'.uniqid()]);
+    $student->depositFloat(400, ['description' => 'top up']);
+
+    $registration = Registration::create([
+        'student_id' => $student->id,
+        'section_id' => $section->id,
+        'amount_due' => 1000,
+        'amount_paid' => 1000,
+        'trainer_amount' => 250,
+    ]);
+
+    // 400 of the 1000 charge is funded (40%) => trainer gets 40% of 250.
+    expect((float) $section->trainer->fresh()->balanceFloat)->toBe(100.0)
+        ->and((float) $registration->fresh()->funded_amount)->toBe(400.0);
+});
+
+it('settles the trainer share automatically once the student tops up their wallet', function () {
+    $section = makeSection();
+    $student = Student::create(['name' => ['en' => 'S', 'ar' => 'ط'], 'username' => 'st_'.uniqid()]);
+
+    $registration = Registration::create([
+        'student_id' => $student->id,
+        'section_id' => $section->id,
+        'amount_due' => 1000,
+        'amount_paid' => 1000,
+        'trainer_amount' => 250,
+    ]);
+
+    expect((float) $section->trainer->fresh()->balanceFloat)->toBe(0.0);
+
+    $student->depositFloat(1000, ['description' => 'payment']);
+    \App\Services\TrainerPayoutService::settleForStudent($student->fresh(), 1000);
+
+    expect((float) $section->trainer->fresh()->balanceFloat)->toBe(250.0)
+        ->and((float) $registration->fresh()->trainer_credited_amount)->toBe(250.0);
 });
 
 it('records the student name in the wallet transaction note', function () {

@@ -38,8 +38,10 @@ class Registration extends Model
         return [
             'amount_due' => 'decimal:2',
             'amount_paid' => 'decimal:2',
+            'funded_amount' => 'decimal:2',
             'exemption_amount' => 'decimal:2',
             'trainer_amount' => 'decimal:2',
+            'trainer_credited_amount' => 'decimal:2',
             'seat_reservation_paid' => 'decimal:2',
         ];
     }
@@ -88,8 +90,8 @@ class Registration extends Model
                 ]);
             }
 
-            if ($trainer && (float) $this->trainer_amount > 0) {
-                $trainer->forceWithdrawFloat((float) $this->trainer_amount, [
+            if ($trainer && (float) $this->trainer_credited_amount > 0) {
+                $trainer->forceWithdrawFloat((float) $this->trainer_credited_amount, [
                     'description' => __('Refund for cancelled registration: :name', ['name' => $this->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$this->section_id]),
                     'note' => __('Registration #:id cancelled', ['id' => $this->id]),
                 ]);

@@ -1,0 +1,26 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('subjects', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('course_type_id')->nullable()->constrained()->nullOnDelete();
+            $table->json('name');
+            $table->string('color', 16)->nullable();
+            $table->integer('sort_order')->default(0);
+            $table->timestamps();
+            $table->softDeletes();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('subjects');
+    }
+};

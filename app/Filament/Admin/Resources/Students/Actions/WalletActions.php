@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\Students\Actions;
 
 use App\Models\PaymentType;
 use App\Models\Student;
+use App\Services\TrainerPayoutService;
 use Bavix\Wallet\Models\Wallet;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
@@ -29,6 +30,8 @@ class WalletActions
                     (float) $data['amount'],
                     self::buildMeta($data, __('Deposit to student wallet'))
                 );
+
+                TrainerPayoutService::settleForStudent($record, (float) $data['amount']);
 
                 Notification::make()
                     ->success()

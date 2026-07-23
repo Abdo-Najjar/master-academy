@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\CourseType;
 use App\Models\Subject;
 use Illuminate\Database\Seeder;
 
@@ -9,6 +10,8 @@ class SubjectSeeder extends Seeder
 {
     public function run(): void
     {
+        $courseTypeId = CourseType::query()->where('name->en', 'General')->value('id');
+
         $subjects = [
             ['ar' => 'رياضيات', 'en' => 'Math', 'color' => '#0EA5E9'],
             ['ar' => 'فيزياء', 'en' => 'Physics', 'color' => '#F97316'],
@@ -26,6 +29,7 @@ class SubjectSeeder extends Seeder
                     'name' => ['ar' => $name['ar'], 'en' => $name['en']],
                     'color' => $name['color'],
                     'sort_order' => $i + 1,
+                    'course_type_id' => $courseTypeId,
                 ]
             );
         }

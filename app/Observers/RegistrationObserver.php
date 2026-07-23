@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Registration;
 use App\Models\Section;
 use App\Services\FinancialDueService;
+use App\Services\TrainerPayoutService;
 use Illuminate\Support\Facades\DB;
 
 class RegistrationObserver
@@ -40,19 +41,22 @@ class RegistrationObserver
     }
 
     /**
-     * On create: deduct `amount_paid` from the student's wallet (allows negative
-     * balance) and credit `trainer_amount` to the trainer's wallet.
+     * On create: deduct `amount_paid` from the student's wallet (allows
+     * negative balance). The trainer is only credited for the portion of
+     * that charge the student's wallet actually had available *before* this
+     * charge — not for money the student doesn't yet have. Any uncredited
+     * remainder is settled automatically later, when the student's wallet is
+     * topped up (see TrainerPayoutService::settleForStudent()).
      */
     public function created(Registration $registration): void
     {
         DB::transaction(function () use ($registration): void {
             $registration->loadMissing(['student', 'section.trainer']);
             $student = $registration->student;
-            $trainer = $registration->section?->trainer;
 
             $amountPaid = (float) $registration->amount_paid;
-            $trainerAmount = (float) $registration->trainer_amount;
             $studentName = $student?->getTranslation('name', app()->getLocale(), false) ?? '#'.$registration->student_id;
+            $balanceBefore = $student ? $student->balanceFloat : 0.0;
 
             if ($student && $amountPaid > 0) {
                 $student->forceWithdrawFloat($amountPaid, [
@@ -64,25 +68,21 @@ class RegistrationObserver
                 ]);
             }
 
-            if ($trainer && $trainerAmount > 0) {
-                $trainer->depositFloat($trainerAmount, [
-                    'description' => __('Trainer share for registration: :name', [
-                        'name' => $registration->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$registration->section_id,
-                    ]),
-                    'note' => __('Registration #:id — :student', ['id' => $registration->id, 'student' => $studentName]),
-                ]);
-            }
+            $covered = max(0.0, min($amountPaid, $balanceBefore));
+            TrainerPayoutService::applyFundedDelta($registration, $covered);
         });
     }
 
     /**
-     * On update: only adjust the delta between old and new amounts. Withdraw
-     * the extra if amount_paid went up, refund the difference if it went down.
-     * Same logic for trainer_amount.
+     * On update: only adjust the delta between old and new amount_paid.
+     * Withdraw the extra if it went up (crediting the trainer only for the
+     * portion the student could actually cover), refund the difference if it
+     * went down (clawing back any trainer credit above the new, lower cap).
+     * A direct edit to trainer_amount (e.g. a rate correction) is also
+     * re-settled against the registration's current funded amount.
      */
     public function updated(Registration $registration): void
     {
-        // Only act if money fields actually changed
         $changedPaid = $registration->wasChanged('amount_paid');
         $changedTrainer = $registration->wasChanged('trainer_amount');
 
@@ -90,10 +90,11 @@ class RegistrationObserver
             return;
         }
 
-        DB::transaction(function () use ($registration, $changedPaid, $changedTrainer): void {
+        DB::transaction(function () use ($registration, $changedPaid): void {
             $registration->loadMissing(['student', 'section.trainer']);
             $student = $registration->student;
-            $trainer = $registration->section?->trainer;
+
+            $targetFunded = (float) $registration->funded_amount;
 
             if ($changedPaid && $student) {
                 $old = (float) $registration->getOriginal('amount_paid');
@@ -101,6 +102,7 @@ class RegistrationObserver
                 $diff = $new - $old;
 
                 if ($diff > 0) {
+                    $balanceBefore = $student->balanceFloat;
                     $student->forceWithdrawFloat($diff, [
                         'description' => __('Additional charge for registration: :name', [
                             'name' => $registration->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$registration->section_id,
@@ -108,6 +110,7 @@ class RegistrationObserver
                         'note' => __('Registration #:id', ['id' => $registration->id]),
                         'payment_type_id' => $registration->payment_type_id,
                     ]);
+                    $targetFunded += max(0.0, min($diff, $balanceBefore));
                 } elseif ($diff < 0) {
                     $student->depositFloat(abs($diff), [
                         'description' => __('Adjustment for registration: :name', [
@@ -118,27 +121,7 @@ class RegistrationObserver
                 }
             }
 
-            if ($changedTrainer && $trainer) {
-                $old = (float) $registration->getOriginal('trainer_amount');
-                $new = (float) $registration->trainer_amount;
-                $diff = $new - $old;
-
-                if ($diff > 0) {
-                    $trainer->depositFloat($diff, [
-                        'description' => __('Additional trainer share for registration: :name', [
-                            'name' => $registration->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$registration->section_id,
-                        ]),
-                        'note' => __('Registration #:id', ['id' => $registration->id]),
-                    ]);
-                } elseif ($diff < 0) {
-                    $trainer->forceWithdrawFloat(abs($diff), [
-                        'description' => __('Trainer share adjustment for registration: :name', [
-                            'name' => $registration->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$registration->section_id,
-                        ]),
-                        'note' => __('Registration #:id', ['id' => $registration->id]),
-                    ]);
-                }
-            }
+            TrainerPayoutService::applyFundedDelta($registration, $targetFunded);
         });
     }
 

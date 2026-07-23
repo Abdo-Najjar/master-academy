@@ -33,6 +33,11 @@ class RegistrationInfolist
                         TextEntry::make('trainer_amount')
                             ->label(__('Trainer Share'))
                             ->formatStateUsing(fn ($state) => number_format((float) $state, 2).' ₪'),
+                        TextEntry::make('trainer_credited_amount')
+                            ->label(__('Trainer Share Credited'))
+                            ->badge()
+                            ->color(fn (Registration $record): string => (float) $record->trainer_credited_amount >= (float) $record->trainer_amount ? 'success' : 'warning')
+                            ->formatStateUsing(fn ($state) => number_format((float) $state, 2).' ₪'),
                         TextEntry::make('note')->label(__('Note'))->placeholder('—')->columnSpanFull(),
                         TextEntry::make('created_at')->label(__('Created'))->dateTime()->placeholder('—'),
                         TextEntry::make('deleted_at')

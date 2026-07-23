@@ -38,6 +38,13 @@ class RegistrationsTable
                 TextColumn::make('exemption_amount')->label(__('Exemption'))->money('ILS', decimalPlaces: 0)->sortable(),
                 TextColumn::make('amount_paid')->label(__('Paid'))->money('ILS', decimalPlaces: 0)->sortable(),
                 TextColumn::make('trainer_amount')->label(__('Trainer Share'))->money('ILS', decimalPlaces: 0)->sortable(),
+                TextColumn::make('trainer_credited_amount')
+                    ->label(__('Trainer Share Credited'))
+                    ->money('ILS', decimalPlaces: 0)
+                    ->badge()
+                    ->color(fn (Registration $record): string => (float) $record->trainer_credited_amount >= (float) $record->trainer_amount ? 'success' : 'warning')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable(),
                 TextColumn::make('created_at')->label(__('Date'))->dateTime()->sortable(),
             ])
             ->filters([

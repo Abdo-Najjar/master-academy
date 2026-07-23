@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             GovernorateSeeder::class,
             CitySeeder::class,
             PaymentTypeSeeder::class,
+            CourseTypeSeeder::class,
             SubjectSeeder::class,
         ]);
     }
