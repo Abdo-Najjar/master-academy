@@ -160,7 +160,7 @@ class SectionForm
                                     ->searchable()
                                     ->preload(),
                             ])
-                            ->columns(1)
+                            ->columns(4)
                             ->columnSpanFull()
                             ->defaultItems(0)
                             ->addActionLabel(__('Add Time')),
