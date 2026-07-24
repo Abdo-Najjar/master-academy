@@ -3,6 +3,9 @@
 namespace App\Filament\Admin\Resources\CourseTypes;
 
 use App\Filament\Admin\Resources\CourseTypes\Pages\ManageCourseTypes;
+use App\Filament\Admin\Resources\CourseTypes\Pages\ViewCourseType;
+use App\Filament\Admin\Resources\CourseTypes\RelationManagers\SubjectsRelationManager;
+use App\Filament\Admin\Resources\CourseTypes\Schemas\CourseTypeInfolist;
 use App\Filament\Support\DeletionGuard;
 use App\Models\CourseType;
 use BackedEnum;
@@ -15,6 +18,7 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -69,6 +73,11 @@ class CourseTypeResource extends Resource
             ]);
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return CourseTypeInfolist::configure($schema);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -86,6 +95,7 @@ class CourseTypeResource extends Resource
             ])
             ->recordActions([
                 ActionGroup::make([
+                    ViewAction::make(),
                     EditAction::make(),
                     DeleteAction::make()
                         ->before(fn (CourseType $record) => static::guardDeletion($record)),
@@ -124,10 +134,18 @@ class CourseTypeResource extends Resource
         ]);
     }
 
+    public static function getRelations(): array
+    {
+        return [
+            SubjectsRelationManager::class,
+        ];
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => ManageCourseTypes::route('/'),
+            'view' => ViewCourseType::route('/{record}'),
         ];
     }
 

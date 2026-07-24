@@ -2,8 +2,6 @@
 
 namespace App\Filament\Admin\Resources\Subjects;
 
-use App\Filament\Admin\Resources\Subjects\Pages\CreateSubject;
-use App\Filament\Admin\Resources\Subjects\Pages\EditSubject;
 use App\Filament\Admin\Resources\Subjects\Pages\ListSubjects;
 use App\Filament\Admin\Resources\Subjects\Pages\ViewSubject;
 use App\Filament\Admin\Resources\Subjects\Schemas\SubjectForm;
@@ -74,9 +72,7 @@ class SubjectResource extends Resource
     {
         return [
             'index' => ListSubjects::route('/'),
-            'create' => CreateSubject::route('/create'),
             'view' => ViewSubject::route('/{record}'),
-            'edit' => EditSubject::route('/{record}/edit'),
         ];
     }
 
