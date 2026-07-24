@@ -11,6 +11,7 @@ use App\Models\Student;
 use BackedEnum;
 use Closure;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -137,102 +138,118 @@ class QuickEnroll extends Page implements HasForms
                     ->columnSpanFull(),
 
                 FormSection::make(__('Registration'))
-                    ->description(__('Pick the section and confirm the amounts. The amount paid will be charged to the student wallet automatically.'))
+                    ->description(__('Add one or more sections. Each section is charged separately to the student wallet.'))
                     ->icon('heroicon-o-clipboard-document-check')
                     ->schema([
-                        Select::make('section_id')
-                            ->label(__('Section'))
-                            ->options(fn () => Section::query()
-                                ->with('subject')
-                                ->orderByDesc('id')
-                                ->get()
-                                ->mapWithKeys(fn ($s) => [
-                                    $s->id => $s->getTranslation('name', app()->getLocale(), false)
-                                        .($s->subject ? ' — '.$s->subject->getTranslation('name', app()->getLocale(), false) : '')
-                                        .' ('.number_format((float) $s->price, 2).' ₪)',
-                                ]))
-                            ->searchable()
-                            ->required()
-                            ->live()
-                            ->afterStateUpdated(function ($state, Set $set) {
-                                if ($state) {
-                                    $section = Section::find($state);
-                                    if ($section) {
-                                        $set('amount_due', $section->price);
-                                        $set('amount_paid', $section->price);
-                                    }
-                                }
-                            })
-                            ->columnSpanFull(),
+                        Repeater::make('registrations')
+                            ->label(__('Sections'))
+                            ->hiddenLabel()
+                            ->schema([
+                                Select::make('section_id')
+                                    ->label(__('Section'))
+                                    ->options(fn () => Section::query()
+                                        ->with('subject')
+                                        ->orderByDesc('id')
+                                        ->get()
+                                        ->mapWithKeys(fn ($s) => [
+                                            $s->id => $s->getTranslation('name', app()->getLocale(), false)
+                                                .($s->subject ? ' — '.$s->subject->getTranslation('name', app()->getLocale(), false) : '')
+                                                .' ('.number_format((float) $s->price, 2).' ₪)',
+                                        ]))
+                                    ->searchable()
+                                    ->required()
+                                    ->live()
+                                    ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                                    ->afterStateUpdated(function ($state, Set $set) {
+                                        if ($state) {
+                                            $section = Section::find($state);
+                                            if ($section) {
+                                                $set('amount_due', $section->price);
+                                                $set('amount_paid', $section->price);
+                                            }
+                                        }
+                                    })
+                                    ->columnSpanFull(),
 
-                        Select::make('payment_type_id')
-                            ->label(__('Payment Type'))
-                            ->options(PaymentType::all()->pluck('name', 'id'))
-                            ->searchable()
-                            ->preload(),
+                                Select::make('payment_type_id')
+                                    ->label(__('Payment Type'))
+                                    ->options(PaymentType::all()->pluck('name', 'id'))
+                                    ->searchable()
+                                    ->preload(),
 
-                        TextInput::make('amount_due')
-                            ->label(__('Amount Due'))
-                            ->numeric()
-                            ->prefix('₪')
-                            ->required()
-                            ->minValue(0)
-                            ->live(debounce: 500)
-                            ->afterStateUpdated(function (Get $get, Set $set) {
-                                $due = (float) ($get('amount_due') ?? 0);
-                                $exempt = (float) ($get('exemption_amount') ?? 0);
-                                $set('amount_paid', max(0, $due - $exempt));
-                            }),
+                                TextInput::make('amount_due')
+                                    ->label(__('Amount Due'))
+                                    ->numeric()
+                                    ->prefix('₪')
+                                    ->required()
+                                    ->minValue(0)
+                                    ->live(debounce: 500)
+                                    ->afterStateUpdated(function (Get $get, Set $set) {
+                                        $due = (float) ($get('amount_due') ?? 0);
+                                        $exempt = (float) ($get('exemption_amount') ?? 0);
+                                        $set('amount_paid', max(0, $due - $exempt));
+                                    }),
 
-                        Select::make('exemption_type_id')
-                            ->label(__('Exemption Type'))
-                            ->options(fn () => \App\Models\ExemptionType::query()
-                                ->where('is_active', true)
-                                ->get()
-                                ->mapWithKeys(fn (\App\Models\ExemptionType $t) => [
-                                    $t->id => $t->getTranslation('name', app()->getLocale(), false),
-                                ]))
-                            ->searchable()
-                            ->preload()
-                            ->placeholder(__('No exemption'))
-                            ->live()
-                            ->afterStateUpdated(function ($state, Get $get, Set $set) {
-                                $due = (float) ($get('amount_due') ?? 0);
-                                if (! $state) {
-                                    return;
-                                }
-                                $type = \App\Models\ExemptionType::find($state);
-                                $discount = $type ? $type->computeDiscount($due) : 0.0;
-                                if ($discount > 0) {
-                                    $set('exemption_amount', $discount);
-                                    $set('amount_paid', max(0, $due - $discount));
-                                }
-                            }),
+                                Select::make('exemption_type_id')
+                                    ->label(__('Exemption Type'))
+                                    ->options(fn () => \App\Models\ExemptionType::query()
+                                        ->where('is_active', true)
+                                        ->get()
+                                        ->mapWithKeys(fn (\App\Models\ExemptionType $t) => [
+                                            $t->id => $t->getTranslation('name', app()->getLocale(), false),
+                                        ]))
+                                    ->searchable()
+                                    ->preload()
+                                    ->placeholder(__('No exemption'))
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, Get $get, Set $set) {
+                                        $due = (float) ($get('amount_due') ?? 0);
+                                        if (! $state) {
+                                            return;
+                                        }
+                                        $type = \App\Models\ExemptionType::find($state);
+                                        $discount = $type ? $type->computeDiscount($due) : 0.0;
+                                        if ($discount > 0) {
+                                            $set('exemption_amount', $discount);
+                                            $set('amount_paid', max(0, $due - $discount));
+                                        }
+                                    }),
 
-                        TextInput::make('exemption_amount')
-                            ->label(__('Exemption / Discount'))
-                            ->numeric()
-                            ->prefix('₪')
-                            ->default(0)
-                            ->minValue(0)
-                            ->live(debounce: 500)
-                            ->afterStateUpdated(function (Get $get, Set $set) {
-                                $due = (float) ($get('amount_due') ?? 0);
-                                $exempt = (float) ($get('exemption_amount') ?? 0);
-                                $set('amount_paid', max(0, $due - $exempt));
-                            }),
+                                TextInput::make('exemption_amount')
+                                    ->label(__('Exemption / Discount'))
+                                    ->numeric()
+                                    ->prefix('₪')
+                                    ->default(0)
+                                    ->minValue(0)
+                                    ->live(debounce: 500)
+                                    ->afterStateUpdated(function (Get $get, Set $set) {
+                                        $due = (float) ($get('amount_due') ?? 0);
+                                        $exempt = (float) ($get('exemption_amount') ?? 0);
+                                        $set('amount_paid', max(0, $due - $exempt));
+                                    }),
 
-                        TextInput::make('amount_paid')
-                            ->label(__('Amount To Be Paid'))
-                            ->numeric()
-                            ->prefix('₪')
-                            ->required()
-                            ->minValue(0)
-                            ->helperText(__('Will be auto-deducted from the student wallet on save. Negative balance is allowed.')),
+                                TextInput::make('amount_paid')
+                                    ->label(__('Amount To Be Paid'))
+                                    ->numeric()
+                                    ->prefix('₪')
+                                    ->required()
+                                    ->minValue(0)
+                                    ->helperText(__('Will be auto-deducted from the student wallet on save. Negative balance is allowed.')),
 
-                        Textarea::make('note')
-                            ->label(__('Note'))
-                            ->rows(2)
+                                Textarea::make('note')
+                                    ->label(__('Note'))
+                                    ->rows(2)
+                                    ->columnSpanFull(),
+                            ])
+                            ->columns(2)
+                            ->itemLabel(fn (array $state): ?string => filled($state['section_id'] ?? null)
+                                ? Section::find($state['section_id'])?->getTranslation('name', app()->getLocale(), false)
+                                : null)
+                            ->addActionLabel(__('Add Section'))
+                            ->defaultItems(1)
+                            ->minItems(1)
+                            ->reorderable(false)
+                            ->collapsible()
                             ->columnSpanFull(),
                     ])
                     ->columns(1)
@@ -245,11 +262,24 @@ class QuickEnroll extends Page implements HasForms
     {
         $data = $this->form->getState();
 
+        $registrationRows = $data['registrations'] ?? [];
+
+        if (empty($registrationRows)) {
+            Notification::make()
+                ->danger()
+                ->title(__('Could not enroll student'))
+                ->body(__('Add at least one section.'))
+                ->persistent()
+                ->send();
+
+            return;
+        }
+
         $student = null;
-        $registration = null;
+        $sectionNames = [];
 
         try {
-            DB::transaction(function () use ($data, &$student, &$registration): void {
+            DB::transaction(function () use ($data, $registrationRows, &$student, &$sectionNames): void {
                 $student = Student::create([
                     'name' => $data['name'],
                     'username' => $data['username'],
@@ -264,24 +294,44 @@ class QuickEnroll extends Page implements HasForms
                     'is_active' => true,
                 ]);
 
-                // Capacity + schedule conflict checks
-                $section = Section::find($data['section_id']);
-                if ($section) {
+                $sectionIds = array_column($registrationRows, 'section_id');
+                if (count($sectionIds) !== count(array_unique($sectionIds))) {
+                    throw new \RuntimeException(__('The same section was selected more than once.'));
+                }
+
+                $allTimes = SectionTime::query()->whereIn('section_id', $sectionIds)->with('section')->get()->groupBy('section_id');
+
+                foreach ($registrationRows as $row) {
+                    $section = Section::find($row['section_id']);
+                    if (! $section) {
+                        continue;
+                    }
+
+                    $sectionNames[] = $section->getTranslation('name', app()->getLocale(), false);
+
+                    // Capacity check
                     if ($section->capacity) {
                         $enrolled = Registration::query()->where('section_id', $section->id)->count();
                         if ($enrolled >= $section->capacity) {
                             throw new \RuntimeException(
-                                __('This section is full (capacity :capacity).', ['capacity' => $section->capacity])
+                                __('Section :name is full (capacity :capacity).', [
+                                    'name' => $section->getTranslation('name', app()->getLocale(), false),
+                                    'capacity' => $section->capacity,
+                                ])
                             );
                         }
                     }
 
+                    // Schedule conflict check: against the student's other (pre-existing) sections
+                    // and against the other sections picked in this same submission.
                     $otherSectionIds = Registration::query()
                         ->where('student_id', $student->id)
-                        ->pluck('section_id');
+                        ->pluck('section_id')
+                        ->merge(array_diff($sectionIds, [$row['section_id']]))
+                        ->unique();
 
                     if ($otherSectionIds->isNotEmpty()) {
-                        $newTimes = SectionTime::query()->where('section_id', $section->id)->get();
+                        $newTimes = $allTimes->get($section->id, collect());
                         $otherTimes = SectionTime::query()->whereIn('section_id', $otherSectionIds)->with('section')->get();
 
                         foreach ($newTimes as $new) {
@@ -291,8 +341,9 @@ class QuickEnroll extends Page implements HasForms
                                 }
                                 if ($new->start_time < $other->end_time && $new->end_time > $other->start_time) {
                                     throw new \RuntimeException(
-                                        __('Schedule conflict with the student\'s other section :name on :day at :time', [
-                                            'name' => $other->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$other->section_id,
+                                        __('Schedule conflict between :section and :other on :day at :time', [
+                                            'section' => $section->getTranslation('name', app()->getLocale(), false),
+                                            'other' => $other->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$other->section_id,
                                             'day' => __(ucfirst((string) $new->day)),
                                             'time' => substr((string) $other->start_time, 0, 5).' - '.substr((string) $other->end_time, 0, 5),
                                         ])
@@ -301,19 +352,19 @@ class QuickEnroll extends Page implements HasForms
                             }
                         }
                     }
-                }
 
-                $registration = Registration::create([
-                    'student_id' => $student->id,
-                    'section_id' => $data['section_id'],
-                    'payment_type_id' => $data['payment_type_id'] ?? null,
-                    'amount_due' => $data['amount_due'],
-                    'amount_paid' => $data['amount_paid'],
-                    'exemption_amount' => $data['exemption_amount'] ?? 0,
-                    'exemption_type_id' => $data['exemption_type_id'] ?? null,
-                    'trainer_amount' => 0,
-                    'note' => $data['note'] ?? null,
-                ]);
+                    Registration::create([
+                        'student_id' => $student->id,
+                        'section_id' => $row['section_id'],
+                        'payment_type_id' => $row['payment_type_id'] ?? null,
+                        'amount_due' => $row['amount_due'],
+                        'amount_paid' => $row['amount_paid'],
+                        'exemption_amount' => $row['exemption_amount'] ?? 0,
+                        'exemption_type_id' => $row['exemption_type_id'] ?? null,
+                        'trainer_amount' => 0,
+                        'note' => $row['note'] ?? null,
+                    ]);
+                }
             });
         } catch (\Throwable $e) {
             Notification::make()
@@ -329,9 +380,9 @@ class QuickEnroll extends Page implements HasForms
         Notification::make()
             ->success()
             ->title(__('Student enrolled successfully'))
-            ->body(__('Student :name has been created and registered in :section', [
+            ->body(__('Student :name has been created and registered in: :sections', [
                 'name' => is_array($student->name) ? ($student->name[app()->getLocale()] ?? reset($student->name)) : $student->name,
-                'section' => Section::find($data['section_id'])?->getTranslation('name', app()->getLocale(), false) ?? '#'.$data['section_id'],
+                'sections' => implode(', ', $sectionNames),
             ]))
             ->send();
 

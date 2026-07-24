@@ -1475,5 +1475,12 @@
     "Content": "المحتوى",
     "Recipients": "المستلمون",
     "Send a one-off message to confirm the connection works end to end.": "أرسل رسالة تجريبية للتأكد من أن الاتصال يعمل بشكل كامل.",
-    "Login History": "سجل الدخول"
+    "Login History": "سجل الدخول",
+    "Add one or more sections. Each section is charged separately to the student wallet.": "أضف شعبة واحدة أو أكثر. سيتم خصم كل شعبة من محفظة الطالب بشكل منفصل.",
+    "Add Section": "إضافة شعبة",
+    "Add at least one section.": "أضف شعبة واحدة على الأقل.",
+    "The same section was selected more than once.": "تم اختيار نفس الشعبة أكثر من مرة.",
+    "Section :name is full (capacity :capacity).": "الشعبة :name ممتلئة (السعة :capacity).",
+    "Schedule conflict between :section and :other on :day at :time": "تعارض في الجدول بين :section و :other يوم :day الساعة :time",
+    "Student :name has been created and registered in: :sections": "تم إنشاء الطالب :name وتسجيله في: :sections"
 }

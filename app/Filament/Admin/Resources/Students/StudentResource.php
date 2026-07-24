@@ -92,6 +92,16 @@ class StudentResource extends Resource
 
     public static function getGloballySearchableAttributes(): array
     {
-        return ['student_number', 'username', 'ssn', 'email', 'phone_number', 'name'];
+        return ['student_number', 'username', 'ssn', 'email', 'phone_number', 'whatsapp_number', 'name'];
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        return array_filter([
+            __('Student Number') => $record->student_number,
+            __('National ID / SSN') => $record->ssn,
+            __('Phone Number') => $record->phone_number,
+            __('Email') => $record->email,
+        ]);
     }
 }

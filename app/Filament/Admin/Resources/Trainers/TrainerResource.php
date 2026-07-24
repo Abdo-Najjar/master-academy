@@ -94,6 +94,16 @@ class TrainerResource extends Resource
 
     public static function getGloballySearchableAttributes(): array
     {
-        return ['trainer_number', 'username', 'ssn', 'email', 'phone_number', 'name'];
+        return ['trainer_number', 'username', 'ssn', 'email', 'phone_number', 'whatsapp_number', 'name'];
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        return array_filter([
+            __('Trainer Number') => $record->trainer_number,
+            __('National ID / SSN') => $record->ssn,
+            __('Phone Number') => $record->phone_number,
+            __('Email') => $record->email,
+        ]);
     }
 }
