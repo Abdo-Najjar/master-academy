@@ -80,7 +80,7 @@
         <table>
             <tr>
                 @if ($logo)
-                    <td class="logo-cell"><img src="{{ $logo }}" alt=""></td>
+                    <td class="logo-cell"><img src="{{ $logo }}" alt="" width="31" height="31"></td>
                 @endif
                 <td>
                     <div class="t1">{{ $appName }}</div>
@@ -99,7 +99,7 @@
                     <tr>
                         <td>
                             @if ($photo)
-                                <img src="{{ $photo }}" alt="">
+                                <img src="{{ $photo }}" alt="" width="69" height="80">
                             @else
                                 {{ $initial }}
                             @endif
