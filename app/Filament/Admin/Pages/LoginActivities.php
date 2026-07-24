@@ -84,6 +84,7 @@ class LoginActivities extends Page implements HasTable
                         \App\Models\Trainer::class => __('Trainer'),
                     ]),
             ])
+            ->emptyStateHeading(__('No records found'))
             ->defaultSort('logged_in_at', 'desc');
     }
 }

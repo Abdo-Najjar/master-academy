@@ -10,6 +10,7 @@ use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section as FormSection;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 
 class AssignmentForm
@@ -28,7 +29,16 @@ class AssignmentForm
                                         .($s->subject ? ' — '.$s->subject->getTranslation('name', app()->getLocale(), false) : ''),
                                 ]))
                             ->searchable()
-                            ->required(),
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(function ($state, Set $set) {
+                                if ($state) {
+                                    $section = Section::find($state);
+                                    if ($section && $section->trainer_id) {
+                                        $set('trainer_id', $section->trainer_id);
+                                    }
+                                }
+                            }),
                         Select::make('trainer_id')
                             ->label(__('Trainer'))
                             ->options(fn () => Trainer::all()->mapWithKeys(fn (Trainer $t) => [

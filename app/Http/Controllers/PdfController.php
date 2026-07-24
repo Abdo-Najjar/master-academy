@@ -55,10 +55,19 @@ class PdfController extends Controller
 
         $registration->loadMissing(['student', 'section.subject', 'section.trainer', 'paymentType']);
 
+        // Embed the light-theme logo as a data URI for reliable mPDF rendering.
+        $logo = null;
+        $logoFile = public_path('images/light/android-chrome-512x512.png');
+        if (is_file($logoFile)) {
+            $mime = mime_content_type($logoFile) ?: 'image/png';
+            $logo = 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($logoFile));
+        }
+
         $html = View::make('pdf.receipt', [
             'registration' => $registration,
             'now' => now(),
             'issuer' => Auth::user(),
+            'logo' => $logo,
         ])->render();
 
         $pdf = LaravelMpdf::loadHTML($html, [

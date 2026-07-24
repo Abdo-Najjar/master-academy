@@ -1484,5 +1484,6 @@
     "Section :name is full (capacity :capacity).": "الشعبة :name ممتلئة (السعة :capacity).",
     "Schedule conflict between :section and :other on :day at :time": "تعارض في الجدول بين :section و :other يوم :day الساعة :time",
     "Student :name has been created and registered in: :sections": "تم إنشاء الطالب :name وتسجيله في: :sections",
-    "Section :name has no trainer assigned. Assign a trainer to the section before registering students.": "الشعبة :name ليس لها مدرب معيّن. الرجاء تعيين مدرب للشعبة قبل تسجيل الطلاب فيها."
+    "Section :name has no trainer assigned. Assign a trainer to the section before registering students.": "الشعبة :name ليس لها مدرب معيّن. الرجاء تعيين مدرب للشعبة قبل تسجيل الطلاب فيها.",
+    "Attachments": "المرفقات"
 }

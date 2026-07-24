@@ -135,6 +135,7 @@ class AttendanceRecords extends Page implements HasTable
                     ->action(fn (): StreamedResponse => $this->exportExcel()),
             ])
             ->paginated([25, 50, 100])
+            ->emptyStateHeading(__('No records found'))
             ->defaultSort('date', 'desc');
     }
 

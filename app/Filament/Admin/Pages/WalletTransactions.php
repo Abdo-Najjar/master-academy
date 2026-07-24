@@ -156,6 +156,7 @@ class WalletTransactions extends Page implements HasTable
                     ->action(fn () => $this->exportExcel()),
             ])
             ->paginated([25, 50, 100])
+            ->emptyStateHeading(__('No records found'))
             ->defaultSort('created_at', 'desc');
     }
 

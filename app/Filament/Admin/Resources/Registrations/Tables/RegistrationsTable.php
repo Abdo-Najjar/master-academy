@@ -6,7 +6,6 @@ use App\Models\Registration;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
@@ -83,7 +82,6 @@ class RegistrationsTable
                             $record->deleteWithWalletAdjustments();
                             Notification::make()->title(__('Registration cancelled'))->success()->send();
                         }),
-                    DeleteAction::make(),
                 ]),
             ])
             ->toolbarActions([
