@@ -29,21 +29,26 @@ class TimesRelationManager extends RelationManager
         return is_subclass_of($pageClass, \Filament\Resources\Pages\ViewRecord::class);
     }
 
+    public static function dayOptions(): array
+    {
+        return [
+            'saturday' => __('Saturday'),
+            'sunday' => __('Sunday'),
+            'monday' => __('Monday'),
+            'tuesday' => __('Tuesday'),
+            'wednesday' => __('Wednesday'),
+            'thursday' => __('Thursday'),
+            'friday' => __('Friday'),
+        ];
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 Select::make('day')
                     ->label(__('Day'))
-                    ->options([
-                        'saturday' => __('Saturday'),
-                        'sunday' => __('Sunday'),
-                        'monday' => __('Monday'),
-                        'tuesday' => __('Tuesday'),
-                        'wednesday' => __('Wednesday'),
-                        'thursday' => __('Thursday'),
-                        'friday' => __('Friday'),
-                    ])
+                    ->options(self::dayOptions())
                     ->required(),
                 TimePicker::make('start_time')->seconds(false)->required()->label(__('Start Time')),
                 TimePicker::make('end_time')->seconds(false)->required()->label(__('End Time')),
@@ -61,7 +66,7 @@ class TimesRelationManager extends RelationManager
             ->recordTitleAttribute('day')
             ->emptyStateHeading(__('No records found'))
             ->columns([
-                TextColumn::make('day')->label(__('Day')),
+                TextColumn::make('day')->label(__('Day'))->formatStateUsing(fn (string $state): string => self::dayOptions()[$state] ?? $state),
                 TextColumn::make('start_time')->label(__('Start')),
                 TextColumn::make('end_time')->label(__('End')),
                 TextColumn::make('room.number')->label(__('Room'))->placeholder('-'),

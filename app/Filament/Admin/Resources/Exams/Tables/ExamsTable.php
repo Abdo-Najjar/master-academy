@@ -53,6 +53,8 @@ class ExamsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    TogglePublishGradesAction::publishBulk(),
+                    TogglePublishGradesAction::unpublishBulk(),
                     DeleteBulkAction::make(),
                 ]),
             ])

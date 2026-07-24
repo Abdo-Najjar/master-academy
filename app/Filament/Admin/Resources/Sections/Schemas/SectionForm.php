@@ -3,7 +3,10 @@
 namespace App\Filament\Admin\Resources\Sections\Schemas;
 
 use App\Models\Room;
+use App\Models\Section as SectionModel;
+use App\Models\SectionTime;
 use App\Models\Trainer;
+use Closure;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -163,7 +166,61 @@ class SectionForm
                             ->columns(4)
                             ->columnSpanFull()
                             ->defaultItems(0)
-                            ->addActionLabel(__('Add Time')),
+                            ->addActionLabel(__('Add Time'))
+                            ->rules([
+                                fn (Get $get, ?SectionModel $record) => function (string $attribute, $value, Closure $fail) use ($get, $record) {
+                                    $rows = is_array($value) ? $value : [];
+                                    $trainerId = $get('trainer_id');
+
+                                    foreach ($rows as $row) {
+                                        if (empty($row['day']) || empty($row['start_time']) || empty($row['end_time'])) {
+                                            continue;
+                                        }
+
+                                        if ($trainerId) {
+                                            $conflict = SectionTime::query()
+                                                ->where('day', $row['day'])
+                                                ->where('start_time', '<', $row['end_time'])
+                                                ->where('end_time', '>', $row['start_time'])
+                                                ->whereHas('section', fn ($q) => $q->where('trainer_id', $trainerId)
+                                                    ->when($record?->id, fn ($q2) => $q2->where('id', '!=', $record->id)))
+                                                ->with('section')
+                                                ->first();
+
+                                            if ($conflict) {
+                                                $fail(__('Trainer is already teaching :name on :day at :time', [
+                                                    'name' => $conflict->section?->name ?? '#'.$conflict->section_id,
+                                                    'day' => __(ucfirst((string) $row['day'])),
+                                                    'time' => substr((string) $conflict->start_time, 0, 5).' - '.substr((string) $conflict->end_time, 0, 5),
+                                                ]));
+
+                                                return;
+                                            }
+                                        }
+
+                                        if (! empty($row['room_id'])) {
+                                            $conflict = SectionTime::query()
+                                                ->where('day', $row['day'])
+                                                ->where('room_id', $row['room_id'])
+                                                ->where('start_time', '<', $row['end_time'])
+                                                ->where('end_time', '>', $row['start_time'])
+                                                ->when($record?->id, fn ($q) => $q->where('section_id', '!=', $record->id))
+                                                ->with('section')
+                                                ->first();
+
+                                            if ($conflict) {
+                                                $fail(__('Room is already used by :name on :day at :time', [
+                                                    'name' => $conflict->section?->name ?? '#'.$conflict->section_id,
+                                                    'day' => __(ucfirst((string) $row['day'])),
+                                                    'time' => substr((string) $conflict->start_time, 0, 5).' - '.substr((string) $conflict->end_time, 0, 5),
+                                                ]));
+
+                                                return;
+                                            }
+                                        }
+                                    }
+                                },
+                            ]),
                     ]),
             ]);
     }

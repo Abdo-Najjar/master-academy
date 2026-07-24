@@ -7,6 +7,7 @@ use App\Models\ExamGrade;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Grid;
 
 /**
  * Reusable action that lets a teacher enter/update every student's score for an
@@ -27,9 +28,12 @@ class EnterGradesAction
                 }
 
                 $record->loadMissing('section.registrations.student');
-                $existing = ExamGrade::query()
+                $existingScores = ExamGrade::query()
                     ->where('exam_id', $record->id)
                     ->pluck('score', 'student_id');
+                $existingNotes = ExamGrade::query()
+                    ->where('exam_id', $record->id)
+                    ->pluck('note', 'student_id');
 
                 $fields = [];
                 foreach ($record->section?->registrations ?? [] as $reg) {
@@ -40,18 +44,31 @@ class EnterGradesAction
                     $name = is_array($student->name)
                         ? ($student->name[app()->getLocale()] ?? reset($student->name))
                         : $student->name;
-                    $fields[] = TextInput::make("scores.{$student->id}")
-                        ->label($name.' ('.$student->student_number.')')
-                        ->numeric()
-                        ->minValue(0)
-                        ->maxValue((float) $record->max_score)
-                        ->default($existing[$student->id] ?? null);
+                    $fields[] = Grid::make(2)
+                        ->schema([
+                            TextInput::make("scores.{$student->id}")
+                                ->label($name.' ('.$student->student_number.')')
+                                ->numeric()
+                                ->minValue(0)
+                                ->maxValue((float) $record->max_score)
+                                ->helperText(__('Out of :max', ['max' => $record->max_score]))
+                                ->default($existingScores[$student->id] ?? null),
+                            TextInput::make("notes.{$student->id}")
+                                ->label(__('Note'))
+                                ->maxLength(255)
+                                ->default($existingNotes[$student->id] ?? null),
+                        ]);
                 }
 
                 return $fields;
             })
             ->action(function (Exam $record, array $data): void {
+                $notes = $data['notes'] ?? [];
+
                 foreach (($data['scores'] ?? []) as $studentId => $score) {
+                    $note = $notes[$studentId] ?? null;
+                    $note = $note === '' ? null : $note;
+
                     if ($score === null || $score === '') {
                         ExamGrade::query()
                             ->where('exam_id', $record->id)
@@ -63,7 +80,7 @@ class EnterGradesAction
 
                     ExamGrade::query()->updateOrCreate(
                         ['exam_id' => $record->id, 'student_id' => (int) $studentId],
-                        ['score' => (float) $score]
+                        ['score' => (float) $score, 'note' => $note]
                     );
                 }
 
