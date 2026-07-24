@@ -25,16 +25,11 @@ class SectionsCalendar extends Page implements HasForms
 
     protected string $view = 'filament.admin.pages.sections-calendar';
 
-    protected static ?int $navigationSort = 6;
+    protected static ?int $navigationSort = -1;
 
     public ?array $filters = [];
 
     public string $cursor;
-
-    public static function getNavigationGroup(): ?string
-    {
-        return __('Education');
-    }
 
     public static function getNavigationLabel(): string
     {

@@ -15,12 +15,10 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
-use Filament\Forms\Components\ColorPicker;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
@@ -34,7 +32,7 @@ class CourseTypeResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -65,8 +63,6 @@ class CourseTypeResource extends Resource
                 Section::make('')
                     ->schema([
                         \App\Filament\Support\TranslatableInput::make('name', __('Name')),
-                        ColorPicker::make('color')
-                            ->label(__('Color')),
                     ])
                     ->columns(1)
                     ->columnSpanFull(),
@@ -81,10 +77,8 @@ class CourseTypeResource extends Resource
                 TextColumn::make('name')
                     ->label(__('Name'))
                     ->badge()
-                    ->color(fn ($record) => $record->color ? \Filament\Support\Colors\Color::hex($record->color) : 'gray')
                     ->searchable()
                     ->sortable(),
-                ColorColumn::make('color')->label(__('Color')),
                 TextColumn::make('subjects_count')->counts('subjects')->label(__('Courses Count')),
             ])
             ->filters([
