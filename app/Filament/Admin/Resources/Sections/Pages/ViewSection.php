@@ -7,6 +7,7 @@ use App\Filament\Admin\Resources\Sections\SectionResource;
 use App\Models\Section;
 use App\Services\WhatsAppService;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
@@ -23,65 +24,70 @@ class ViewSection extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('notifyWhatsApp')
-                ->label(__('Notify via WhatsApp'))
-                ->icon('heroicon-o-chat-bubble-left-ellipsis')
-                ->color('success')
-                ->schema([
-                    Textarea::make('message')
-                        ->label(__('Message'))
-                        ->rows(4)
-                        ->required()
-                        ->placeholder(__('Type your message…')),
-                ])
-                ->action(function (Section $record, array $data): StreamedResponse {
-                    $contacts = WhatsAppService::sectionContacts($record, $data['message']);
+            ActionGroup::make([
+                EditAction::make(),
+                Action::make('notifyWhatsApp')
+                    ->label(__('Notify via WhatsApp'))
+                    ->icon('heroicon-o-chat-bubble-left-ellipsis')
+                    ->color('success')
+                    ->schema([
+                        Textarea::make('message')
+                            ->label(__('Message'))
+                            ->rows(4)
+                            ->required()
+                            ->placeholder(__('Type your message…')),
+                    ])
+                    ->action(function (Section $record, array $data): StreamedResponse {
+                        $contacts = WhatsAppService::sectionContacts($record, $data['message']);
 
-                    $sectionName = $record->name;
-                    $html = self::buildContactsHtml($sectionName, array_values($contacts), $data['message']);
+                        $sectionName = $record->name;
+                        $html = self::buildContactsHtml($sectionName, array_values($contacts), $data['message']);
 
-                    return response()->streamDownload(
-                        fn () => print($html),
-                        'whatsapp-'.\Str::slug($sectionName).'.html',
-                        ['Content-Type' => 'text/html; charset=utf-8']
-                    );
-                }),
-            Action::make('exportAttendance')
-                ->label(__('Export Attendance'))
-                ->icon('heroicon-o-clipboard-document-check')
-                ->color('info')
-                ->action(fn (Section $record): StreamedResponse => $this->exportAttendanceMatrix($record)),
-            Action::make('exportAttendanceSheet')
-                ->label(__('Export Daily Attendance'))
-                ->icon('heroicon-o-document-arrow-down')
-                ->color('gray')
-                ->schema([
-                    DatePicker::make('date')
-                        ->label(__('Date'))
-                        ->native(false)
-                        ->required()
-                        ->default(now()),
-                    Radio::make('format')
-                        ->label(__('Format'))
-                        ->options([
-                            'pdf' => __('PDF'),
-                            'excel' => __('Excel'),
-                        ])
-                        ->default('pdf')
-                        ->inline()
-                        ->required(),
-                ])
-                ->action(function (Section $record, array $data, $livewire): ?StreamedResponse {
-                    if ($data['format'] === 'excel') {
-                        return $this->exportAttendanceSheetExcel($record, $data['date']);
-                    }
+                        return response()->streamDownload(
+                            fn () => print($html),
+                            'whatsapp-'.\Str::slug($sectionName).'.html',
+                            ['Content-Type' => 'text/html; charset=utf-8']
+                        );
+                    }),
+                Action::make('exportAttendance')
+                    ->label(__('Export Attendance'))
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->color('info')
+                    ->action(fn (Section $record): StreamedResponse => $this->exportAttendanceMatrix($record)),
+                Action::make('exportAttendanceSheet')
+                    ->label(__('Export Daily Attendance'))
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('gray')
+                    ->schema([
+                        DatePicker::make('date')
+                            ->label(__('Date'))
+                            ->native(false)
+                            ->required()
+                            ->default(now()),
+                        Radio::make('format')
+                            ->label(__('Format'))
+                            ->options([
+                                'pdf' => __('PDF'),
+                                'excel' => __('Excel'),
+                            ])
+                            ->default('pdf')
+                            ->inline()
+                            ->required(),
+                    ])
+                    ->action(function (Section $record, array $data, $livewire): ?StreamedResponse {
+                        if ($data['format'] === 'excel') {
+                            return $this->exportAttendanceSheetExcel($record, $data['date']);
+                        }
 
-                    $url = route('admin.pdf.attendance-sheet', ['section' => $record, 'date' => $data['date']]);
-                    $livewire->js('window.open('.json_encode($url).", '_blank')");
+                        $url = route('admin.pdf.attendance-sheet', ['section' => $record, 'date' => $data['date']]);
+                        $livewire->js('window.open('.json_encode($url).", '_blank')");
 
-                    return null;
-                }),
-            EditAction::make(),
+                        return null;
+                    }),
+            ])
+                ->label(__('Actions'))
+                ->icon('heroicon-o-ellipsis-vertical')
+                ->button(),
         ];
     }
 

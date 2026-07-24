@@ -61,7 +61,7 @@ class RegistrationForm
                                 }
                             })
                             ->rules([
-                                function (string $attribute, $value, Closure $fail) {
+                                fn () => function (string $attribute, $value, Closure $fail) {
                                     if (! $value) {
                                         return;
                                     }
