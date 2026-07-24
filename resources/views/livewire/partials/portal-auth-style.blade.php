@@ -15,7 +15,7 @@
 
     .pa-blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .33; pointer-events: none; animation: pa-float 14s ease-in-out infinite alternate; }
     .pa-blob--1 { width: 440px; height: 440px; background: var(--pa-a1); top: -150px; inset-inline-start: -110px; }
-    .pa-blob--2 { width: 380px; height: 380px; background: #2563eb; bottom: -130px; inset-inline-end: -90px; animation-delay: -6s; opacity: .22; }
+    .pa-blob--2 { width: 380px; height: 380px; background: var(--pa-a2); bottom: -130px; inset-inline-end: -90px; animation-delay: -6s; opacity: .22; }
     @keyframes pa-float { from { transform: translateY(0) scale(1); } to { transform: translateY(46px) scale(1.1); } }
 
     .pa-card {

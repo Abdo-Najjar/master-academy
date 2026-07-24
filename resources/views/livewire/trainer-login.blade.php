@@ -1,4 +1,4 @@
-<div class="pa-root" style="--pa-a1:#10b981;--pa-a2:#047857;">
+<div class="pa-root" style="--pa-a1:#f59e0b;--pa-a2:#b45309;">
     @include('livewire.partials.portal-auth-style')
 
     <span class="pa-blob pa-blob--1"></span>
