@@ -98,6 +98,10 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::SIMPLE_PAGE_START,
                 fn(): string => view('filament.admin.partials.theme-toggle')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
+                fn(): string => view('filament.admin.partials.theme-toggle-topbar')->render(),
             );
     }
 }
