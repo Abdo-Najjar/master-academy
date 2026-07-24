@@ -154,7 +154,7 @@
                 </div>
                 <div>
                     <label style="display:block;font-size:.875rem;font-weight:600;margin-bottom:.375rem;">{{ __('Message') }}</label>
-                    <textarea wire:model="testMessage" rows="3" placeholder="{{ __('Test message from Manba center…') }}"
+                    <textarea wire:model="testMessage" rows="3" placeholder="{{ __('Test message from Master Academy…') }}"
                               class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3.5 py-2.5 text-sm dark:bg-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"></textarea>
                     @error('testMessage') <p style="color:#dc2626;font-size:.8rem;margin-top:.375rem;">{{ $message }}</p> @enderror
                 </div>

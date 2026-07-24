@@ -76,7 +76,7 @@
     <div class="mp-wrap">
         <div class="mp-hero">
             <img src="{{ \App\Support\AppBranding::logoUrl('light') }}" alt="{{ __('Logo') }}" class="mp-logo" data-theme-asset onerror="this.style.display='none'">
-            <h1 class="mp-title">منبع التميز</h1>
+            <h1 class="mp-title">ماستر أكاديمي</h1>
             <div class="mp-sub-line"></div>
         </div>
 

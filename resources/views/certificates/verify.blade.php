@@ -33,7 +33,7 @@
         </div>
 
         <h1 class="cv-title">{{ __('Certificate Verified') }} ✓</h1>
-        <p class="cv-sub">{{ __('This is an authentic certificate issued by') }} <strong>منبع التميز</strong></p>
+        <p class="cv-sub">{{ __('This is an authentic certificate issued by') }} <strong>ماستر أكاديمي</strong></p>
 
         <div class="cv-rows">
             <div class="cv-row">

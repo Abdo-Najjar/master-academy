@@ -23,7 +23,7 @@ class AppBranding
             ];
         } catch (Throwable) {
             return [
-                'app_name' => config('app.name', 'منبع التميز'),
+                'app_name' => config('app.name', 'ماستر أكاديمي'),
                 'primary_color' => '#dc2626',
                 'secondary_color' => '#f59e0b',
             ];
@@ -52,7 +52,7 @@ class AppBranding
 
     public static function appName(): string
     {
-        return self::settings()['app_name'] ?? config('app.name', 'منبع التميز');
+        return self::settings()['app_name'] ?? config('app.name', 'ماستر أكاديمي');
     }
 
     /**
