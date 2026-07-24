@@ -22,9 +22,37 @@ class CertificateService
         ]);
     }
 
+    /**
+     * Issue one certificate per student enrolled in the section, skipping
+     * students who already have a certificate for this section + template.
+     *
+     * @return array{issued: \Illuminate\Support\Collection<int, Certificate>, skipped: int}
+     */
+    public static function issueForSection(Section $section, CertificateTemplate $template): array
+    {
+        $studentIds = $section->registrations()->pluck('student_id')->unique();
+
+        $alreadyIssuedStudentIds = Certificate::query()
+            ->where('section_id', $section->id)
+            ->where('template_id', $template->id)
+            ->whereIn('student_id', $studentIds)
+            ->pluck('student_id');
+
+        $toIssue = $studentIds->diff($alreadyIssuedStudentIds);
+
+        $issued = $toIssue->map(
+            fn (int $studentId) => self::issue(Student::findOrFail($studentId), $template, $section)
+        )->values();
+
+        return [
+            'issued' => $issued,
+            'skipped' => $alreadyIssuedStudentIds->count(),
+        ];
+    }
+
     public static function generatePdf(Certificate $certificate): string
     {
-        $certificate->loadMissing(['student', 'section.subject', 'template']);
+        $certificate->loadMissing(['student', 'section.subject', 'section.trainer', 'template']);
 
         $template = $certificate->template;
         $student = $certificate->student;
@@ -90,7 +118,7 @@ class CertificateService
      */
     public static function imagePayload(Certificate $certificate): array
     {
-        $certificate->loadMissing(['student', 'section.subject', 'template']);
+        $certificate->loadMissing(['student', 'section.subject', 'section.trainer', 'template']);
 
         $template = $certificate->template;
         $student = $certificate->student;
@@ -146,8 +174,18 @@ class CertificateService
                 'size' => $qrSize,
                 'svg' => $qrSvg,
             ] : null,
-            'filename' => 'certificate-'.$certificate->serial_number.'.png',
+            'filename' => self::certificateFilename($certificate, (string) ($values['student_name'] ?? '')),
         ];
+    }
+
+    /**
+     * Build a filesystem/zip-safe download filename: "<student name> - <serial number>.png".
+     */
+    protected static function certificateFilename(Certificate $certificate, string $studentName): string
+    {
+        $safeName = trim(preg_replace('/[\\/:*?"<>|]+/u', ' ', $studentName) ?? '');
+
+        return ($safeName !== '' ? $safeName.' - ' : '').$certificate->serial_number.'.png';
     }
 
     /**
@@ -164,6 +202,8 @@ class CertificateService
         $sectionNameEn = $sectionNameAr;
         $subjectNameAr = $section?->subject ? (string) $section->subject->getTranslation('name', 'ar', false) : '';
         $subjectNameEn = $section?->subject ? (string) $section->subject->getTranslation('name', 'en', false) : '';
+        $trainerNameAr = $section?->trainer ? (string) $section->trainer->getTranslation('name', 'ar', false) : '';
+        $trainerNameEn = $section?->trainer ? (string) $section->trainer->getTranslation('name', 'en', false) : '';
 
         return [
             // Locale-default keys (backward compatible with old templates)
@@ -177,11 +217,14 @@ class CertificateService
             'section_name_en' => $sectionNameEn,
             'subject_name_ar' => $subjectNameAr,
             'subject_name_en' => $subjectNameEn,
+            'trainer_name_ar' => $trainerNameAr,
+            'trainer_name_en' => $trainerNameEn,
             // Other fields
             'serial_number' => $certificate->serial_number,
             'issued_date' => $certificate->issued_at?->format('Y/m/d') ?? now()->format('Y/m/d'),
             'student_number' => $student?->student_number ?? '',
             'student_ssn' => $student?->ssn ?? '',
+            'training_hours' => $section?->training_hours !== null ? (string) $section->training_hours : '',
         ];
     }
 }

@@ -9,6 +9,7 @@ use App\Models\Student;
 use App\Services\CertificateService;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -20,6 +21,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 
 class CertificatesTable
 {
@@ -96,6 +98,60 @@ class CertificatesTable
                             ->persistent()
                             ->send();
                     }),
+                Action::make('issue_certificates_section')
+                    ->label(__('Issue for Section'))
+                    ->icon('heroicon-o-user-group')
+                    ->color('info')
+                    ->schema([
+                        Select::make('section_id')
+                            ->label(__('Section'))
+                            ->options(Section::query()->orderBy('id', 'desc')->get()->pluck('name', 'id'))
+                            ->searchable()
+                            ->required(),
+                        Select::make('template_id')
+                            ->label(__('Template'))
+                            ->options(CertificateTemplate::where('is_active', true)->get()->pluck('name', 'id'))
+                            ->required(),
+                    ])
+                    ->action(function (array $data, $livewire): void {
+                        $section = Section::findOrFail($data['section_id']);
+                        $template = CertificateTemplate::findOrFail($data['template_id']);
+
+                        $result = CertificateService::issueForSection($section, $template);
+                        $issued = $result['issued'];
+
+                        if ($issued->isEmpty()) {
+                            Notification::make()
+                                ->warning()
+                                ->title(__('No certificates issued'))
+                                ->body(__('All enrolled students already have a certificate for this section and template.'))
+                                ->send();
+
+                            return;
+                        }
+
+                        $url = route('admin.pdf.certificate-images-bulk', ['ids' => $issued->pluck('id')->implode(',')]);
+
+                        $livewire->js('window.open('.json_encode($url).", '_blank')");
+
+                        $skipped = $result['skipped'];
+                        $body = $skipped > 0
+                            ? __(':count certificates issued, :skipped already existed and were skipped.', ['count' => $issued->count(), 'skipped' => $skipped])
+                            : __(':count certificates issued.', ['count' => $issued->count()]);
+
+                        Notification::make()
+                            ->success()
+                            ->title(__('Certificates issued successfully'))
+                            ->body($body)
+                            ->actions([
+                                Action::make('open')
+                                    ->label(__('Open Certificates'))
+                                    ->url($url, shouldOpenInNewTab: true)
+                                    ->button(),
+                            ])
+                            ->persistent()
+                            ->send();
+                    }),
             ])
             ->filters([
                 SelectFilter::make('template_id')
@@ -114,7 +170,18 @@ class CertificatesTable
                 ]),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([DeleteBulkAction::make()]),
+                BulkActionGroup::make([
+                    BulkAction::make('download_images_bulk')
+                        ->label(__('Download Images'))
+                        ->icon('heroicon-o-photo')
+                        ->color('gray')
+                        ->action(function (Collection $records, $livewire): void {
+                            $url = route('admin.pdf.certificate-images-bulk', ['ids' => $records->pluck('id')->implode(',')]);
+                            $livewire->js('window.open('.json_encode($url).", '_blank')");
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    DeleteBulkAction::make(),
+                ]),
             ])
             ->defaultSort('id', 'desc');
     }

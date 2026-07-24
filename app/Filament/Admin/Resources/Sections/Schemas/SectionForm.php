@@ -92,6 +92,10 @@ class SectionForm
                             ->label(__('Capacity'))
                             ->numeric()
                             ->minValue(1),
+                        TextInput::make('training_hours')
+                            ->label(__('Training Hours'))
+                            ->numeric()
+                            ->minValue(0),
                     ])
                     ->columns(1),
 

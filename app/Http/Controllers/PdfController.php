@@ -46,6 +46,27 @@ class PdfController extends Controller
     }
 
     /**
+     * Batch export: renders every certificate id passed in `ids` (comma-separated)
+     * one after another on the client and lets the user download them all.
+     */
+    public function certificateImagesBulk(Request $request): ViewContract
+    {
+        abort_unless($request->user()?->can('certificate.index'), 403);
+
+        $ids = array_filter(array_map('intval', explode(',', (string) $request->query('ids'))));
+
+        $certificates = Certificate::query()->whereIn('id', $ids)->get()->sortBy(
+            fn (Certificate $c): int => array_search($c->id, $ids, true)
+        );
+
+        $payloads = $certificates->map(fn (Certificate $c) => CertificateService::imagePayload($c))->values();
+
+        return View::make('pdf.certificate-images-bulk', [
+            'payloads' => $payloads,
+        ]);
+    }
+
+    /**
      * Printable receipt for a single registration. mPDF is used because
      * dompdf does not shape Arabic glyphs / RTL correctly.
      */

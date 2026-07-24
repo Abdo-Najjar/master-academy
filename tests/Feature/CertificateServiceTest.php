@@ -49,7 +49,7 @@ it('issues a certificate with auto serial number and UUID token', function () {
     expect($cert->student_id)->toBe($this->student->id);
     expect($cert->section_id)->toBe($this->section->id);
     expect($cert->template_id)->toBe($this->template->id);
-    expect($cert->serial_number)->toMatch('/^CERT-\d{4}-\d{4}$/');
+    expect($cert->serial_number)->toMatch('/^MA-\d{4}-\d{3}$/');
     expect($cert->verification_token)->toHaveLength(36); // UUID
 });
 
@@ -57,15 +57,15 @@ it('issues a certificate without a section', function () {
     $cert = CertificateService::issue($this->student, $this->template, null);
 
     expect($cert->section_id)->toBeNull();
-    expect($cert->serial_number)->toStartWith('CERT-');
+    expect($cert->serial_number)->toStartWith('MA-');
 });
 
 it('serial numbers increment within same year', function () {
     $c1 = CertificateService::issue($this->student, $this->template);
     $c2 = CertificateService::issue($this->student, $this->template);
 
-    [$year1, $seq1] = explode('-', substr($c1->serial_number, 5));
-    [$year2, $seq2] = explode('-', substr($c2->serial_number, 5));
+    [$year1, $seq1] = explode('-', substr($c1->serial_number, 3));
+    [$year2, $seq2] = explode('-', substr($c2->serial_number, 3));
 
     expect($year1)->toBe($year2);
     expect((int) $seq2)->toBeGreaterThan((int) $seq1);

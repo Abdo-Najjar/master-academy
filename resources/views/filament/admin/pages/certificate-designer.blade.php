@@ -69,10 +69,13 @@
                 'section_name_en' => __('Section Name') . ' (EN)',
                 'subject_name_ar' => __('Subject') . ' (ع)',
                 'subject_name_en' => __('Subject') . ' (EN)',
+                'trainer_name_ar' => __('Trainer Name') . ' (ع)',
+                'trainer_name_en' => __('Trainer Name') . ' (EN)',
                 'serial_number' => __('Serial Number'),
                 'issued_date'   => __('Issue Date'),
                 'student_number'=> __('Student Number'),
                 'student_ssn'   => __('SSN'),
+                'training_hours'=> __('Training Hours'),
             ] as $key => $label)
                 <button type="button" class="cd-chip" @click="addField('{{ $key }}', '{{ $label }}')">+ {{ $label }}</button>
             @endforeach

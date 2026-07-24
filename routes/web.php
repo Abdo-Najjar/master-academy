@@ -53,5 +53,6 @@ Route::middleware(['web', 'auth'])
         Route::get('receipt/{registration}', [PdfController::class, 'receipt'])->name('receipt');
         Route::get('student-card/{student}', [PdfController::class, 'studentCard'])->name('student-card');
         Route::get('certificate-image/{certificate}', [PdfController::class, 'certificateImage'])->name('certificate-image');
+        Route::get('certificate-images-bulk', [PdfController::class, 'certificateImagesBulk'])->name('certificate-images-bulk');
         Route::get('attendance-sheet/{section}', [PdfController::class, 'attendanceSheet'])->name('attendance-sheet');
     });

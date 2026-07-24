@@ -27,6 +27,7 @@ class Section extends Model implements HasMedia
         'price',
         'trainer_rate',
         'capacity',
+        'training_hours',
         'section_type',
         'seat_reservation_type',
         'seat_reservation_amount',
@@ -42,13 +43,14 @@ class Section extends Model implements HasMedia
             'trainer_rate' => 'decimal:2',
             'seat_reservation_amount' => 'decimal:2',
             'capacity' => 'integer',
+            'training_hours' => 'integer',
         ];
     }
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'subject_id', 'trainer_id', 'start_date', 'end_date', 'price', 'trainer_rate', 'capacity'])
+            ->logOnly(['name', 'subject_id', 'trainer_id', 'start_date', 'end_date', 'price', 'trainer_rate', 'capacity', 'training_hours'])
             ->logOnlyDirty();
     }
 

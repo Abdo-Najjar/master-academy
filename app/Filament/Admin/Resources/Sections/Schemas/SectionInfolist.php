@@ -31,6 +31,7 @@ class SectionInfolist
                             ->label(__('Trainer Rate (%)'))
                             ->formatStateUsing(fn ($state) => $state !== null ? number_format((float) $state, 2).' %' : '—'),
                         TextEntry::make('capacity')->label(__('Capacity'))->numeric()->placeholder('—'),
+                        TextEntry::make('training_hours')->label(__('Training Hours'))->numeric()->placeholder('—'),
                         TextEntry::make('created_at')->label(__('Created'))->dateTime()->placeholder('—'),
                         TextEntry::make('deleted_at')
                             ->label(__('Deleted'))
