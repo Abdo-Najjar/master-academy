@@ -37,7 +37,7 @@ class ViewSection extends ViewRecord
                 ->action(function (Section $record, array $data): StreamedResponse {
                     $contacts = WhatsAppService::sectionContacts($record, $data['message']);
 
-                    $sectionName = $record->getTranslation('name', app()->getLocale(), false);
+                    $sectionName = $record->name;
                     $html = self::buildContactsHtml($sectionName, array_values($contacts), $data['message']);
 
                     return response()->streamDownload(
@@ -116,7 +116,7 @@ class ViewSection extends ViewRecord
             ->unique('id')
             ->values();
 
-        $sectionName = $section->getTranslation('name', app()->getLocale(), false) ?: (string) $section->id;
+        $sectionName = $section->name ?: (string) $section->id;
 
         return response()->streamDownload(function () use ($dates, $lookup, $students, $labels): void {
             $writer = new Writer();
@@ -184,7 +184,7 @@ class ViewSection extends ViewRecord
             ->sortBy(fn ($s) => $s->getTranslation('name', app()->getLocale(), false))
             ->values();
 
-        $sectionName = $section->getTranslation('name', app()->getLocale(), false) ?: (string) $section->id;
+        $sectionName = $section->name ?: (string) $section->id;
 
         return response()->streamDownload(function () use ($students, $attendances, $labels): void {
             $writer = new Writer();

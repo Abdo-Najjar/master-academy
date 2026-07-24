@@ -193,10 +193,7 @@ class DemoSeeder extends Seeder
             $rate = (float) ($trainer->default_rate ?: random_int(20, 50));
 
             $section = Section::create([
-                'name' => [
-                    'ar' => $subject->getTranslation('name', 'ar', false).' - شعبة '.$i,
-                    'en' => 'Section '.$i,
-                ],
+                'name' => $subject->getTranslation('name', 'ar', false).' - شعبة '.$i,
                 'subject_id' => $subject->id,
                 'trainer_id' => $trainer->id,
                 'start_date' => $start->toDateString(),

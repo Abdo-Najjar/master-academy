@@ -135,7 +135,7 @@ class ExamsRelationManager extends RelationManager
             ->orderByDesc('id')
             ->get()
             ->mapWithKeys(fn (Section $s): array => [
-                $s->id => $s->getTranslation('name', app()->getLocale(), false)
+                $s->id => $s->name
                     .($s->subject ? ' — '.$s->subject->getTranslation('name', app()->getLocale(), false) : ''),
             ])
             ->toArray();

@@ -129,14 +129,14 @@ class WhatsAppService
 
     public static function cancelSessionMessage(Section $section, string $date): string
     {
-        $name = $section->getTranslation('name', 'ar', false) ?: $section->getTranslation('name', 'en', false);
+        $name = $section->name;
 
         return "🔴 إشعار هام\n\nنعلمكم بأن حصة مجموعة ({$name}) المقررة بتاريخ {$date} قد تم إلغاؤها.\n\nعذراً على الإزعاج.";
     }
 
     public static function rescheduleMessage(Section $section, string $oldDate, string $newDate): string
     {
-        $name = $section->getTranslation('name', 'ar', false) ?: $section->getTranslation('name', 'en', false);
+        $name = $section->name;
 
         return "🔄 تغيير موعد\n\nنعلمكم بأن موعد حصة مجموعة ({$name}) قد تغيّر:\n📅 من: {$oldDate}\n📅 إلى: {$newDate}\n\nشكراً لتفهمكم.";
     }
@@ -156,7 +156,7 @@ class WhatsAppService
             ? ($student->name['ar'] ?? reset($student->name))
             : (string) $student->name;
 
-        $sectionName = $section->getTranslation('name', 'ar', false) ?: $section->getTranslation('name', 'en', false);
+        $sectionName = $section->name;
 
         return "📋 إشعار غياب\n\nنعلمكم بأن الطالب/ة ({$studentName}) لم يحضر/تحضر حصة مجموعة ({$sectionName}) بتاريخ {$date}.\n\nللاستفسار تواصلوا مع الإدارة.";
     }

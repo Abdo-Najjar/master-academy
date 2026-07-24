@@ -68,7 +68,7 @@
                         <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
                             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                                 <div>
-                                    <h3 class="text-lg font-semibold">{{ $section->getTranslation('name', app()->getLocale(), false) }}</h3>
+                                    <h3 class="text-lg font-semibold">{{ $section->name }}</h3>
                                     <p class="text-sm text-gray-500">{{ $section->subject?->getTranslation('name', app()->getLocale(), false) }} · {{ $section->registrations->count() }} {{ __('students') }}</p>
                                 </div>
                                 <div class="flex gap-2">
@@ -128,7 +128,7 @@
                         <select wire:model.live="attendanceSectionId" wire:change="loadAttendance" class="px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
                             <option value="">{{ __('Select section') }}</option>
                             @foreach ($sections as $s)
-                                <option value="{{ $s->id }}">{{ $s->getTranslation('name', app()->getLocale(), false) }}</option>
+                                <option value="{{ $s->id }}">{{ $s->name }}</option>
                             @endforeach
                         </select>
                         <input wire:model.live="attendanceDate" wire:change="loadAttendance" type="date" class="px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
@@ -196,7 +196,7 @@
                     <select wire:model.live="materialsSectionId" class="px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700 mb-4">
                         <option value="">{{ __('Select section') }}</option>
                         @foreach ($sections as $s)
-                            <option value="{{ $s->id }}">{{ $s->getTranslation('name', app()->getLocale(), false) }}</option>
+                            <option value="{{ $s->id }}">{{ $s->name }}</option>
                         @endforeach
                     </select>
 
@@ -251,7 +251,7 @@
                             <select wire:model="newAssignmentSectionId" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
                                 <option value="">{{ __('Select section') }}</option>
                                 @foreach ($sections as $s)
-                                    <option value="{{ $s->id }}">{{ $s->getTranslation('name', app()->getLocale(), false) }}</option>
+                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
                                 @endforeach
                             </select>
                             @error('newAssignmentSectionId') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
@@ -296,7 +296,7 @@
                                 <div>
                                     <h3 class="text-lg font-semibold">{{ $a->title }}</h3>
                                     <p class="text-sm text-gray-500">
-                                        {{ $a->section?->getTranslation('name', app()->getLocale(), false) }}
+                                        {{ $a->section?->name }}
                                         @if ($a->due_date) · {{ __('Due') }}: {{ $a->due_date->format('Y-m-d H:i') }} @endif
                                         @if ($a->max_points) · {{ __('Max Points') }}: {{ rtrim(rtrim((string) $a->max_points, '0'), '.') }} @endif
                                     </p>

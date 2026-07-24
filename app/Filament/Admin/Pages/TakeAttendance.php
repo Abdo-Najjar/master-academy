@@ -82,7 +82,7 @@ class TakeAttendance extends Page implements HasForms
                                 ->orderByDesc('id')
                                 ->get()
                                 ->mapWithKeys(fn ($s) => [
-                                    $s->id => $s->getTranslation('name', app()->getLocale(), false)
+                                    $s->id => $s->name
                                         .($s->subject ? ' — '.$s->subject->getTranslation('name', app()->getLocale(), false) : ''),
                                 ]))
                             ->searchable()

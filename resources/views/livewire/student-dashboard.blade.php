@@ -101,7 +101,7 @@
                         <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
                             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                                 <div>
-                                    <h3 class="text-lg font-semibold">{{ $section?->getTranslation('name', app()->getLocale(), false) }}</h3>
+                                    <h3 class="text-lg font-semibold">{{ $section?->name }}</h3>
                                     <p class="text-sm text-gray-500">{{ $section?->subject?->getTranslation('name', app()->getLocale(), false) }} · {{ $section?->trainer?->getTranslation('name', app()->getLocale(), false) }}</p>
                                 </div>
                                 <span class="text-sm px-3 py-1 rounded-full bg-purple-100 text-purple-700">{{ number_format((float) $reg->amount_paid, 2) }} ₪</span>
@@ -130,7 +130,7 @@
                                         @forelse ($items as $item)
                                             <div class="mb-2 last:mb-0">
                                                 <span class="font-medium">{{ $item['start_time'] }} - {{ $item['end_time'] }}</span> ·
-                                                {{ $item['section']?->getTranslation('name', app()->getLocale(), false) }}
+                                                {{ $item['section']?->name }}
                                                 @if ($item['time']->room)
                                                     <span class="text-xs text-gray-500"> ({{ __('Room') }}: {{ $item['time']->room->number }})</span>
                                                 @endif
@@ -162,7 +162,7 @@
                             <div class="min-w-0 flex-1">
                                 <p class="font-medium truncate">{{ $media->name }}</p>
                                 <p class="text-xs text-gray-500 truncate">
-                                    {{ $section?->getTranslation('name', app()->getLocale(), false) }}
+                                    {{ $section?->name }}
                                     · {{ strtoupper($ext) }} · {{ number_format($media->size / 1024, 0) }} KB
                                 </p>
                             </div>
@@ -192,7 +192,7 @@
                                 <div>
                                     <h3 class="text-lg font-semibold">{{ $a->title }}</h3>
                                     <p class="text-sm text-gray-500">
-                                        {{ $a->section?->getTranslation('name', app()->getLocale(), false) }}
+                                        {{ $a->section?->name }}
                                         @if ($a->due_date)
                                             · {{ __('Due') }}: {{ $a->due_date->format('Y-m-d H:i') }}
                                             @if ($isPastDue) <span class="text-red-500">({{ __('Past due') }})</span> @endif
@@ -240,7 +240,7 @@
                             @forelse ($grades as $g)
                                 <tr>
                                     <td class="px-4 py-3 font-medium">{{ $g->exam?->name }}</td>
-                                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ $g->exam?->section?->getTranslation('name', app()->getLocale(), false) }}</td>
+                                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ $g->exam?->section?->name }}</td>
                                     <td class="px-4 py-3">{{ optional($g->exam?->date)->format('Y-m-d') }}</td>
                                     <td class="px-4 py-3">
                                         <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
@@ -308,7 +308,7 @@
                                 <div>
                                     <h3 class="text-lg font-semibold">{{ $cert->template?->name ?? __('Certificate') }}</h3>
                                     @if ($cert->section)
-                                        <p class="text-sm text-gray-500">{{ $cert->section->getTranslation('name', app()->getLocale(), false) }} · {{ $cert->section->subject?->getTranslation('name', app()->getLocale(), false) }}</p>
+                                        <p class="text-sm text-gray-500">{{ $cert->section->name }} · {{ $cert->section->subject?->getTranslation('name', app()->getLocale(), false) }}</p>
                                     @endif
                                     <p class="text-xs text-gray-400 mt-1">{{ __('Serial') }}: {{ $cert->serial_number }} · {{ optional($cert->issued_at)->format('Y-m-d') }}</p>
                                 </div>

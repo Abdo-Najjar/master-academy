@@ -76,7 +76,7 @@ class SectionsCalendar extends Page implements HasForms
                                 return Section::query()
                                     ->when($get('subject_id'), fn ($q, $subjectId) => $q->where('subject_id', $subjectId))
                                     ->get()
-                                    ->mapWithKeys(fn (Section $s) => [$s->id => $s->getTranslation('name', app()->getLocale(), false)])
+                                    ->mapWithKeys(fn (Section $s) => [$s->id => $s->name])
                                     ->toArray();
                             })
                             ->searchable()

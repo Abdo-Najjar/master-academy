@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\AutoTranslatesMissing;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,11 +12,10 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\Translatable\HasTranslations;
 
 class Section extends Model implements HasMedia
 {
-    use AutoTranslatesMissing, HasFactory, HasTranslations, InteractsWithMedia, LogsActivity, SoftDeletes;
+    use HasFactory, InteractsWithMedia, LogsActivity, SoftDeletes;
 
     /** @var list<string> */
     protected $fillable = [
@@ -33,9 +31,6 @@ class Section extends Model implements HasMedia
         'seat_reservation_type',
         'seat_reservation_amount',
     ];
-
-    /** @var list<string> */
-    public array $translatable = ['name'];
 
     /** @return array<string, string> */
     protected function casts(): array

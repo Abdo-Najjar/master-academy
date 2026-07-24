@@ -68,7 +68,7 @@
                         @php
                             $section = $event->section;
                             $subjectColor = $section?->subject?->color;
-                            $sectionName = $section ? $section->getTranslation('name', app()->getLocale(), false) : '—';
+                            $sectionName = $section ? $section->name : '—';
                             $roomName = $event->room?->number;
                             $time = \Illuminate\Support\Carbon::parse($event->start_time)->format('H:i').'–'.\Illuminate\Support\Carbon::parse($event->end_time)->format('H:i');
                         @endphp

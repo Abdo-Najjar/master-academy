@@ -148,11 +148,12 @@ class QuickEnroll extends Page implements HasForms
                                 Select::make('section_id')
                                     ->label(__('Section'))
                                     ->options(fn () => Section::query()
+                                        ->whereNotNull('trainer_id')
                                         ->with('subject')
                                         ->orderByDesc('id')
                                         ->get()
                                         ->mapWithKeys(fn ($s) => [
-                                            $s->id => $s->getTranslation('name', app()->getLocale(), false)
+                                            $s->id => $s->name
                                                 .($s->subject ? ' — '.$s->subject->getTranslation('name', app()->getLocale(), false) : '')
                                                 .' ('.number_format((float) $s->price, 2).' ₪)',
                                         ]))
@@ -243,7 +244,7 @@ class QuickEnroll extends Page implements HasForms
                             ])
                             ->columns(2)
                             ->itemLabel(fn (array $state): ?string => filled($state['section_id'] ?? null)
-                                ? Section::find($state['section_id'])?->getTranslation('name', app()->getLocale(), false)
+                                ? Section::find($state['section_id'])?->name
                                 : null)
                             ->addActionLabel(__('Add Section'))
                             ->defaultItems(1)
@@ -307,7 +308,15 @@ class QuickEnroll extends Page implements HasForms
                         continue;
                     }
 
-                    $sectionNames[] = $section->getTranslation('name', app()->getLocale(), false);
+                    $sectionNames[] = $section->name;
+
+                    if (! $section->trainer_id) {
+                        throw new \RuntimeException(
+                            __('Section :name has no trainer assigned. Assign a trainer to the section before registering students.', [
+                                'name' => $section->name,
+                            ])
+                        );
+                    }
 
                     // Capacity check
                     if ($section->capacity) {
@@ -315,7 +324,7 @@ class QuickEnroll extends Page implements HasForms
                         if ($enrolled >= $section->capacity) {
                             throw new \RuntimeException(
                                 __('Section :name is full (capacity :capacity).', [
-                                    'name' => $section->getTranslation('name', app()->getLocale(), false),
+                                    'name' => $section->name,
                                     'capacity' => $section->capacity,
                                 ])
                             );
@@ -342,8 +351,8 @@ class QuickEnroll extends Page implements HasForms
                                 if ($new->start_time < $other->end_time && $new->end_time > $other->start_time) {
                                     throw new \RuntimeException(
                                         __('Schedule conflict between :section and :other on :day at :time', [
-                                            'section' => $section->getTranslation('name', app()->getLocale(), false),
-                                            'other' => $other->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$other->section_id,
+                                            'section' => $section->name,
+                                            'other' => $other->section?->name ?? '#'.$other->section_id,
                                             'day' => __(ucfirst((string) $new->day)),
                                             'time' => substr((string) $other->start_time, 0, 5).' - '.substr((string) $other->end_time, 0, 5),
                                         ])

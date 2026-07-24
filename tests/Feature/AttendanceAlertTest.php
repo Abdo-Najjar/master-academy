@@ -23,7 +23,7 @@ beforeEach(function () {
     ]);
 
     $this->section = Section::create([
-        'name' => ['en' => 'Alerts Section', 'ar' => 'قسم التنبيهات'],
+        'name' => 'Alerts Section',
         'subject_id' => $this->subject->id,
         'trainer_id' => $this->trainer->id,
         'price' => 100,

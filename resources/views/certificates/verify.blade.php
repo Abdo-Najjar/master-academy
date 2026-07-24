@@ -47,7 +47,7 @@
             @if($certificate->section)
             <div class="cv-row">
                 <span class="cv-label">{{ __('Section') }}</span>
-                <span class="cv-val">{{ $certificate->section->getTranslation('name', 'ar', false) }}</span>
+                <span class="cv-val">{{ $certificate->section->name }}</span>
             </div>
             <div class="cv-row">
                 <span class="cv-label">{{ __('Subject') }}</span>

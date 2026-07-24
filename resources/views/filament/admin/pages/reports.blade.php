@@ -170,7 +170,7 @@
                         @foreach ($dueStudents as $reg)
                             @php
                                 $student = $reg->student;
-                                $sName = $reg->section?->getTranslation('name', app()->getLocale(), false);
+                                $sName = $reg->section?->name;
                                 $sSubject = $reg->section?->subject?->getTranslation('name', app()->getLocale(), false);
                                 $studentName = is_array($student?->name) ? ($student->name[app()->getLocale()] ?? reset($student->name)) : $student?->name;
                                 $phone = preg_replace('/[^0-9]/', '', (string) ($student?->whatsapp_number ?: $student?->phone_number));

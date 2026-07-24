@@ -20,7 +20,7 @@ beforeEach(function () {
     ]);
 
     $this->section = Section::create([
-        'name' => ['en' => 'Sec', 'ar' => 'قسم'],
+        'name' => 'Sec',
         'subject_id' => $this->subject->id,
         'trainer_id' => $this->trainer->id,
         'price' => 0,
@@ -79,7 +79,7 @@ it('shows announcements targeted at the student via section', function () {
     $targeted->sections()->attach($this->section->id);
 
     $unrelated = Section::create([
-        'name' => ['en' => 'Other', 'ar' => 'آخر'],
+        'name' => 'Other',
         'subject_id' => $this->subject->id,
         'trainer_id' => $this->trainer->id,
         'price' => 0,

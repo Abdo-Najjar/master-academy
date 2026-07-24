@@ -160,8 +160,8 @@ class CertificateService
         $studentNameAr = $student ? ((string) ($student->getTranslation('name', 'ar', false)
             ?: (is_array($student->name) ? reset($student->name) : $student->name))) : '';
         $studentNameEn = $student ? (string) $student->getTranslation('name', 'en', false) : '';
-        $sectionNameAr = $section ? (string) $section->getTranslation('name', 'ar', false) : '';
-        $sectionNameEn = $section ? (string) $section->getTranslation('name', 'en', false) : '';
+        $sectionNameAr = $section ? (string) $section->name : '';
+        $sectionNameEn = $sectionNameAr;
         $subjectNameAr = $section?->subject ? (string) $section->subject->getTranslation('name', 'ar', false) : '';
         $subjectNameEn = $section?->subject ? (string) $section->subject->getTranslation('name', 'en', false) : '';
 

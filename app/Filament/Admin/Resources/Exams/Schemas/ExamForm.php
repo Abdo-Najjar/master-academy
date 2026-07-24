@@ -22,7 +22,7 @@ class ExamForm
                             ->label(__('Section'))
                             ->options(fn () => Section::query()->with('subject')->orderByDesc('id')->get()
                                 ->mapWithKeys(fn ($s) => [
-                                    $s->id => $s->getTranslation('name', app()->getLocale(), false)
+                                    $s->id => $s->name
                                         .($s->subject ? ' — '.$s->subject->getTranslation('name', app()->getLocale(), false) : ''),
                                 ]))
                             ->searchable()

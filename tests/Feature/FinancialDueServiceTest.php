@@ -18,7 +18,7 @@ beforeEach(function () {
     $this->subject = Subject::create(['name' => ['en' => 'Maths', 'ar' => 'رياضيات']]);
 
     $this->section = Section::create([
-        'name'       => ['en' => 'Fin Section', 'ar' => 'قسم مالي'],
+        'name'       => 'Fin Section',
         'subject_id' => $this->subject->id,
         'trainer_id' => $this->trainer->id,
         'price'      => 200,

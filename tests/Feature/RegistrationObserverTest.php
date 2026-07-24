@@ -17,7 +17,7 @@ function makeSection(array $overrides = []): Section
     ]);
 
     return Section::create(array_merge([
-        'name' => ['en' => 'Section A', 'ar' => 'شعبة أ'],
+        'name' => 'Section A',
         'subject_id' => $subject->id,
         'trainer_id' => $trainer->id,
         'price' => 1000,

@@ -13,7 +13,7 @@
         <div class="mb-6 p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
             <h1 class="text-xl font-semibold">{{ $assignment->title }}</h1>
             <p class="text-sm text-gray-500 mt-1">
-                {{ $assignment->section?->getTranslation('name', app()->getLocale(), false) }}
+                {{ $assignment->section?->name }}
                 @if ($assignment->due_date)
                     · {{ __('Due') }}: {{ $assignment->due_date->format('Y-m-d H:i') }}
                     @if ($assignment->due_date->isPast()) <span class="text-red-500">({{ __('Past due') }})</span> @endif

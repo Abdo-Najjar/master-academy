@@ -17,7 +17,7 @@ beforeEach(function () {
     $subject = Subject::create(['name' => ['en' => 'Science', 'ar' => 'علوم']]);
 
     $this->section = Section::create([
-        'name'       => ['en' => 'Cmd Section', 'ar' => 'قسم'],
+        'name'       => 'Cmd Section',
         'subject_id' => $subject->id,
         'trainer_id' => $trainer->id,
         'price'      => 100,

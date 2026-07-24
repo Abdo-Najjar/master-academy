@@ -46,7 +46,7 @@ class RegistrationForm
                             ->prefix('₪'),
                         Select::make('section_id')
                             ->label(__('Section'))
-                            ->relationship('section', 'name')
+                            ->relationship('section', 'name', modifyQueryUsing: fn ($query) => $query->whereNotNull('trainer_id'))
                             ->searchable()
                             ->preload()
                             ->required()
@@ -61,6 +61,17 @@ class RegistrationForm
                                 }
                             })
                             ->rules([
+                                function (string $attribute, $value, Closure $fail) {
+                                    if (! $value) {
+                                        return;
+                                    }
+                                    $section = Section::find($value);
+                                    if ($section && ! $section->trainer_id) {
+                                        $fail(__('Section :name has no trainer assigned. Assign a trainer to the section before registering students.', [
+                                            'name' => $section->name,
+                                        ]));
+                                    }
+                                },
                                 fn (callable $get, ?Registration $record) => function (string $attribute, $value, Closure $fail) use ($get, $record) {
                                     $studentId = $get('student_id');
                                     if (! $studentId || ! $value) {
@@ -86,7 +97,7 @@ class RegistrationForm
                                                 continue;
                                             }
                                             if ($new->start_time < $other->end_time && $new->end_time > $other->start_time) {
-                                                $sectionName = $other->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$other->section_id;
+                                                $sectionName = $other->section?->name ?? '#'.$other->section_id;
                                                 $fail(__('Schedule conflict with the student\'s other section :name on :day at :time', [
                                                     'name' => $sectionName,
                                                     'day' => __(ucfirst((string) $new->day)),

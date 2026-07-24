@@ -61,7 +61,7 @@ class RegistrationObserver
             if ($student && $amountPaid > 0) {
                 $student->forceWithdrawFloat($amountPaid, [
                     'description' => __('Charge for registration: :name', [
-                        'name' => $registration->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$registration->section_id,
+                        'name' => $registration->section?->name ?? '#'.$registration->section_id,
                     ]),
                     'note' => __('Registration #:id — :student', ['id' => $registration->id, 'student' => $studentName]),
                     'payment_type_id' => $registration->payment_type_id,
@@ -105,7 +105,7 @@ class RegistrationObserver
                     $balanceBefore = $student->balanceFloat;
                     $student->forceWithdrawFloat($diff, [
                         'description' => __('Additional charge for registration: :name', [
-                            'name' => $registration->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$registration->section_id,
+                            'name' => $registration->section?->name ?? '#'.$registration->section_id,
                         ]),
                         'note' => __('Registration #:id', ['id' => $registration->id]),
                         'payment_type_id' => $registration->payment_type_id,
@@ -114,7 +114,7 @@ class RegistrationObserver
                 } elseif ($diff < 0) {
                     $student->depositFloat(abs($diff), [
                         'description' => __('Adjustment for registration: :name', [
-                            'name' => $registration->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$registration->section_id,
+                            'name' => $registration->section?->name ?? '#'.$registration->section_id,
                         ]),
                         'note' => __('Registration #:id', ['id' => $registration->id]),
                     ]);

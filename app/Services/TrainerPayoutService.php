@@ -38,7 +38,7 @@ class TrainerPayoutService
         }
 
         $studentName = $registration->student?->getTranslation('name', app()->getLocale(), false) ?? '#'.$registration->student_id;
-        $sectionName = $registration->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$registration->section_id;
+        $sectionName = $registration->section?->name ?? '#'.$registration->section_id;
 
         if ($trainer && $trainerDelta > 0) {
             $trainer->depositFloat($trainerDelta, [

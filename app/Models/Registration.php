@@ -85,14 +85,14 @@ class Registration extends Model
 
             if ($student && (float) $this->amount_paid > 0) {
                 $student->depositFloat((float) $this->amount_paid, [
-                    'description' => __('Refund for cancelled registration: :name', ['name' => $this->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$this->section_id]),
+                    'description' => __('Refund for cancelled registration: :name', ['name' => $this->section?->name ?? '#'.$this->section_id]),
                     'note' => __('Registration #:id cancelled', ['id' => $this->id]),
                 ]);
             }
 
             if ($trainer && (float) $this->trainer_credited_amount > 0) {
                 $trainer->forceWithdrawFloat((float) $this->trainer_credited_amount, [
-                    'description' => __('Refund for cancelled registration: :name', ['name' => $this->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$this->section_id]),
+                    'description' => __('Refund for cancelled registration: :name', ['name' => $this->section?->name ?? '#'.$this->section_id]),
                     'note' => __('Registration #:id cancelled', ['id' => $this->id]),
                 ]);
             }

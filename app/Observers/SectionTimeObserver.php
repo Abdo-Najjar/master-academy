@@ -33,7 +33,7 @@ class SectionTimeObserver
                 ->with('section.trainer')
                 ->first();
             if ($conflict) {
-                $name = $conflict->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$conflict->section_id;
+                $name = $conflict->section?->name ?? '#'.$conflict->section_id;
                 throw ValidationException::withMessages([
                     'times' => __('Trainer is already teaching :name on :day at :time', [
                         'name' => $name,
@@ -51,7 +51,7 @@ class SectionTimeObserver
                 ->with('section')
                 ->first();
             if ($conflict) {
-                $name = $conflict->section?->getTranslation('name', app()->getLocale(), false) ?? '#'.$conflict->section_id;
+                $name = $conflict->section?->name ?? '#'.$conflict->section_id;
                 throw ValidationException::withMessages([
                     'times' => __('Room is already used by :name on :day at :time', [
                         'name' => $name,

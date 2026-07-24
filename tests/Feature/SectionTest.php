@@ -15,25 +15,25 @@ it('computes the status accessor from dates', function () {
     $subject = sectionSubject();
 
     $upcoming = Section::create([
-        'name' => ['en' => 'U', 'ar' => 'ق'],
+        'name' => 'U',
         'subject_id' => $subject->id,
         'start_date' => now()->addDays(5),
         'end_date' => now()->addDays(40),
     ]);
     $active = Section::create([
-        'name' => ['en' => 'A', 'ar' => 'ن'],
+        'name' => 'A',
         'subject_id' => $subject->id,
         'start_date' => now()->subDay(),
         'end_date' => now()->addDays(10),
     ]);
     $completed = Section::create([
-        'name' => ['en' => 'C', 'ar' => 'م'],
+        'name' => 'C',
         'subject_id' => $subject->id,
         'start_date' => now()->subDays(40),
         'end_date' => now()->subDays(5),
     ]);
     $scheduled = Section::create([
-        'name' => ['en' => 'S', 'ar' => 'ج'],
+        'name' => 'S',
         'subject_id' => $subject->id,
     ]);
 
@@ -50,8 +50,8 @@ it('blocks a trainer from being double-booked at overlapping times', function ()
         'username' => 'trn_'.uniqid(),
     ]);
 
-    $sectionA = Section::create(['name' => ['en' => 'A', 'ar' => 'أ'], 'subject_id' => $subject->id, 'trainer_id' => $trainer->id]);
-    $sectionB = Section::create(['name' => ['en' => 'B', 'ar' => 'ب'], 'subject_id' => $subject->id, 'trainer_id' => $trainer->id]);
+    $sectionA = Section::create(['name' => 'A', 'subject_id' => $subject->id, 'trainer_id' => $trainer->id]);
+    $sectionB = Section::create(['name' => 'B', 'subject_id' => $subject->id, 'trainer_id' => $trainer->id]);
 
     SectionTime::create([
         'section_id' => $sectionA->id,
@@ -75,8 +75,8 @@ it('allows the same trainer at non-overlapping times', function () {
         'username' => 'trn_'.uniqid(),
     ]);
 
-    $sectionA = Section::create(['name' => ['en' => 'A', 'ar' => 'أ'], 'subject_id' => $subject->id, 'trainer_id' => $trainer->id]);
-    $sectionB = Section::create(['name' => ['en' => 'B', 'ar' => 'ب'], 'subject_id' => $subject->id, 'trainer_id' => $trainer->id]);
+    $sectionA = Section::create(['name' => 'A', 'subject_id' => $subject->id, 'trainer_id' => $trainer->id]);
+    $sectionB = Section::create(['name' => 'B', 'subject_id' => $subject->id, 'trainer_id' => $trainer->id]);
 
     SectionTime::create(['section_id' => $sectionA->id, 'day' => 'monday', 'start_time' => '08:00', 'end_time' => '10:00']);
     $second = SectionTime::create(['section_id' => $sectionB->id, 'day' => 'monday', 'start_time' => '10:00', 'end_time' => '12:00']);
