@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Observers\CertificateObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Str;
 
+#[ObservedBy([CertificateObserver::class])]
 class Certificate extends Model
 {
     use HasFactory, SoftDeletes;
@@ -29,23 +31,6 @@ class Certificate extends Model
         return [
             'issued_at' => 'datetime',
         ];
-    }
-
-    protected static function booted(): void
-    {
-        static::creating(function (self $cert): void {
-            if (empty($cert->serial_number)) {
-                $year = now()->year;
-                $next = (int) static::query()->withTrashed()->whereYear('created_at', $year)->count() + 1;
-                $cert->serial_number = 'CERT-'.$year.'-'.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
-            }
-            if (empty($cert->verification_token)) {
-                $cert->verification_token = Str::uuid()->toString();
-            }
-            if (empty($cert->issued_at)) {
-                $cert->issued_at = now();
-            }
-        });
     }
 
     public function student(): BelongsTo

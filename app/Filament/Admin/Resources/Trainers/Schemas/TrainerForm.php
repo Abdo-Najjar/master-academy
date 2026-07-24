@@ -52,8 +52,10 @@ class TrainerForm
                             ->maxLength(255),
                         TextInput::make('trainer_number')
                             ->label(__('Trainer Number'))
-                            ->unique(table: 'trainers', column: 'trainer_number', ignoreRecord: true, modifyRuleUsing: fn (Unique $rule) => $rule->whereNull('deleted_at'))
-                            ->maxLength(255),
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->placeholder(__('Auto-generated'))
+                            ->visibleOn('edit'),
                         TextInput::make('email')
                             ->label(__('Email'))
                             ->email()
@@ -65,8 +67,16 @@ class TrainerForm
                             ->revealable()
                             ->required(fn ($livewire) => $livewire instanceof CreateTrainer)
                             ->minLength(6)
+                            ->same('password_confirmation')
                             ->dehydrated(fn ($state) => filled($state))
                             ->dehydrateStateUsing(fn ($state) => filled($state) ? Hash::make($state) : null),
+                        TextInput::make('password_confirmation')
+                            ->label(__('Confirm Password'))
+                            ->password()
+                            ->revealable()
+                            ->required(fn ($livewire) => $livewire instanceof CreateTrainer)
+                            ->minLength(6)
+                            ->dehydrated(false),
                     ])
                     ->columns(1),
 

@@ -35,8 +35,16 @@ class UserForm
                             ->revealable()
                             ->required(fn ($livewire) => $livewire instanceof CreateUser)
                             ->minLength(8)
+                            ->same('password_confirmation')
                             ->dehydrated(fn ($state) => filled($state))
                             ->dehydrateStateUsing(fn ($state) => filled($state) ? Hash::make($state) : null),
+                        TextInput::make('password_confirmation')
+                            ->label(__('Confirm Password'))
+                            ->password()
+                            ->revealable()
+                            ->required(fn ($livewire) => $livewire instanceof CreateUser)
+                            ->minLength(8)
+                            ->dehydrated(false),
                         TextInput::make('ssn')->label(__('SSN'))->maxLength(255),
                         TextInput::make('phone_number')->label(__('Phone'))->tel()->maxLength(255),
                         TextInput::make('whatsapp_number')->label(__('WhatsApp'))->tel()->maxLength(255),

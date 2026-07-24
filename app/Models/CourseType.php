@@ -14,7 +14,7 @@ class CourseType extends Model
     use AutoTranslatesMissing, HasFactory, HasTranslations, SoftDeletes;
 
     /** @var list<string> */
-    protected $fillable = ['name', 'color', 'sort_order'];
+    protected $fillable = ['name', 'sort_order'];
 
     /** @var list<string> */
     public array $translatable = ['name'];

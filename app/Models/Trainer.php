@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Models\Concerns\AutoTranslatesMissing;
+use App\Observers\TrainerObserver;
 use Bavix\Wallet\Interfaces\Wallet;
 use Bavix\Wallet\Interfaces\WalletFloat;
 use Bavix\Wallet\Traits\HasWalletFloat;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -21,6 +23,7 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Translatable\HasTranslations;
 
+#[ObservedBy([TrainerObserver::class])]
 class Trainer extends Authenticatable implements HasMedia, Wallet, WalletFloat
 {
     use AutoTranslatesMissing, HasFactory, HasTranslations, HasWalletFloat, InteractsWithMedia, LogsActivity, Notifiable, SoftDeletes;

@@ -65,8 +65,16 @@ class StudentForm
                             ->revealable()
                             ->required(fn ($livewire) => $livewire instanceof CreateStudent)
                             ->minLength(6)
+                            ->same('password_confirmation')
                             ->dehydrated(fn ($state) => filled($state))
                             ->dehydrateStateUsing(fn ($state) => filled($state) ? Hash::make($state) : null),
+                        TextInput::make('password_confirmation')
+                            ->label(__('Confirm Password'))
+                            ->password()
+                            ->revealable()
+                            ->required(fn ($livewire) => $livewire instanceof CreateStudent)
+                            ->minLength(6)
+                            ->dehydrated(false),
                     ])
                     ->columns(1),
 

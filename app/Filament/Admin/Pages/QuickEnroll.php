@@ -87,7 +87,15 @@ class QuickEnroll extends Page implements HasForms
                             ->password()
                             ->revealable()
                             ->required()
-                            ->minLength(6),
+                            ->minLength(6)
+                            ->same('password_confirmation'),
+                        TextInput::make('password_confirmation')
+                            ->label(__('Confirm Password'))
+                            ->password()
+                            ->revealable()
+                            ->required()
+                            ->minLength(6)
+                            ->dehydrated(false),
                         TextInput::make('email')
                             ->label(__('Email'))
                             ->email()
