@@ -23,7 +23,6 @@ class SubjectInfolist
                             ->columnSpanFull(),
                         ColorEntry::make('color')->label(__('Color'))->placeholder('—'),
                         TextEntry::make('courseType.name')->label(__('Course Type'))->placeholder('—'),
-                        TextEntry::make('sort_order')->label(__('Sort Order'))->numeric(),
                         TextEntry::make('created_at')->label(__('Created'))->dateTime()->placeholder('—'),
                         TextEntry::make('deleted_at')
                             ->label(__('Deleted'))

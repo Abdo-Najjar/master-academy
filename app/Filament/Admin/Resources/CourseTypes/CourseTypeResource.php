@@ -86,7 +86,6 @@ class CourseTypeResource extends Resource
                     ->sortable(),
                 ColorColumn::make('color')->label(__('Color')),
                 TextColumn::make('subjects_count')->counts('subjects')->label(__('Courses Count')),
-                TextColumn::make('sort_order')->label(__('Sort Order'))->sortable(),
             ])
             ->filters([
                 TrashedFilter::make(),
