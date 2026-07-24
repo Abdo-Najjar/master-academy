@@ -94,6 +94,16 @@ class AdminPanelProvider extends PanelProvider
                         </a>
                     </div>
                 BLADE)
+            )
+            ->renderHook(
+                PanelsRenderHook::SIMPLE_PAGE_START,
+                fn (): string => Blade::render(<<<'BLADE'
+                    @if (filament()->hasDarkMode() && ! filament()->hasDarkModeForced())
+                        <div class="fixed end-4 top-4 z-50 rounded-xl bg-white/80 p-1 shadow-lg ring-1 ring-gray-950/5 backdrop-blur dark:bg-gray-800/80 dark:ring-white/10">
+                            <x-filament-panels::theme-switcher />
+                        </div>
+                    @endif
+                BLADE)
             );
     }
 }
