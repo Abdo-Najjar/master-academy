@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\Trainers\Actions;
 
 use App\Models\PaymentType;
 use App\Models\Trainer;
+use App\Notifications\WalletTransaction;
 use Bavix\Wallet\Models\Wallet;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
@@ -30,6 +31,8 @@ class WalletActions
                     self::buildMeta($data, __('Deposit to trainer wallet'))
                 );
 
+                $record->notify(new WalletTransaction('deposit', (float) $data['amount']));
+
                 Notification::make()
                     ->success()
                     ->title(__('Deposit successful'))
@@ -52,6 +55,8 @@ class WalletActions
                     (float) $data['amount'],
                     self::buildMeta($data, __('Withdraw from trainer wallet'))
                 );
+
+                $record->notify(new WalletTransaction('withdraw', (float) $data['amount']));
 
                 Notification::make()
                     ->success()

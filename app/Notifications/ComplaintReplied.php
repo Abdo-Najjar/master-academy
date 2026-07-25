@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Complaint;
+use App\Models\Student;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -21,12 +22,15 @@ class ComplaintReplied extends Notification
     /** @return array<string, mixed> */
     public function toDatabase(object $notifiable): array
     {
+        $routeName = $notifiable instanceof Student ? 'student.dashboard' : 'trainer.dashboard';
+
         return [
             'complaint_id' => $this->complaint->id,
             'subject' => $this->complaint->subject,
             'reply' => $this->complaint->admin_reply,
             'status' => $this->complaint->status,
             'title' => __('The administration replied to your complaint'),
+            'url' => route($routeName, ['tab' => 'complaints']),
         ];
     }
 }

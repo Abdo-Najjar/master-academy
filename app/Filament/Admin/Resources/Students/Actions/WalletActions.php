@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\Students\Actions;
 
 use App\Models\PaymentType;
 use App\Models\Student;
+use App\Notifications\WalletTransaction;
 use App\Services\TrainerPayoutService;
 use Bavix\Wallet\Models\Wallet;
 use Filament\Actions\Action;
@@ -33,6 +34,8 @@ class WalletActions
 
                 TrainerPayoutService::settleForStudent($record, (float) $data['amount']);
 
+                $record->notify(new WalletTransaction('deposit', (float) $data['amount']));
+
                 Notification::make()
                     ->success()
                     ->title(__('Deposit successful'))
@@ -56,6 +59,8 @@ class WalletActions
                     (float) $data['amount'],
                     self::buildMeta($data, __('Withdraw from student wallet'))
                 );
+
+                $record->notify(new WalletTransaction('withdraw', (float) $data['amount']));
 
                 Notification::make()
                     ->success()

@@ -19,7 +19,7 @@
                     <a href="{{ route('trainer.dashboard') }}" wire:navigate
                        class="inline-flex items-center gap-1 text-sm text-emerald-600 hover:underline mb-4">
                         <svg class="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                        {{ __('Back to Dashboard') }}
+                        {{ __('Back') }}
                     </a>
 
                     <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">

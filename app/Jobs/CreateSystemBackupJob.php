@@ -23,17 +23,22 @@ class CreateSystemBackupJob implements ShouldQueue
 
     public int $tries = 1;
 
-    public function __construct(public int $userId)
+    /**
+     * @param  int|null  $userId  The admin who triggered this manually, or null for a scheduled run
+     *                            (in which case everyone with backup.download permission is notified).
+     */
+    public function __construct(public ?int $userId = null)
     {
     }
 
     public function handle(): void
     {
-        /** @var User|null $user */
-        $user = User::find($this->userId);
+        $recipients = $this->userId
+            ? User::query()->whereKey($this->userId)->get()
+            : User::query()->permission('backup.download')->get();
 
-        if (! $user) {
-            Log::warning("CreateSystemBackupJob: user {$this->userId} not found, aborting.");
+        if ($recipients->isEmpty()) {
+            Log::warning("CreateSystemBackupJob: no recipients found (userId: {$this->userId}), aborting.");
             return;
         }
 
@@ -74,7 +79,7 @@ class CreateSystemBackupJob implements ShouldQueue
                         )
                         ->markAsRead(),
                 ])
-                ->sendToDatabase($user);
+                ->sendToDatabase($recipients);
         } catch (Throwable $e) {
             Log::error('CreateSystemBackupJob failed', [
                 'user_id' => $this->userId,
@@ -86,7 +91,7 @@ class CreateSystemBackupJob implements ShouldQueue
                 ->icon('heroicon-o-x-circle')
                 ->title(__('Backup failed'))
                 ->body($e->getMessage())
-                ->sendToDatabase($user);
+                ->sendToDatabase($recipients);
         }
     }
 

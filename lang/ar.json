@@ -1502,5 +1502,13 @@
     "Schedule conflict between :section and :other on :day at :time": "تعارض في الجدول بين :section و :other يوم :day الساعة :time",
     "Student :name has been created and registered in: :sections": "تم إنشاء الطالب :name وتسجيله في: :sections",
     "Section :name has no trainer assigned. Assign a trainer to the section before registering students.": "الشعبة :name ليس لها مدرب معيّن. الرجاء تعيين مدرب للشعبة قبل تسجيل الطلاب فيها.",
-    "Attachments": "المرفقات"
+    "Attachments": "المرفقات",
+    "Notifications": "الإشعارات",
+    "Notification": "إشعار",
+    "No notifications yet": "لا توجد إشعارات بعد",
+    "Mark all as read": "تحديد الكل كمقروء",
+    "New assignment: :title": "تكليف جديد: :title",
+    "Back": "العودة للخلف",
+    "A deposit of :amount has been made to your wallet": "تم إيداع :amount في محفظتك",
+    "A withdrawal of :amount has been made from your wallet": "تم سحب :amount من محفظتك"
 }
