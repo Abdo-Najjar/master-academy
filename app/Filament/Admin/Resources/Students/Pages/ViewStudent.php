@@ -23,11 +23,11 @@ class ViewStudent extends ViewRecord
     {
         return [
             ActionGroup::make([
-                Action::make('studentCard')
-                    ->label(__('Student Card'))
-                    ->icon('heroicon-o-identification')
-                    ->color('gray')
-                    ->url(fn (Student $record): string => route('admin.pdf.student-card', $record), shouldOpenInNewTab: true),
+                // Action::make('studentCard')
+                //     ->label(__('Student Card'))
+                //     ->icon('heroicon-o-identification')
+                //     ->color('gray')
+                //     ->url(fn (Student $record): string => route('admin.pdf.student-card', $record), shouldOpenInNewTab: true),
                 Action::make('issueCertificate')
                     ->label(__('Issue Certificate'))
                     ->icon('heroicon-o-academic-cap')
