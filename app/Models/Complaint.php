@@ -70,11 +70,16 @@ class Complaint extends Model
     }
 
     /**
-     * Complaints older than one month are archived: hidden from the admin panel
-     * and from the student/trainer portals (the rows are kept, just not shown).
+     * A complaint is archived once it has been resolved for more than a week:
+     * hidden from the admin panel and from the student/trainer portals
+     * (the row is kept, just not shown). Open/in-progress complaints are
+     * never archived by age.
      */
     public function scopeNotArchived(Builder $query): Builder
     {
-        return $query->where('created_at', '>=', now()->subMonth());
+        return $query->where(function (Builder $q) {
+            $q->whereNull('resolved_at')
+                ->orWhere('resolved_at', '>=', now()->subWeek());
+        });
     }
 }

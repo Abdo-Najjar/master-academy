@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Announcement;
 use App\Models\Assignment;
 use App\Models\Complaint;
+use App\Services\ComplaintAlertService;
 use Bavix\Wallet\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
@@ -57,7 +58,7 @@ class StudentDashboard extends Component
             'newPassword' => __('New Password'),
             'newPasswordConfirmation' => __('Confirm Password'),
             'newAvatar' => __('Profile Picture'),
-            'complaintSubject' => __('Subject'),
+            'complaintSubject' => __('Complaint Subject'),
             'complaintBody' => __('Body'),
         ];
     }
@@ -116,11 +117,13 @@ class StudentDashboard extends Component
             'complaintBody' => ['required', 'string', 'min:10'],
         ]);
 
-        $student->complaints()->create([
+        $complaint = $student->complaints()->create([
             'subject' => $this->complaintSubject,
             'body' => $this->complaintBody,
             'status' => Complaint::STATUS_OPEN,
         ]);
+
+        app(ComplaintAlertService::class)->notifyNewComplaint($complaint);
 
         $this->reset(['complaintSubject', 'complaintBody']);
         session()->flash('message', __('Complaint submitted successfully'));

@@ -10,6 +10,7 @@ use App\Models\Section;
 use App\Models\Student;
 use App\Services\CertificateService;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
@@ -22,56 +23,61 @@ class ViewStudent extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('studentCard')
-                ->label(__('Student Card'))
-                ->icon('heroicon-o-identification')
-                ->color('gray')
-                ->url(fn (Student $record): string => route('admin.pdf.student-card', $record), shouldOpenInNewTab: true),
-            Action::make('issueCertificate')
-                ->label(__('Issue Certificate'))
-                ->icon('heroicon-o-academic-cap')
-                ->color('info')
-                ->schema([
-                    Select::make('template_id')
-                        ->label(__('Template'))
-                        ->options(CertificateTemplate::where('is_active', true)->get()->pluck('name', 'id'))
-                        ->required(),
-                    Select::make('section_id')
-                        ->label(__('Section'))
-                        ->options(fn (Student $record) => $record->registrations()
-                            ->with('section')
-                            ->get()
-                            ->pluck('section.name', 'section.id')
-                            ->filter()
-                        )
-                        ->searchable()
-                        ->required(),
-                ])
-                ->action(function (Student $record, array $data, $livewire): void {
-                    $template = CertificateTemplate::findOrFail($data['template_id']);
-                    $section = Section::find($data['section_id']);
-                    $cert = CertificateService::issue($record, $template, $section);
+            ActionGroup::make([
+                Action::make('studentCard')
+                    ->label(__('Student Card'))
+                    ->icon('heroicon-o-identification')
+                    ->color('gray')
+                    ->url(fn (Student $record): string => route('admin.pdf.student-card', $record), shouldOpenInNewTab: true),
+                Action::make('issueCertificate')
+                    ->label(__('Issue Certificate'))
+                    ->icon('heroicon-o-academic-cap')
+                    ->color('info')
+                    ->schema([
+                        Select::make('template_id')
+                            ->label(__('Template'))
+                            ->options(CertificateTemplate::where('is_active', true)->get()->pluck('name', 'id'))
+                            ->required(),
+                        Select::make('section_id')
+                            ->label(__('Section'))
+                            ->options(fn (Student $record) => $record->registrations()
+                                ->with('section')
+                                ->get()
+                                ->pluck('section.name', 'section.id')
+                                ->filter()
+                            )
+                            ->searchable()
+                            ->required(),
+                    ])
+                    ->action(function (Student $record, array $data, $livewire): void {
+                        $template = CertificateTemplate::findOrFail($data['template_id']);
+                        $section = Section::find($data['section_id']);
+                        $cert = CertificateService::issue($record, $template, $section);
 
-                    $url = route('admin.pdf.certificate-image', $cert);
+                        $url = route('admin.pdf.certificate-image', $cert);
 
-                    $livewire->js('window.open('.json_encode($url).", '_blank')");
+                        $livewire->js('window.open('.json_encode($url).", '_blank')");
 
-                    Notification::make()
-                        ->success()
-                        ->title(__('Certificate issued successfully'))
-                        ->actions([
-                            Action::make('open')
-                                ->label(__('Open Certificate'))
-                                ->url($url, shouldOpenInNewTab: true)
-                                ->button(),
-                        ])
-                        ->persistent()
-                        ->send();
-                }),
-            TransferSectionAction::make(),
-            WalletActions::deposit(),
-            WalletActions::withdraw(),
-            EditAction::make(),
+                        Notification::make()
+                            ->success()
+                            ->title(__('Certificate issued successfully'))
+                            ->actions([
+                                Action::make('open')
+                                    ->label(__('Open Certificate'))
+                                    ->url($url, shouldOpenInNewTab: true)
+                                    ->button(),
+                            ])
+                            ->persistent()
+                            ->send();
+                    }),
+                TransferSectionAction::make(),
+                WalletActions::deposit(),
+                WalletActions::withdraw(),
+                EditAction::make(),
+            ])
+                ->label(__('Actions'))
+                ->icon('heroicon-o-ellipsis-vertical')
+                ->button(),
         ];
     }
 }

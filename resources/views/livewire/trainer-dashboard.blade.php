@@ -362,7 +362,7 @@
                     <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold mb-4">{{ __('Submit a Complaint') }}</h3>
                         <form wire:submit="submitComplaint" class="space-y-3">
-                            <input wire:model="complaintSubject" type="text" placeholder="{{ __('Subject') }}"
+                            <input wire:model="complaintSubject" type="text" placeholder="{{ __('Complaint Subject') }}"
                                    class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
                             @error('complaintSubject') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                             <textarea wire:model="complaintBody" rows="5" placeholder="{{ __('Describe your complaint') }}"

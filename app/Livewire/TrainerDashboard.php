@@ -6,6 +6,7 @@ use App\Models\Assignment;
 use App\Models\Attendance;
 use App\Models\Complaint;
 use App\Models\Section;
+use App\Services\ComplaintAlertService;
 use Bavix\Wallet\Models\Transaction;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -91,7 +92,7 @@ class TrainerDashboard extends Component
             'newPasswordConfirmation' => __('Confirm Password'),
             'newAvatar' => __('Profile Picture'),
             'newMaterials.*' => __('File'),
-            'complaintSubject' => __('Subject'),
+            'complaintSubject' => __('Complaint Subject'),
             'complaintBody' => __('Body'),
             'newAssignmentSectionId' => __('Section'),
             'newAssignmentTitle' => __('Title'),
@@ -286,11 +287,13 @@ class TrainerDashboard extends Component
             'complaintBody' => ['required', 'string', 'min:10'],
         ]);
 
-        $trainer->complaints()->create([
+        $complaint = $trainer->complaints()->create([
             'subject' => $this->complaintSubject,
             'body' => $this->complaintBody,
             'status' => Complaint::STATUS_OPEN,
         ]);
+
+        app(ComplaintAlertService::class)->notifyNewComplaint($complaint);
 
         $this->reset(['complaintSubject', 'complaintBody']);
         session()->flash('message', __('Complaint submitted successfully'));
