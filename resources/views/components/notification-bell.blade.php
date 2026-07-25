@@ -1,11 +1,16 @@
-@props(['notifications', 'unreadCount'])
+@props([
+    'notifications',
+    'unreadCount',
+    'wrapperClass' => 'fixed top-4 end-4 z-50',
+    'buttonClass' => 'h-11 w-11 rounded-full bg-white text-gray-700 shadow-lg ring-1 ring-gray-200 hover:scale-105 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700',
+])
 
-<div x-data="{ open: false }" @click.outside="open = false" class="fixed top-4 end-4 z-50">
+<div x-data="{ open: false }" @click.outside="open = false" class="{{ $wrapperClass }}">
     <button
         type="button"
         @click="open = !open"
         aria-label="{{ __('Notifications') }}"
-        class="relative flex h-11 w-11 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg ring-1 ring-gray-200 transition hover:scale-105 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700"
+        class="relative flex items-center justify-center transition {{ $buttonClass }}"
     >
         <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
