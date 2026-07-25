@@ -1,9 +1,8 @@
 @php
-    $brand = \App\Support\AppBranding::settings();
-    $primary = $brand['primary_color'] ?? '#1e3a8a';
     $appName = \App\Support\AppBranding::appName();
     $navy = '#16224a';
     $gold = '#c9a227';
+    $tint = '#eef1f8';
     $initial = mb_substr(trim((string) $name), 0, 1);
 
     // Academic year: Sep–Dec → Y/Y+1, Jan–Aug → Y-1/Y
@@ -23,123 +22,113 @@
         body {
             font-family: 'DejaVu Sans', sans-serif; margin: 0; padding: 0;
             color: #1f2937; background: #ffffff;
-            border: 1.4pt solid {{ $navy }};
+            border: 1pt solid #e2e5eb;
         }
 
-        /* ── Header band ─────────────────────────────── */
-        .hdr { background-color: {{ $navy }}; padding: 5pt 9pt 4pt; }
-        .hdr table { width: 100%; border-collapse: collapse; }
-        .hdr td { vertical-align: middle; }
-        .hdr .logo-cell { width: 26pt; }
-        .hdr .logo-cell img { width: 23pt; height: 23pt; }
-        .hdr .t1 { font-size: 11.5pt; font-weight: bold; color: #ffffff; letter-spacing: .2pt; }
-        .hdr .t2 { font-size: 5.6pt; color: {{ $gold }}; letter-spacing: .6pt; }
-        .hdr .badge-cell { text-align: left; vertical-align: middle; }
-        .hdr .badge-wrap { border-collapse: collapse; margin-inline-start: auto; }
-        .hdr .badge-wrap td {
-            font-size: 6pt; font-weight: bold; color: {{ $navy }};
-            background-color: {{ $gold }}; padding: 3pt 8pt; border-radius: 8pt; letter-spacing: .3pt;
-            white-space: nowrap;
+        /* ── Top corner brand mark ─────────────────────── */
+        .brandrow { width: 100%; border-collapse: collapse; }
+        .brandrow td { vertical-align: middle; padding: 7pt 9pt 0; }
+        .brandrow .logo-cell { width: 20pt; text-align: center; }
+        .brandrow .logo-cell img {
+            width: 18pt; height: 18pt; border-radius: 50%; border: 1pt solid {{ $gold }};
         }
-        .goldline { height: 2.2pt; background-color: {{ $gold }}; font-size: 0; line-height: 0; }
+        .brandrow .name-cell { text-align: left; }
+        .brandrow .app-name { font-size: 8pt; font-weight: bold; color: {{ $navy }}; }
+        .brandrow .app-tag { font-size: 4.6pt; color: #9ca3af; letter-spacing: .4pt; }
 
-        /* ── Body ────────────────────────────────────── */
-        table.body { width: 100%; border-collapse: collapse; }
-        td.photo-cell { width: 66pt; text-align: center; vertical-align: top; padding: 7pt 4pt 0 8pt; }
-        table.photoframe { border-collapse: collapse; margin: 0 auto; width: 52pt; }
-        table.photoframe td {
-            height: 60pt; text-align: center; vertical-align: middle;
-            border: 1.6pt solid {{ $gold }}; background-color: {{ $navy }};
-            color: #ffffff; font-size: 24pt; font-weight: bold; border-radius: 3pt;
+        /* ── Body: colored panel + fields ─────────────── */
+        table.body { width: 100%; border-collapse: collapse; margin-top: 5pt; }
+
+        td.panel-cell { width: 88pt; vertical-align: top; padding: 0; }
+        .panel {
+            background-color: {{ $navy }}; margin: 0 8pt 0 0; padding: 9pt 0 7pt;
+            border-radius: 8pt; text-align: center;
         }
-        table.photoframe img { width: 48pt; height: 58pt; }
-        .photo-caption { font-size: 5pt; color: #9ca3af; margin-top: 2pt; letter-spacing: 1.2pt; }
-
-        td.divider-cell { width: 1pt; padding: 6pt 0; }
-        .divider { width: 1pt; height: 100%; background-color: #e5e7eb; font-size: 0; }
-
-        td.info-cell { vertical-align: top; padding: 7pt 4pt 0 8pt; }
-        .name { font-size: 11.8pt; font-weight: bold; color: {{ $navy }}; margin: 0 0 4pt; line-height: 1.35; }
-        .num-wrap { border-collapse: collapse; margin-bottom: 5pt; }
-        .num-wrap td {
-            font-size: 7.6pt; font-weight: bold; color: #ffffff;
-            background-color: {{ $primary }}; padding: 1.6pt 8pt; border-radius: 7pt; letter-spacing: .3pt;
+        table.photoring { border-collapse: collapse; margin: 0 auto; }
+        table.photoring td {
+            width: 46pt; height: 46pt; text-align: center; vertical-align: middle;
+            background-color: #ffffff; border: 2pt solid {{ $gold }}; border-radius: 50%;
+            color: {{ $navy }}; font-size: 20pt; font-weight: bold;
         }
-        table.info { border-collapse: collapse; }
-        table.info td { padding: 1.5pt 0; font-size: 6.9pt; vertical-align: top; }
-        table.info td.label { color: #9ca3af; padding-left: 6pt; white-space: nowrap; }
-        table.info td.value { color: #111827; font-weight: bold; }
-
-        td.qr-cell { width: 54pt; text-align: center; vertical-align: top; padding: 8pt 8pt 0 4pt; }
+        table.photoring img { width: 46pt; height: 46pt; border-radius: 50%; }
+        .panel-caption { font-size: 4.6pt; color: {{ $gold }}; letter-spacing: 1pt; margin: 4pt 0 6pt; }
         .qr {
-            background-color: #ffffff; border: 1.4pt solid {{ $navy }};
-            border-radius: 4pt; padding: 3pt; display: inline-block;
+            background-color: #ffffff; border-radius: 3pt; padding: 3pt; display: inline-block;
         }
-        .qr img { width: 42pt; height: 42pt; display: block; }
-        .qr-caption { font-size: 5pt; color: #9ca3af; margin-top: 2.5pt; letter-spacing: .3pt; }
+        .qr img { width: 34pt; height: 34pt; display: block; }
 
-        /* ── Footer band ─────────────────────────────── */
+        td.info-cell { vertical-align: middle; padding: 2pt 8pt 0 0; }
+        .field { margin-bottom: 6pt; }
+        .field .lbl { font-size: 5.4pt; color: #9ca3af; letter-spacing: .3pt; margin-bottom: 1.5pt; }
+        .field .val {
+            font-size: 8.4pt; font-weight: bold; color: {{ $navy }};
+            padding-bottom: 3pt; border-bottom: 1pt solid #e2e5eb;
+        }
+        .field:last-child .val { border-bottom: 0; }
+        .field .num { font-family: 'DejaVu Sans', sans-serif; letter-spacing: .3pt; }
+
+        /* ── Footer ─────────────────────────────────── */
         .ftr {
             position: absolute; bottom: 0; right: 0; left: 0;
-            background-color: {{ $navy }};
+            border-top: 1pt solid {{ $gold }}; padding: 3pt 9pt;
         }
         .ftr table { width: 100%; border-collapse: collapse; }
-        .ftr td { padding: 3.5pt 9pt; font-size: 5.6pt; color: #c7cee8; vertical-align: middle; }
-        .ftr .year { font-weight: bold; color: {{ $gold }}; font-size: 6.2pt; }
+        .ftr td { font-size: 4.8pt; color: #9ca3af; vertical-align: middle; }
         .ftr .valid-cell { text-align: left; }
     </style>
 </head>
 <body>
-    <div class="hdr">
-        <table>
-            <tr>
-                @if ($logo)
-                    <td class="logo-cell"><img src="{{ $logo }}" alt="" width="31" height="31"></td>
-                @endif
-                <td>
-                    <div class="t1">{{ $appName }}</div>
-                    <div class="t2">EXCELLENCE TRAINING CENTER</div>
-                </td>
-                <td class="badge-cell">
-                    <table class="badge-wrap"><tr><td>بطاقة طالب &nbsp;•&nbsp; STUDENT ID</td></tr></table>
-                </td>
-            </tr>
-        </table>
-    </div>
-    <div class="goldline"></div>
+    <table class="brandrow">
+        <tr>
+            @if ($logo)
+                <td class="logo-cell"><img src="{{ $logo }}" alt=""></td>
+            @endif
+            <td class="name-cell">
+                <div class="app-name">{{ $appName }}</div>
+                <div class="app-tag">EXCELLENCE TRAINING CENTER &nbsp;•&nbsp; STUDENT ID</div>
+            </td>
+        </tr>
+    </table>
 
     <table class="body">
         <tr>
-            <td class="photo-cell">
-                <table class="photoframe">
-                    <tr>
-                        <td>
-                            @if ($photo)
-                                <img src="{{ $photo }}" alt="" width="69" height="80">
-                            @else
-                                {{ $initial }}
-                            @endif
-                        </td>
-                    </tr>
-                </table>
-                <div class="photo-caption">PHOTO</div>
+            <td class="panel-cell">
+                <div class="panel">
+                    <table class="photoring">
+                        <tr>
+                            <td>
+                                @if ($photo)
+                                    <img src="{{ $photo }}" alt="">
+                                @else
+                                    {{ $initial }}
+                                @endif
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="panel-caption">{{ __('Scan to verify') }}</div>
+                    <div class="qr">{!! $qrSvg !!}</div>
+                </div>
             </td>
-            <td class="divider-cell"><div class="divider"></div></td>
             <td class="info-cell">
-                <div class="name">{{ $name }}</div>
-                <table class="num-wrap"><tr><td>{{ $student->student_number ?? ('#' . $student->id) }}</td></tr></table>
-                <table class="info">
-                    @if ($student->dob)
-                        <tr><td class="label">{{ __('Date of Birth') }}</td><td class="value">{{ $student->dob->format('Y-m-d') }}</td></tr>
-                    @endif
-                    @if ($student->phone_number)
-                        <tr><td class="label">{{ __('Phone') }}</td><td class="value">{{ $student->phone_number }}</td></tr>
-                    @endif
-                </table>
-            </td>
-            <td class="qr-cell">
-                <div class="qr">{!! $qrSvg !!}</div>
-                <div class="qr-caption">{{ __('Scan to verify') }}</div>
+                <div class="field">
+                    <div class="lbl">{{ __('Student Name') }}</div>
+                    <div class="val">{{ $name }}</div>
+                </div>
+                <div class="field">
+                    <div class="lbl">{{ __('Student Number') }}</div>
+                    <div class="val num">{{ $student->student_number ?? ('#' . $student->id) }}</div>
+                </div>
+                @if ($student->dob)
+                    <div class="field">
+                        <div class="lbl">{{ __('Date of Birth') }}</div>
+                        <div class="val num">{{ $student->dob->format('Y-m-d') }}</div>
+                    </div>
+                @elseif ($student->phone_number)
+                    <div class="field">
+                        <div class="lbl">{{ __('Phone') }}</div>
+                        <div class="val num">{{ $student->phone_number }}</div>
+                    </div>
+                @endif
             </td>
         </tr>
     </table>
@@ -147,11 +136,7 @@
     <div class="ftr">
         <table>
             <tr>
-                <td>
-                    <span class="year">{{ __('Academic Year') }} {{ $academicYear }}</span>
-                    &nbsp;&nbsp;•&nbsp;&nbsp;
-                    {{ __('This card is personal and non-transferable') }}
-                </td>
+                <td>{{ __('Academic Year') }} {{ $academicYear }} &nbsp;•&nbsp; {{ __('This card is personal and non-transferable') }}</td>
                 <td class="valid-cell">{{ __('Valid until') }} {{ $validUntil }}</td>
             </tr>
         </table>
