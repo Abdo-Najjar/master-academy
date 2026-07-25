@@ -3,28 +3,48 @@
 namespace App\Services;
 
 use App\Models\Registration;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class FinancialDueService
 {
     /**
-     * Outstanding balance for a registration (course fee minus paid minus exemption).
+     * Total amount still owed by students: charges (`amount_paid`) that were
+     * withdrawn from the student's wallet but not yet backed by real funds
+     * (`funded_amount`) — i.e. the wallet went negative to cover them.
+     * Unlike `financial_status`, this reflects actual money collected, not
+     * just whether the bill was fully assigned.
+     */
+    public static function outstandingAmount(?Builder $query = null): float
+    {
+        $query ??= Registration::query()->whereNull('deleted_at');
+
+        return (float) $query->get(['amount_paid', 'funded_amount'])->sum(
+            fn (Registration $registration) => max(0.0, (float) $registration->amount_paid - (float) $registration->funded_amount)
+        );
+    }
+
+    /**
+     * Outstanding balance for a registration: the portion of the charge
+     * (`amount_paid`) that isn't yet backed by real funds the student
+     * deposited (`funded_amount`). `amount_paid` is withdrawn from the
+     * student's wallet in full at registration time regardless of balance,
+     * so it does not by itself indicate money was actually collected.
      */
     public static function remainingBalance(Registration $registration): float
     {
-        $due = (float) $registration->amount_due;
         $paid = (float) $registration->amount_paid;
-        $exempt = (float) $registration->exemption_amount;
+        $funded = (float) $registration->funded_amount;
 
-        return round($due - $paid - $exempt, 2);
+        return round(max(0.0, $paid - $funded), 2);
     }
 
     /**
      * Compute financial status for a single (fixed-course) registration.
      *
-     * ok       -> fully paid / exempted
-     * due      -> partially paid, balance remaining
-     * overdue  -> nothing paid yet on a course that has a fee
+     * ok       -> fully funded by real money
+     * due      -> partially funded, balance remaining
+     * overdue  -> nothing funded yet on a charge that has a balance
      */
     public static function computeStatus(Registration $registration): string
     {
@@ -34,7 +54,7 @@ class FinancialDueService
             return 'ok';
         }
 
-        return ((float) $registration->amount_paid) <= 0.009 ? 'overdue' : 'due';
+        return ((float) $registration->funded_amount) <= 0.009 ? 'overdue' : 'due';
     }
 
     /**

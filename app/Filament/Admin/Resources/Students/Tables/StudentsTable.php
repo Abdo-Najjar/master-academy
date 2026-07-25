@@ -46,7 +46,7 @@ class StudentsTable
                         'archived' => 'gray',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn ($state) => __($state))
+                    ->formatStateUsing(fn ($state) => __(ucfirst($state)))
                     ->sortable(),
                 TextColumn::make('registrations_count')->counts('registrations')->label(__('Registrations')),
                 TextColumn::make('balanceFloat')->label(__('Wallet Balance'))->money('ILS', decimalPlaces: 0)->getStateUsing(fn ($record) => $record->balanceFloat),

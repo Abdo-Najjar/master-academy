@@ -7,6 +7,7 @@ use App\Models\Certificate;
 use App\Models\Registration;
 use App\Models\Student;
 use App\Models\Trainer;
+use App\Services\FinancialDueService;
 use BackedEnum;
 use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
@@ -106,9 +107,10 @@ class Reports extends Page implements HasForms
             ->when($trainerId, fn ($q) => $q->whereHas('section', fn ($s) => $s->where('trainer_id', $trainerId)));
 
         $registrationsCount = (clone $registrations)->count();
-        $revenue = (clone $registrations)->sum('amount_paid');
+        $revenue = (clone $registrations)->sum('funded_amount');
         $exemptions = (clone $registrations)->sum('exemption_amount');
-        $trainerShare = (clone $registrations)->sum('trainer_amount');
+        $trainerShare = (clone $registrations)->sum('trainer_credited_amount');
+        $outstanding = FinancialDueService::outstandingAmount(clone $registrations);
 
         $newStudents = Student::query()
             ->whereBetween('created_at', [$from, $to])
@@ -133,6 +135,7 @@ class Reports extends Page implements HasForms
             'exemptions' => (float) $exemptions,
             'trainer_share' => (float) $trainerShare,
             'net_revenue' => (float) $revenue - (float) $trainerShare,
+            'outstanding' => $outstanding,
             'attendance_rate' => $rate,
             'attendance_total' => $totalAttendance,
             'attendance_breakdown' => [
@@ -156,7 +159,7 @@ class Reports extends Page implements HasForms
             ->withSum(['sections as revenue' => function ($q) use ($from, $to) {
                 $q->join('registrations', 'sections.id', '=', 'registrations.section_id')
                     ->whereBetween('registrations.created_at', [$from, $to]);
-            }], 'registrations.amount_paid')
+            }], 'registrations.funded_amount')
             ->orderByDesc('revenue')
             ->limit(5)
             ->get();
@@ -173,7 +176,7 @@ class Reports extends Page implements HasForms
             ->join('sections', 'registrations.section_id', '=', 'sections.id')
             ->leftJoin('subjects', 'sections.subject_id', '=', 'subjects.id')
             ->whereBetween('registrations.created_at', [$from, $to])
-            ->selectRaw('COALESCE(subjects.name, ?) as subject_name, COUNT(*) as total, SUM(registrations.amount_paid) as revenue', [__('Not set')])
+            ->selectRaw('COALESCE(subjects.name, ?) as subject_name, COUNT(*) as total, SUM(registrations.funded_amount) as revenue', [__('Not set')])
             ->groupBy('subject_name')
             ->orderByDesc('total')
             ->limit(10)

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Registration;
 use App\Models\Student;
+use App\Services\FinancialDueService;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -55,6 +56,10 @@ class TrainerPayoutService
         $registration->forceFill([
             'funded_amount' => $newFundedAmount,
             'trainer_credited_amount' => $targetCredited,
+        ]);
+
+        $registration->forceFill([
+            'financial_status' => FinancialDueService::computeStatus($registration),
         ])->saveQuietly();
     }
 

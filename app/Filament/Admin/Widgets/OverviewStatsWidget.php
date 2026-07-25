@@ -8,6 +8,7 @@ use App\Models\Registration;
 use App\Models\Section;
 use App\Models\Student;
 use App\Models\Trainer;
+use App\Services\FinancialDueService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -21,11 +22,13 @@ class OverviewStatsWidget extends BaseWidget
     {
         $weekRevenue = Registration::query()
             ->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
-            ->sum('amount_paid');
+            ->sum('funded_amount');
 
         $monthRevenue = Registration::query()
             ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
-            ->sum('amount_paid');
+            ->sum('funded_amount');
+
+        $outstanding = FinancialDueService::outstandingAmount();
 
         $activeStudents = Student::where('status', 'active')->count();
         $newStudents = Student::where('status', 'active')
@@ -66,6 +69,11 @@ class OverviewStatsWidget extends BaseWidget
                 ->description(__('Monthly') . ': ' . number_format((float) $monthRevenue, 0) . ' ₪')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success'),
+
+            Stat::make(__('Outstanding from Students'), number_format($outstanding, 0) . ' ₪')
+                ->description(__('Charged but not yet collected'))
+                ->descriptionIcon('heroicon-m-exclamation-circle')
+                ->color($outstanding > 0 ? 'danger' : 'success'),
 
             Stat::make(__('Due Payments'), $dueStudents)
                 ->description(__('Overdue') . ': ' . $overdueStudents)

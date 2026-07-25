@@ -13,6 +13,8 @@
         .ma-rep-card--green .ma-rep-card__value{color:rgb(22,163,74);}
         .ma-rep-card--emerald{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25);}
         .ma-rep-card--emerald .ma-rep-card__value{color:rgb(5,150,105);}
+        .ma-rep-card--red{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25);}
+        .ma-rep-card--red .ma-rep-card__value{color:rgb(220,38,38);}
 
         .ma-rep-2col{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem;}
         .ma-rep-finrow{display:flex;align-items:center;justify-content:space-between;font-size:.875rem;}
@@ -79,6 +81,10 @@
                 <p class="ma-rep-card__label">{{ __('Revenue') }}</p>
                 <p class="ma-rep-card__value">{{ $money($stats['revenue']) }}</p>
             </div>
+            <div class="ma-rep-card ma-rep-card--red">
+                <p class="ma-rep-card__label">{{ __('Outstanding from Students') }}</p>
+                <p class="ma-rep-card__value">{{ $money($stats['outstanding']) }}</p>
+            </div>
             <div class="ma-rep-card ma-rep-card--emerald">
                 <p class="ma-rep-card__label">{{ __('Attendance Rate') }}</p>
                 <p class="ma-rep-card__value">{{ $stats['attendance_rate'] }}%</p>
@@ -103,6 +109,10 @@
                 <div class="ma-rep-finrow">
                     <span class="ma-rep-finrow__label">{{ __('Trainer Share') }}</span>
                     <span class="ma-rep-finrow__val ma-rep-finrow__val--blue">{{ $money($stats['trainer_share']) }}</span>
+                </div>
+                <div class="ma-rep-finrow">
+                    <span class="ma-rep-finrow__label">{{ __('Outstanding from Students') }}</span>
+                    <span class="ma-rep-finrow__val" style="color:rgb(220,38,38);">{{ $money($stats['outstanding']) }}</span>
                 </div>
                 <div class="ma-rep-finrow ma-rep-finrow--total">
                     <span class="ma-rep-finrow__label" style="color:inherit;font-weight:600;">{{ __('Net Revenue') }}</span>
