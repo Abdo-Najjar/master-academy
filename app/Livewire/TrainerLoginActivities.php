@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\InteractsWithTrainerAuth;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -9,6 +10,8 @@ use Livewire\Component;
 #[Layout('components.layouts.app')]
 class TrainerLoginActivities extends Component
 {
+    use InteractsWithTrainerAuth;
+
     public function render()
     {
         $trainer = Auth::guard('trainer')->user();
@@ -18,6 +21,9 @@ class TrainerLoginActivities extends Component
             : collect();
 
         return view('livewire.trainer-login-activities', [
+            'trainer' => $trainer,
+            'notifications' => $trainer->notifications()->limit(15)->get(),
+            'unreadNotificationsCount' => $trainer->unreadNotifications()->count(),
             'loginActivities' => $loginActivities,
         ]);
     }

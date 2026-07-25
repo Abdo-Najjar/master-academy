@@ -1,24 +1,12 @@
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900" x-data="{ sidebarOpen: false, confirmBox: { open: false, message: '', action: null } }">
-    {{-- Floating bell on desktop only; on mobile it lives inside the header bar next to the menu button. --}}
-    <x-notification-bell wrapper-class="hidden md:block fixed top-4 end-4 z-50"
-                         :notifications="$notifications" :unread-count="$unreadNotificationsCount" />
-
-    <div class="md:hidden sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
-        <h1 class="text-lg font-semibold">{{ __('Trainer Portal') }}</h1>
-        <div class="flex items-center gap-1">
-            <x-notification-bell wrapper-class="relative"
-                                 button-class="h-10 w-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                                 :notifications="$notifications" :unread-count="$unreadNotificationsCount" />
-            <button @click="sidebarOpen = !sidebarOpen" aria-label="{{ __('Menu') }}"
-                    class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-            </button>
-        </div>
-    </div>
-
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900" style="--portal-accent: #059669"
+     x-data="{ sidebarOpen: false, confirmBox: { open: false, message: '', action: null } }">
     <div class="flex min-h-screen">
-        <aside :class="sidebarOpen ? 'translate-x-0' : '{{ app()->getLocale() === 'ar' ? 'translate-x-full' : '-translate-x-full' }} md:translate-x-0'"
-               class="fixed md:static top-0 bottom-0 start-0 z-50 w-60 md:w-64 bg-white dark:bg-gray-800 border-{{ app()->getLocale() === 'ar' ? 'l' : 'r' }} border-gray-200 dark:border-gray-700 transition-transform duration-300 ease-in-out shrink-0">
+        {{-- The closed (off-canvas) transform is static and mobile-scoped (max-md:) so it applies
+             on the very first paint — binding it through :class alone makes the sidebar flash open
+             until Alpine boots. Scoping to max-md: leaves the desktop sidebar untransformed, so
+             there is no cascade fight; the open state uses `!` to beat the static transform. --}}
+        <aside :class="sidebarOpen ? 'translate-x-0!' : ''"
+               class="fixed md:static top-0 bottom-0 start-0 z-50 w-60 md:w-64 bg-white dark:bg-gray-800 border-{{ app()->getLocale() === 'ar' ? 'l' : 'r' }} border-gray-200 dark:border-gray-700 {{ app()->getLocale() === 'ar' ? 'max-md:translate-x-full' : 'max-md:-translate-x-full' }} transition-transform duration-300 ease-in-out shrink-0">
             <div class="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex items-center gap-3">
                     @php $avatar = $trainer->getFirstMediaUrl('main'); @endphp
@@ -56,6 +44,15 @@
         </aside>
 
         <div x-show="sidebarOpen" @click="sidebarOpen = false" class="md:hidden fixed inset-0 bg-black/50 z-40" style="display: none;"></div>
+
+        <div class="flex min-w-0 flex-1 flex-col">
+            @include('livewire.partials.portal-header', [
+                'portalTitle' => __('Trainer Portal'),
+                'portalUser' => $trainer,
+                'portalSubtitle' => $trainer->trainer_number,
+                'portalAvatarClass' => 'ring-emerald-500',
+                'portalFallbackClass' => 'bg-emerald-500',
+            ])
 
         <main class="flex-1 min-w-0 p-4 md:p-6">
             @if (session('message'))
@@ -133,7 +130,7 @@
                 <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                     <h3 class="text-lg font-semibold mb-4">{{ __('Mark Attendance') }}</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <select wire:model.live="attendanceSectionId" wire:change="loadAttendance" class="px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                        <select wire:model.live="attendanceSectionId" wire:change="loadAttendance">
                             <option value="">{{ __('Select section') }}</option>
                             @foreach ($sections as $s)
                                 <option value="{{ $s->id }}">{{ $s->name }}</option>
@@ -201,7 +198,7 @@
             @if ($activeTab === 'materials')
                 <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                     <h3 class="text-lg font-semibold mb-4">{{ __('Section Materials') }}</h3>
-                    <select wire:model.live="materialsSectionId" class="px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700 mb-4">
+                    <select wire:model.live="materialsSectionId" class="mb-4">
                         <option value="">{{ __('Select section') }}</option>
                         @foreach ($sections as $s)
                             <option value="{{ $s->id }}">{{ $s->name }}</option>
@@ -251,12 +248,43 @@
             @endif
 
             @if ($activeTab === 'assignments')
-                <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-4">
+                @php
+                    $activeSections = $sections->filter(fn ($s) => $s->status !== 'completed');
+                    $finishedSections = $sections->filter(fn ($s) => $s->status === 'completed');
+                @endphp
+
+                <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <select wire:model.live="assignmentSectionFilter" class="sm:w-80">
+                        <option value="">{{ __('Active sections only') }}</option>
+                        <option value="all">{{ __('All sections (including finished)') }}</option>
+                        @if ($activeSections->isNotEmpty())
+                            <optgroup label="{{ __('Active') }}">
+                                @foreach ($activeSections as $s)
+                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endif
+                        @if ($finishedSections->isNotEmpty())
+                            <optgroup label="{{ __('Finished') }}">
+                                @foreach ($finishedSections as $s)
+                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endif
+                    </select>
+
+                    <button type="button" wire:click="$toggle('showNewAssignmentForm')"
+                            class="w-fit rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700">
+                        {{ $showNewAssignmentForm ? __('Cancel') : '+ ' . __('New Assignment') }}
+                    </button>
+                </div>
+
+                <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-4" @if (! $showNewAssignmentForm) hidden @endif>
                     <h3 class="text-lg font-semibold mb-4">{{ __('New Assignment') }}</h3>
                     <form wire:submit="createAssignment" class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-sm font-medium mb-1">{{ __('Section') }}</label>
-                            <select wire:model="newAssignmentSectionId" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                            <select wire:model="newAssignmentSectionId" class="w-full">
                                 <option value="">{{ __('Select section') }}</option>
                                 @foreach ($sections as $s)
                                     <option value="{{ $s->id }}">{{ $s->name }}</option>
@@ -279,13 +307,6 @@
                             @error('newAssignmentDueDate') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium mb-1">{{ __('Max Points') }}</label>
-                            <input wire:model="newAssignmentMaxPoints" type="number" step="0.01" min="0" placeholder="{{ __('Max Points') }}"
-                                   class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
-                            @error('newAssignmentMaxPoints') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-                        </div>
-
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium mb-1">{{ __('Description') }}</label>
                             <textarea wire:model="newAssignmentDescription" rows="3" placeholder="{{ __('Description') }}"
@@ -297,27 +318,43 @@
                     </form>
                 </div>
 
-                <div class="space-y-3">
-                    @forelse ($assignments as $a)
-                        <div wire:key="assignment-{{ $a->id }}" class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
-                            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                                <div>
-                                    <h3 class="text-lg font-semibold">{{ $a->title }}</h3>
-                                    <p class="text-sm text-gray-500">
+                <div class="overflow-x-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+                    <table class="min-w-[640px] w-full text-sm">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-4 py-3 text-start">{{ __('Title') }}</th>
+                                <th class="px-4 py-3 text-start">{{ __('Section') }}</th>
+                                <th class="px-4 py-3 text-start">{{ __('Due Date') }}</th>
+                                <th class="px-4 py-3 text-start">{{ __('Submissions') }}</th>
+                                <th class="px-4 py-3"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            @forelse ($assignments as $a)
+                                <tr wire:key="assignment-{{ $a->id }}">
+                                    <td class="px-4 py-3 font-medium">{{ $a->title }}</td>
+                                    <td class="px-4 py-3">
                                         {{ $a->section?->name }}
-                                        @if ($a->due_date) · {{ __('Due') }}: {{ $a->due_date->format('Y-m-d H:i') }} @endif
-                                        @if ($a->max_points) · {{ __('Max Points') }}: {{ rtrim(rtrim((string) $a->max_points, '0'), '.') }} @endif
-                                    </p>
-                                </div>
-                                <a href="{{ route('trainer.assignments.show', $a) }}" wire:navigate
-                                   class="px-3 py-1.5 text-sm rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 whitespace-nowrap">
-                                    {{ __('Submissions') }} ({{ $a->submissions_count }})
-                                </a>
-                            </div>
-                        </div>
-                    @empty
-                        <p class="text-gray-500">{{ __('No records found') }}</p>
-                    @endforelse
+                                        @if ($a->section?->status === 'completed')
+                                            <span class="ms-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ __('Finished') }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">{{ $a->due_date?->format('Y-m-d H:i') ?? '—' }}</td>
+                                    <td class="px-4 py-3">{{ $a->submissions_count }}</td>
+                                    <td class="px-4 py-3 text-end">
+                                        <a href="{{ route('trainer.assignments.show', $a) }}" wire:navigate
+                                           class="px-3 py-1.5 text-sm rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 whitespace-nowrap">
+                                            {{ __('Submissions') }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="px-4 py-6 text-center text-gray-500">{{ __('No records found') }}</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             @endif
 
@@ -462,6 +499,7 @@
                 </div>
             @endif
         </main>
+        </div>
 
         @include('livewire.partials.confirm-modal')
     </div>

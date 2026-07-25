@@ -17,8 +17,8 @@
         })();
     </script>
 
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/light/favicon-32x32.png') }}" data-theme-asset>
-    <link rel="apple-touch-icon" href="{{ asset('images/light/apple-touch-icon.png') }}" data-theme-asset>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/light/favicon-32x32.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/light/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('images/light/site.webmanifest') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])

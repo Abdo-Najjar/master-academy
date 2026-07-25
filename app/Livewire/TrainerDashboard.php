@@ -2,18 +2,22 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\InteractsWithTrainerAuth;
 use App\Models\Assignment;
 use App\Models\Attendance;
 use App\Models\Complaint;
 use App\Models\Section;
+use App\Notifications\AssignmentCreated;
 use App\Services\ComplaintAlertService;
 use Bavix\Wallet\Models\Transaction;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
@@ -21,8 +25,10 @@ use Livewire\WithFileUploads;
 #[Layout('components.layouts.app')]
 class TrainerDashboard extends Component
 {
-    use WithFileUploads;
+    use InteractsWithTrainerAuth, WithFileUploads;
 
+    /** Mirrored to ?tab= so tabs are linkable and browser back/forward works. */
+    #[Url(as: 'tab', history: true)]
     public string $activeTab = 'sections';
 
     public string $currentPassword = '';
@@ -62,20 +68,14 @@ class TrainerDashboard extends Component
 
     public string $newAssignmentDueDate = '';
 
-    public ?float $newAssignmentMaxPoints = null;
+    /** '' = active sections only, 'all' = include finished, otherwise a section id. */
+    public string $assignmentSectionFilter = '';
+
+    public bool $showNewAssignmentForm = false;
 
     public function mount(): void
     {
         $this->attendanceDate = now()->toDateString();
-    }
-
-    public function logout(): void
-    {
-        Auth::guard('trainer')->logout();
-        session()->invalidate();
-        session()->regenerateToken();
-
-        $this->redirect(route('trainer.login'), navigate: true);
     }
 
     public function setActiveTab(string $tab): void
@@ -98,7 +98,6 @@ class TrainerDashboard extends Component
             'newAssignmentTitle' => __('Title'),
             'newAssignmentDescription' => __('Description'),
             'newAssignmentDueDate' => __('Due Date'),
-            'newAssignmentMaxPoints' => __('Max Points'),
         ];
     }
 
@@ -148,16 +147,6 @@ class TrainerDashboard extends Component
 
         $this->reset('newAvatar');
         session()->flash('message', __('Profile picture removed'));
-    }
-
-    public function markNotificationRead(string $notificationId): void
-    {
-        Auth::guard('trainer')->user()?->notifications()->where('id', $notificationId)->first()?->markAsRead();
-    }
-
-    public function markAllNotificationsRead(): void
-    {
-        Auth::guard('trainer')->user()?->unreadNotifications()->update(['read_at' => now()]);
     }
 
     public function openAttendance(int $sectionId): void
@@ -322,7 +311,6 @@ class TrainerDashboard extends Component
             'newAssignmentTitle' => ['required', 'string', 'max:255'],
             'newAssignmentDescription' => ['nullable', 'string'],
             'newAssignmentDueDate' => ['nullable', 'date'],
-            'newAssignmentMaxPoints' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $section = $trainer?->sections()->find($this->newAssignmentSectionId);
@@ -330,16 +318,21 @@ class TrainerDashboard extends Component
             return;
         }
 
-        Assignment::create([
+        $assignment = Assignment::create([
             'section_id' => $section->id,
             'trainer_id' => $trainer->id,
             'title' => $this->newAssignmentTitle,
             'description' => $this->newAssignmentDescription ?: null,
             'due_date' => $this->newAssignmentDueDate ?: null,
-            'max_points' => $this->newAssignmentMaxPoints,
         ]);
 
-        $this->reset(['newAssignmentSectionId', 'newAssignmentTitle', 'newAssignmentDescription', 'newAssignmentDueDate', 'newAssignmentMaxPoints']);
+        $students = $section->registrations()->with('student')->get()->pluck('student')->filter();
+        if ($students->isNotEmpty()) {
+            Notification::send($students, new AssignmentCreated($assignment));
+        }
+
+        $this->reset(['newAssignmentSectionId', 'newAssignmentTitle', 'newAssignmentDescription', 'newAssignmentDueDate']);
+        $this->showNewAssignmentForm = false;
         session()->flash('message', __('Assignment created'));
     }
 
@@ -377,9 +370,23 @@ class TrainerDashboard extends Component
             ? $trainer->complaints()->notArchived()->orderByDesc('created_at')->limit(50)->get()
             : collect();
 
-        $assignments = $trainer
-            ? $trainer->assignments()->with('section')->withCount('submissions')->orderByDesc('due_date')->get()
-            : collect();
+        $assignments = collect();
+        if ($trainer) {
+            $query = $trainer->assignments()->with('section')->withCount('submissions');
+
+            if ($this->assignmentSectionFilter === '') {
+                // Default view hides assignments whose section has already ended;
+                // picking that section (or "all") in the filter brings them back.
+                $query->whereHas('section', fn ($section) => $section->where(
+                    fn ($ended) => $ended->whereNull('end_date')
+                        ->orWhereDate('end_date', '>=', now()->toDateString())
+                ));
+            } elseif ($this->assignmentSectionFilter !== 'all') {
+                $query->where('section_id', (int) $this->assignmentSectionFilter);
+            }
+
+            $assignments = $query->orderByDesc('due_date')->get();
+        }
 
         return view('livewire.trainer-dashboard', [
             'trainer' => $trainer,

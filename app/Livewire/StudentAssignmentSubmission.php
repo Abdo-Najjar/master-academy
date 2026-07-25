@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\InteractsWithStudentAuth;
 use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
 use Illuminate\Http\UploadedFile;
@@ -14,7 +15,7 @@ use Livewire\WithFileUploads;
 #[Layout('components.layouts.app')]
 class StudentAssignmentSubmission extends Component
 {
-    use WithFileUploads;
+    use InteractsWithStudentAuth, WithFileUploads;
 
     public Assignment $assignment;
 
@@ -80,6 +81,12 @@ class StudentAssignmentSubmission extends Component
 
     public function render()
     {
-        return view('livewire.student-assignment-submission');
+        $student = Auth::guard('student')->user();
+
+        return view('livewire.student-assignment-submission', [
+            'student' => $student,
+            'notifications' => $student->notifications()->limit(15)->get(),
+            'unreadNotificationsCount' => $student->unreadNotifications()->count(),
+        ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\InteractsWithTrainerAuth;
 use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +12,8 @@ use Livewire\Component;
 #[Layout('components.layouts.app')]
 class TrainerAssignmentSubmissions extends Component
 {
+    use InteractsWithTrainerAuth;
+
     public Assignment $assignment;
 
     public string $statusFilter = '';
@@ -95,7 +98,12 @@ class TrainerAssignmentSubmissions extends Component
             ->sortBy(fn (array $row) => $row['student']->getTranslation('name', app()->getLocale(), false))
             ->values();
 
+        $trainer = Auth::guard('trainer')->user();
+
         return view('livewire.trainer-assignment-submissions', [
+            'trainer' => $trainer,
+            'notifications' => $trainer->notifications()->limit(15)->get(),
+            'unreadNotificationsCount' => $trainer->unreadNotifications()->count(),
             'rows' => $rows,
         ]);
     }

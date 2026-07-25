@@ -38,25 +38,49 @@
         </div>
 
         @forelse ($notifications as $n)
-            <button
-                type="button"
-                wire:click="markNotificationRead('{{ $n->id }}')"
-                wire:key="notification-{{ $n->id }}"
-                class="w-full text-start px-4 py-3 border-b border-gray-100 dark:border-gray-700/60 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition {{ $n->read_at ? 'opacity-60' : '' }}"
-            >
-                <div class="flex items-start gap-2">
-                    @if (! $n->read_at)
-                        <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-purple-600"></span>
-                    @endif
-                    <div class="min-w-0 flex-1">
-                        <p class="text-sm font-medium truncate">{{ $n->data['title'] ?? __('Notification') }}</p>
-                        @if (! empty($n->data['reply']))
-                            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{{ $n->data['reply'] }}</p>
+            @php $notificationUrl = $n->data['url'] ?? null; @endphp
+            @if ($notificationUrl)
+                <a
+                    href="{{ $notificationUrl }}"
+                    wire:navigate
+                    @click="$wire.markNotificationRead('{{ $n->id }}')"
+                    wire:key="notification-{{ $n->id }}"
+                    class="block w-full text-start px-4 py-3 border-b border-gray-100 dark:border-gray-700/60 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition {{ $n->read_at ? 'opacity-60' : '' }}"
+                >
+                    <div class="flex items-start gap-2">
+                        @if (! $n->read_at)
+                            <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-purple-600"></span>
                         @endif
-                        <p class="mt-1 text-[11px] text-gray-400">{{ $n->created_at->diffForHumans() }}</p>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-medium truncate">{{ $n->data['title'] ?? __('Notification') }}</p>
+                            @if (! empty($n->data['body']) || ! empty($n->data['reply']))
+                                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{{ $n->data['body'] ?? $n->data['reply'] }}</p>
+                            @endif
+                            <p class="mt-1 text-[11px] text-gray-400">{{ $n->created_at->diffForHumans() }}</p>
+                        </div>
                     </div>
-                </div>
-            </button>
+                </a>
+            @else
+                <button
+                    type="button"
+                    wire:click="markNotificationRead('{{ $n->id }}')"
+                    wire:key="notification-{{ $n->id }}"
+                    class="w-full text-start px-4 py-3 border-b border-gray-100 dark:border-gray-700/60 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition {{ $n->read_at ? 'opacity-60' : '' }}"
+                >
+                    <div class="flex items-start gap-2">
+                        @if (! $n->read_at)
+                            <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-purple-600"></span>
+                        @endif
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-medium truncate">{{ $n->data['title'] ?? __('Notification') }}</p>
+                            @if (! empty($n->data['body']) || ! empty($n->data['reply']))
+                                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{{ $n->data['body'] ?? $n->data['reply'] }}</p>
+                            @endif
+                            <p class="mt-1 text-[11px] text-gray-400">{{ $n->created_at->diffForHumans() }}</p>
+                        </div>
+                    </div>
+                </button>
+            @endif
         @empty
             <p class="px-4 py-6 text-center text-sm text-gray-400">{{ __('No notifications yet') }}</p>
         @endforelse

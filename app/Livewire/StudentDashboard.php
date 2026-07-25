@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\InteractsWithStudentAuth;
 use App\Models\Announcement;
 use App\Models\Assignment;
 use App\Models\Complaint;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
@@ -20,8 +22,10 @@ use Livewire\WithFileUploads;
 #[Layout('components.layouts.app')]
 class StudentDashboard extends Component
 {
-    use WithFileUploads;
+    use InteractsWithStudentAuth, WithFileUploads;
 
+    /** Mirrored to ?tab= so tabs are linkable and browser back/forward works. */
+    #[Url(as: 'tab', history: true)]
     public string $activeTab = 'registrations';
 
     public string $currentPassword = '';
@@ -35,15 +39,6 @@ class StudentDashboard extends Component
     public string $complaintSubject = '';
 
     public string $complaintBody = '';
-
-    public function logout(): void
-    {
-        Auth::guard('student')->logout();
-        session()->invalidate();
-        session()->regenerateToken();
-
-        $this->redirect(route('student.login'), navigate: true);
-    }
 
     public function setActiveTab(string $tab): void
     {
@@ -82,16 +77,6 @@ class StudentDashboard extends Component
 
         $this->reset(['currentPassword', 'newPassword', 'newPasswordConfirmation']);
         session()->flash('message', __('Password updated successfully'));
-    }
-
-    public function markNotificationRead(string $notificationId): void
-    {
-        Auth::guard('student')->user()?->notifications()->where('id', $notificationId)->first()?->markAsRead();
-    }
-
-    public function markAllNotificationsRead(): void
-    {
-        Auth::guard('student')->user()?->unreadNotifications()->update(['read_at' => now()]);
     }
 
     public function dismissAnnouncement(int $announcementId): void

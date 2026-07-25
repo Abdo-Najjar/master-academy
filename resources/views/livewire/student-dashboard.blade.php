@@ -1,25 +1,18 @@
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900" x-data="{ sidebarOpen: false, confirmBox: { open: false, message: '', action: null } }">
-    {{-- Floating bell on desktop only; on mobile it lives inside the header bar next to the menu button. --}}
-    <x-notification-bell wrapper-class="hidden md:block fixed top-4 end-4 z-50"
-                         :notifications="$notifications" :unread-count="$unreadNotificationsCount" />
-
-    <div class="md:hidden sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
-        <h1 class="text-lg font-semibold">{{ __('Student Portal') }}</h1>
-        <div class="flex items-center gap-1">
-            <x-notification-bell wrapper-class="relative"
-                                 button-class="h-10 w-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                                 :notifications="$notifications" :unread-count="$unreadNotificationsCount" />
-            <button @click="sidebarOpen = !sidebarOpen" aria-label="{{ __('Menu') }}"
-                    class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-            </button>
-        </div>
-    </div>
-
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900" style="--portal-accent: #9333ea"
+     x-data="{ sidebarOpen: false, confirmBox: { open: false, message: '', action: null } }">
     <div class="flex min-h-screen">
         @include('livewire.partials.student-sidebar', ['useWireClick' => true])
 
         <div x-show="sidebarOpen" @click="sidebarOpen = false" class="md:hidden fixed inset-0 bg-black/50 z-40" style="display: none;"></div>
+
+        <div class="flex min-w-0 flex-1 flex-col">
+            @include('livewire.partials.portal-header', [
+                'portalTitle' => __('Student Portal'),
+                'portalUser' => $student,
+                'portalSubtitle' => $student->student_number,
+                'portalAvatarClass' => 'ring-purple-500',
+                'portalFallbackClass' => 'bg-purple-500',
+            ])
 
         <main class="flex-1 min-w-0 p-4 md:p-6">
             @if (session('message'))
@@ -405,6 +398,7 @@
                 </div>
             @endif
         </main>
+        </div>
 
         @include('livewire.partials.confirm-modal')
     </div>

@@ -3,8 +3,12 @@
     $trainerSidebarCurrentTab = $activeTab ?? null;
     $trainerSidebarUseWireClick = $useWireClick ?? false;
 @endphp
-<aside :class="sidebarOpen ? 'translate-x-0' : '{{ app()->getLocale() === 'ar' ? 'translate-x-full' : '-translate-x-full' }} md:translate-x-0'"
-       class="fixed md:static top-0 bottom-0 start-0 z-50 w-60 md:w-64 bg-white dark:bg-gray-800 border-{{ app()->getLocale() === 'ar' ? 'l' : 'r' }} border-gray-200 dark:border-gray-700 transition-transform duration-300 ease-in-out shrink-0">
+{{-- The closed (off-canvas) transform is static and mobile-scoped (max-md:) so it applies
+     on the very first paint — binding it through :class alone makes the sidebar flash open
+     until Alpine boots. Scoping to max-md: leaves the desktop sidebar untransformed, so
+     there is no cascade fight; the open state uses `!` to beat the static transform. --}}
+<aside :class="sidebarOpen ? 'translate-x-0!' : ''"
+       class="fixed md:static top-0 bottom-0 start-0 z-50 w-60 md:w-64 bg-white dark:bg-gray-800 border-{{ app()->getLocale() === 'ar' ? 'l' : 'r' }} border-gray-200 dark:border-gray-700 {{ app()->getLocale() === 'ar' ? 'max-md:translate-x-full' : 'max-md:-translate-x-full' }} transition-transform duration-300 ease-in-out shrink-0">
     <div class="p-4 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center gap-3">
             @php $avatar = $trainer->getFirstMediaUrl('main'); @endphp
