@@ -255,6 +255,7 @@ class TrainerDashboard extends Component
 
         foreach ($this->newMaterials as $file) {
             $section->addMedia($file->getRealPath())
+                ->usingName(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME))
                 ->usingFileName($file->getClientOriginalName())
                 ->toMediaCollection('materials');
         }

@@ -21,10 +21,11 @@
     .hdr .logo-cell img { width: 30pt; height: 30pt; }
     .hdr .brand { font-size: 14pt; font-weight: bold; color: {{ $navy }}; }
     .hdr .tagline { font-size: 6.4pt; color: #9ca3af; letter-spacing: .4pt; margin-top: 1pt; }
-    .hdr .badge-cell { text-align: left; }
-    .hdr .badge {
-        display: inline-block; font-size: 8pt; font-weight: bold; color: #ffffff;
-        background-color: {{ $primary }}; padding: 4pt 12pt; border-radius: 10pt;
+    .hdr .badge-cell { text-align: left; vertical-align: top; }
+    .hdr .badge-wrap { border-collapse: collapse; margin-inline-start: auto; }
+    .hdr .badge-wrap td {
+        background-color: {{ $primary }}; color: #ffffff; font-weight: bold;
+        font-size: 8.6pt; letter-spacing: .6pt; padding: 5pt 16pt; border-radius: 12pt;
     }
     .goldline { height: 2pt; background-color: {{ $gold }}; font-size: 0; line-height: 0; margin: 8pt 0 12pt; }
 
@@ -72,7 +73,9 @@
           <div class="brand">{{ \App\Support\AppBranding::appName() }}</div>
           <div class="tagline">EXCELLENCE TRAINING CENTER</div>
         </td>
-        <td class="badge-cell"><span class="badge">{{ __('Receipt') }}</span></td>
+        <td class="badge-cell">
+          <table class="badge-wrap"><tr><td>{{ __('Receipt') }}</td></tr></table>
+        </td>
       </tr>
     </table>
   </div>

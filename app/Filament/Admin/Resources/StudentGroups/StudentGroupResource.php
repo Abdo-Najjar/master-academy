@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\StudentGroups;
 
 use App\Filament\Admin\Resources\StudentGroups\Pages\ManageStudentGroups;
 use App\Filament\Admin\Resources\StudentGroups\Schemas\StudentGroupForm;
+use App\Filament\Admin\Resources\StudentGroups\Schemas\StudentGroupInfolist;
 use App\Filament\Admin\Resources\StudentGroups\Tables\StudentGroupsTable;
 use App\Models\StudentGroup;
 use BackedEnum;
@@ -45,6 +46,11 @@ class StudentGroupResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return StudentGroupForm::configure($schema);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return StudentGroupInfolist::configure($schema);
     }
 
     public static function table(Table $table): Table

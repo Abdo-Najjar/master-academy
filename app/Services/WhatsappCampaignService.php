@@ -11,9 +11,10 @@ use Illuminate\Support\Facades\Log;
 class WhatsappCampaignService
 {
     /**
-     * Snapshot the target group's students into campaign recipients
-     * (name + normalized phone) so the send job has a stable list even if
-     * group membership changes while the campaign is running.
+     * Snapshot the target group's students and manually-added contacts into
+     * campaign recipients (name + normalized phone) so the send job has a
+     * stable list even if group membership changes while the campaign is
+     * running.
      */
     public static function buildRecipients(WhatsappCampaign $campaign): int
     {
@@ -41,6 +42,24 @@ class WhatsappCampaignService
                 'whatsapp_campaign_id' => $campaign->id,
                 'student_id' => $student->id,
                 'name' => $name,
+                'phone' => $normalized,
+                'status' => WhatsappCampaignRecipient::STATUS_PENDING,
+            ]);
+
+            $count++;
+        }
+
+        foreach ($group->contacts as $contact) {
+            $normalized = WhatsAppService::normalizePhone($contact->phone);
+
+            if ($normalized === '') {
+                continue;
+            }
+
+            WhatsappCampaignRecipient::create([
+                'whatsapp_campaign_id' => $campaign->id,
+                'student_id' => null,
+                'name' => $contact->name,
                 'phone' => $normalized,
                 'status' => WhatsappCampaignRecipient::STATUS_PENDING,
             ]);
