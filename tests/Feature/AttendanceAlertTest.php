@@ -1,8 +1,6 @@
 <?php
 
 use App\Models\Attendance;
-use App\Models\PaymentType;
-use App\Models\Registration;
 use App\Models\Section;
 use App\Models\Student;
 use App\Models\StudentAlert;
@@ -36,12 +34,10 @@ beforeEach(function () {
         'password' => 'password',
     ]);
 
-    // Use generous thresholds so we can drive both code paths
+    // Use a generous threshold so we can drive the absence-alert code path
     $settings = app(AppSettings::class);
     $settings->enable_absence_alerts = true;
     $settings->absence_alert_threshold = 3;
-    $settings->enable_unpaid_attendance_alerts = true;
-    $settings->unpaid_attendance_alert_threshold = 2;
     $settings->save();
 });
 
@@ -86,46 +82,6 @@ it('does not re-fire absence alert at the same threshold (dedupe)', function () 
     $svc->checkForSection($this->section, [$this->student->id => 'absent']);
 
     expect(StudentAlert::where('kind', StudentAlert::KIND_ABSENCE)->count())->toBe(1);
-});
-
-it('fires an unpaid attendance alert when student attends without paying', function () {
-    Registration::create([
-        'student_id' => $this->student->id,
-        'section_id' => $this->section->id,
-        'payment_type_id' => PaymentType::create(['name' => 'Cash'])->id,
-        'amount_due' => 100,
-        'amount_paid' => 20,
-        'exemption_amount' => 0,
-        'trainer_amount' => 0,
-    ]);
-
-    recordAttendance($this->section->id, $this->student->id, 'present', '2026-05-20');
-    recordAttendance($this->section->id, $this->student->id, 'present', '2026-05-21');
-
-    app(AttendanceAlertService::class)
-        ->checkForSection($this->section, [$this->student->id => 'present']);
-
-    expect(StudentAlert::where('kind', StudentAlert::KIND_UNPAID)->count())->toBe(1);
-});
-
-it('does not fire unpaid alert when registration is fully paid', function () {
-    Registration::create([
-        'student_id' => $this->student->id,
-        'section_id' => $this->section->id,
-        'payment_type_id' => PaymentType::create(['name' => 'Cash'])->id,
-        'amount_due' => 100,
-        'amount_paid' => 100,
-        'exemption_amount' => 0,
-        'trainer_amount' => 0,
-    ]);
-
-    recordAttendance($this->section->id, $this->student->id, 'present', '2026-05-20');
-    recordAttendance($this->section->id, $this->student->id, 'present', '2026-05-21');
-
-    app(AttendanceAlertService::class)
-        ->checkForSection($this->section, [$this->student->id => 'present']);
-
-    expect(StudentAlert::where('kind', StudentAlert::KIND_UNPAID)->count())->toBe(0);
 });
 
 it('respects the enable_absence_alerts flag', function () {

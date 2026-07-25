@@ -16,10 +16,6 @@ class AppSettings extends Settings
 
     public int $absence_alert_threshold;
 
-    public bool $enable_unpaid_attendance_alerts;
-
-    public int $unpaid_attendance_alert_threshold;
-
     public static function group(): string
     {
         return 'app';

@@ -32,8 +32,8 @@ beforeEach(function () {
 
     $this->paymentType = PaymentType::create(['name' => 'Cash']);
 
-    // RegistrationObserver::creating() computes financial_status automatically —
-    // a fully-paid course fee lands as "ok".
+    // The student's wallet starts empty, so this charge lands unfunded
+    // ("overdue") even though amount_paid equals the full fee.
     $this->registration = Registration::create([
         'student_id'       => $this->student->id,
         'section_id'       => $this->section->id,
@@ -45,38 +45,49 @@ beforeEach(function () {
     ]);
 });
 
-it('computes remainingBalance as due minus paid minus exemption', function () {
-    $this->registration->updateQuietly(['amount_due' => 200, 'amount_paid' => 120, 'exemption_amount' => 30]);
+it('computes remainingBalance as the unfunded portion of amount_paid', function () {
+    // amount_paid is charged to the wallet in full at creation regardless of
+    // balance; funded_amount tracks how much of that charge real money backs.
+    $this->registration->forceFill(['funded_amount' => 120])->saveQuietly();
 
-    expect(FinancialDueService::remainingBalance($this->registration->fresh()))->toBe(50.0);
+    expect(FinancialDueService::remainingBalance($this->registration->fresh()))->toBe(80.0);
 });
 
-it('returns ok when fully paid', function () {
-    expect(FinancialDueService::computeStatus($this->registration))->toBe('ok');
+it('returns overdue right after creation when the student had no funds to cover the charge', function () {
+    // The student's wallet was empty before this registration, so nothing
+    // could be funded even though amount_paid was set to the full fee.
+    expect(FinancialDueService::computeStatus($this->registration->fresh()))->toBe('overdue');
 });
 
-it('returns ok when exemption covers the remaining balance', function () {
-    $this->registration->updateQuietly(['amount_due' => 200, 'amount_paid' => 0, 'exemption_amount' => 200]);
+it('returns ok when the charge is fully funded', function () {
+    $this->registration->forceFill(['funded_amount' => 200])->saveQuietly();
 
     expect(FinancialDueService::computeStatus($this->registration->fresh()))->toBe('ok');
 });
 
-it('returns due when partially paid', function () {
-    $this->registration->updateQuietly(['amount_due' => 200, 'amount_paid' => 80, 'exemption_amount' => 0]);
+it('returns ok when amount_paid is zero regardless of funded_amount', function () {
+    $this->registration->forceFill(['amount_paid' => 0, 'funded_amount' => 0])->saveQuietly();
+
+    expect(FinancialDueService::computeStatus($this->registration->fresh()))->toBe('ok');
+});
+
+it('returns due when partially funded', function () {
+    $this->registration->forceFill(['funded_amount' => 80])->saveQuietly();
 
     expect(FinancialDueService::computeStatus($this->registration->fresh()))->toBe('due');
 });
 
-it('returns overdue when nothing has been paid on a course with a fee', function () {
-    $this->registration->updateQuietly(['amount_due' => 200, 'amount_paid' => 0, 'exemption_amount' => 0]);
+it('returns overdue when nothing has been funded on a charge with a balance', function () {
+    $this->registration->forceFill(['funded_amount' => 0])->saveQuietly();
 
     expect(FinancialDueService::computeStatus($this->registration->fresh()))->toBe('overdue');
 });
 
 it('refreshAllStatuses updates a stale financial_status and returns the changed count', function () {
-    // Bypass the observer so financial_status is left stale at "ok" while the
-    // balance now shows a due amount — exactly what refreshAllStatuses fixes.
-    $this->registration->updateQuietly(['amount_paid' => 0]);
+    // Stamp a stale "ok" directly, bypassing the observer, while funded_amount
+    // (0) is still short of amount_paid (200) — exactly the mismatch
+    // refreshAllStatuses reconciles.
+    $this->registration->forceFill(['financial_status' => 'ok'])->saveQuietly();
     expect($this->registration->fresh()->financial_status)->toBe('ok');
 
     $updated = FinancialDueService::refreshAllStatuses();
@@ -86,7 +97,7 @@ it('refreshAllStatuses updates a stale financial_status and returns the changed 
 });
 
 it('refreshAllStatuses dry-run does not persist changes', function () {
-    $this->registration->updateQuietly(['amount_paid' => 0]);
+    $this->registration->forceFill(['financial_status' => 'ok'])->saveQuietly();
 
     $updated = FinancialDueService::refreshAllStatuses(dryRun: true);
 

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Attendance;
-use App\Models\Registration;
 use App\Models\Section;
 use App\Models\Student;
 use App\Models\StudentAlert;
@@ -33,10 +32,6 @@ class AttendanceAlertService
 
             if ($this->settings->enable_absence_alerts) {
                 $alertsFired += (int) $this->checkAbsenceStreak($student, $section);
-            }
-
-            if ($this->settings->enable_unpaid_attendance_alerts) {
-                $alertsFired += (int) $this->checkUnpaidAttendance($student, $section);
             }
         }
 
@@ -90,52 +85,6 @@ class AttendanceAlertService
     }
 
     /**
-     * Fire an alert when a student attends >= threshold lectures in a section
-     * while still having an unpaid balance on their registration.
-     */
-    protected function checkUnpaidAttendance(Student $student, Section $section): bool
-    {
-        $threshold = max(1, $this->settings->unpaid_attendance_alert_threshold);
-
-        $registration = Registration::query()
-            ->where('student_id', $student->id)
-            ->where('section_id', $section->id)
-            ->first();
-
-        if (! $registration) {
-            return false;
-        }
-
-        $unpaid = ((float) $registration->amount_due) - ((float) $registration->amount_paid);
-        if ($unpaid <= 0) {
-            return false;
-        }
-
-        $attendedCount = Attendance::query()
-            ->where('student_id', $student->id)
-            ->where('section_id', $section->id)
-            ->whereIn('status', ['present', 'late'])
-            ->count();
-
-        if ($attendedCount < $threshold) {
-            return false;
-        }
-
-        return $this->fireAlert(
-            $student,
-            $section,
-            StudentAlert::KIND_UNPAID,
-            $attendedCount,
-            __(':name attended :count lectures in :section but still owes :amount', [
-                'name' => is_array($student->name) ? ($student->name[app()->getLocale()] ?? reset($student->name)) : $student->name,
-                'count' => $attendedCount,
-                'section' => is_array($section->name) ? ($section->name[app()->getLocale()] ?? reset($section->name)) : $section->name,
-                'amount' => number_format($unpaid, 2).' ₪',
-            ])
-        );
-    }
-
-    /**
      * Insert an alert row (unique-constraint dedupes) and broadcast a database
      * notification to every admin user. Returns true if a new alert was fired.
      */
@@ -163,18 +112,10 @@ class AttendanceAlertService
             return true;
         }
 
-        $title = match ($kind) {
-            StudentAlert::KIND_ABSENCE => __('Repeated absences alert'),
-            StudentAlert::KIND_UNPAID => __('Unpaid attending student'),
-            default => __('Student alert'),
-        };
-
-        $color = $kind === StudentAlert::KIND_ABSENCE ? 'danger' : 'warning';
-
         Notification::make()
-            ->{$color}()
-            ->icon($kind === StudentAlert::KIND_ABSENCE ? 'heroicon-o-x-circle' : 'heroicon-o-banknotes')
-            ->title($title)
+            ->danger()
+            ->icon('heroicon-o-x-circle')
+            ->title(__('Repeated absences alert'))
             ->body($body)
             ->actions([
                 Action::make('view')

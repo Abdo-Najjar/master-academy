@@ -31,9 +31,10 @@ beforeEach(function () {
 
     $pt = PaymentType::create(['name' => 'Cash']);
 
-    // RegistrationObserver::creating() computes financial_status automatically — fully
-    // paid lands as "ok". We then bypass the observer to make it stale for the command
-    // to fix, the same way a manual DB edit or a refund elsewhere could leave it stale.
+    // The registration lands unfunded ("overdue") since the student's wallet
+    // was empty. Stamp a stale "ok" directly, bypassing the observer, the
+    // same way a manual DB edit or a refund elsewhere could leave it stale —
+    // that's what the command reconciles.
     $this->reg = Registration::create([
         'student_id'      => $this->student->id,
         'section_id'      => $this->section->id,
@@ -44,7 +45,7 @@ beforeEach(function () {
         'trainer_amount'  => 40,
     ]);
 
-    $this->reg->updateQuietly(['amount_paid' => 0]);
+    $this->reg->forceFill(['financial_status' => 'ok'])->saveQuietly();
 });
 
 it('artisan finances:refresh updates financial status', function () {

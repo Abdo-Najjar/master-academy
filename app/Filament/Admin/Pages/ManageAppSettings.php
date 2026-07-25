@@ -58,8 +58,6 @@ class ManageAppSettings extends Page implements HasForms
             'secondary_color' => $settings->secondary_color,
             'enable_absence_alerts' => $settings->enable_absence_alerts,
             'absence_alert_threshold' => $settings->absence_alert_threshold,
-            'enable_unpaid_attendance_alerts' => $settings->enable_unpaid_attendance_alerts,
-            'unpaid_attendance_alert_threshold' => $settings->unpaid_attendance_alert_threshold,
         ]);
     }
 
@@ -100,16 +98,6 @@ class ManageAppSettings extends Page implements HasForms
                             ->maxValue(50)
                             ->required()
                             ->helperText(__('Send an alert when a student misses this many consecutive lectures.')),
-                        Toggle::make('enable_unpaid_attendance_alerts')
-                            ->label(__('Notify admins about unpaid students who keep attending'))
-                            ->inline(false),
-                        TextInput::make('unpaid_attendance_alert_threshold')
-                            ->label(__('Attended lectures threshold with unpaid balance'))
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(50)
-                            ->required()
-                            ->helperText(__('Send an alert when a student attends this many lectures while their registration has an unpaid balance.')),
                     ])
                     ->columns(1)
                     ->columnSpanFull(),
@@ -128,8 +116,6 @@ class ManageAppSettings extends Page implements HasForms
         $settings->secondary_color = $data['secondary_color'];
         $settings->enable_absence_alerts = (bool) ($data['enable_absence_alerts'] ?? false);
         $settings->absence_alert_threshold = (int) ($data['absence_alert_threshold'] ?? 3);
-        $settings->enable_unpaid_attendance_alerts = (bool) ($data['enable_unpaid_attendance_alerts'] ?? false);
-        $settings->unpaid_attendance_alert_threshold = (int) ($data['unpaid_attendance_alert_threshold'] ?? 5);
         $settings->save();
 
         Cache::forget('app_settings_css');
