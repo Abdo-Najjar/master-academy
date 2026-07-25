@@ -95,6 +95,12 @@ class PermissionCatalog
                 'room.update' => __('Update'),
                 'room.delete' => __('Delete'),
             ],
+            'branch' => [
+                'branch.index' => __('View'),
+                'branch.create' => __('Create'),
+                'branch.update' => __('Update'),
+                'branch.delete' => __('Delete'),
+            ],
             'payment_type' => [
                 'payment_type.index' => __('View'),
                 'payment_type.create' => __('Create'),
@@ -195,6 +201,7 @@ class PermissionCatalog
             'city' => __('Cities'),
             'governorate' => __('Governorates'),
             'room' => __('Rooms'),
+            'branch' => __('Branches'),
             'payment_type' => __('Payment Types'),
             'exemption_type' => __('Exemption Types'),
             'wallet_transactions' => __('Wallet Transactions'),

@@ -33,4 +33,9 @@ class Governorate extends Model
     {
         return $this->hasMany(Trainer::class);
     }
+
+    public function branches(): HasMany
+    {
+        return $this->hasMany(Branch::class);
+    }
 }

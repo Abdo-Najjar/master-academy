@@ -118,6 +118,7 @@ class GovernorateResource extends Resource
             'cities' => __('Cities'),
             'students' => __('Students'),
             'trainers' => __('Trainers'),
+            'branches' => __('Branches'),
         ]);
     }
 
@@ -130,6 +131,7 @@ class GovernorateResource extends Resource
             'cities' => __('Cities'),
             'students' => __('Students'),
             'trainers' => __('Trainers'),
+            'branches' => __('Branches'),
         ]);
     }
 

@@ -38,6 +38,11 @@ class SectionForm
                             ->required()
                             ->live()
                             ->afterStateUpdated(fn (callable $set) => $set('trainer_id', null)),
+                        Select::make('branch_id')
+                            ->label(__('Branch'))
+                            ->relationship('branch', 'name')
+                            ->searchable()
+                            ->preload(),
                         Select::make('trainer_id')
                             ->label(__('Trainer'))
                             ->options(function (Get $get): array {

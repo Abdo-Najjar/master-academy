@@ -21,6 +21,7 @@ class Section extends Model implements HasMedia
     protected $fillable = [
         'name',
         'subject_id',
+        'branch_id',
         'trainer_id',
         'start_date',
         'end_date',
@@ -50,7 +51,7 @@ class Section extends Model implements HasMedia
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'subject_id', 'trainer_id', 'start_date', 'end_date', 'price', 'trainer_rate', 'capacity', 'training_hours'])
+            ->logOnly(['name', 'subject_id', 'branch_id', 'trainer_id', 'start_date', 'end_date', 'price', 'trainer_rate', 'capacity', 'training_hours'])
             ->logOnlyDirty();
     }
 
@@ -62,6 +63,11 @@ class Section extends Model implements HasMedia
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function trainer(): BelongsTo

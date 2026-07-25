@@ -21,6 +21,7 @@ class SectionInfolist
                             ->badge()
                             ->color(fn ($record) => $record->subject?->color ? \Filament\Support\Colors\Color::hex($record->subject->color) : 'gray')
                             ->placeholder('—'),
+                        TextEntry::make('branch.name')->label(__('Branch'))->placeholder('—'),
                         TextEntry::make('trainer.name')->label(__('Trainer'))->placeholder('—'),
                         TextEntry::make('start_date')->label(__('Start Date'))->date()->placeholder('—'),
                         TextEntry::make('end_date')->label(__('End Date'))->date()->placeholder('—'),

@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sections', function (Blueprint $table) {
-            $table->unsignedInteger('training_hours')->nullable()->after('capacity');
+        Schema::table('sections', function (Blueprint $table): void {
+            $table->foreignId('branch_id')->nullable()->after('subject_id')->constrained()->nullOnDelete();
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sections', function (Blueprint $table) {
-            $table->dropColumn('training_hours');
+        Schema::table('sections', function (Blueprint $table): void {
+            $table->dropConstrainedForeignId('branch_id');
         });
     }
 };

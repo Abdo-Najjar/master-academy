@@ -10,33 +10,36 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Translatable\HasTranslations;
 
-class City extends Model
+class Branch extends Model
 {
     use AutoTranslatesMissing, HasFactory, HasTranslations, SoftDeletes;
 
     /** @var list<string> */
-    protected $fillable = ['name', 'governorate_id'];
+    protected $fillable = ['name', 'governorate_id', 'city_id', 'sort_order'];
 
     /** @var list<string> */
     public array $translatable = ['name'];
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return [
+            'sort_order' => 'integer',
+        ];
+    }
 
     public function governorate(): BelongsTo
     {
         return $this->belongsTo(Governorate::class);
     }
 
-    public function students(): HasMany
+    public function city(): BelongsTo
     {
-        return $this->hasMany(Student::class);
+        return $this->belongsTo(City::class);
     }
 
-    public function trainers(): HasMany
+    public function sections(): HasMany
     {
-        return $this->hasMany(Trainer::class);
-    }
-
-    public function branches(): HasMany
-    {
-        return $this->hasMany(Branch::class);
+        return $this->hasMany(Section::class);
     }
 }

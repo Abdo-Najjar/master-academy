@@ -29,6 +29,7 @@ class SectionsTable
                     ->color(fn ($record) => $record->subject?->color ? \Filament\Support\Colors\Color::hex($record->subject->color) : 'gray')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('branch.name')->label(__('Branch'))->badge()->placeholder('—')->searchable()->sortable(),
                 TextColumn::make('trainer.name')->label(__('Trainer'))->searchable()->sortable(),
                 TextColumn::make('start_date')->label(__('Start'))->date()->sortable(),
                 TextColumn::make('end_date')->label(__('End'))->date()->sortable(),
@@ -52,6 +53,11 @@ class SectionsTable
                 SelectFilter::make('subject_id')
                     ->label(__('Course'))
                     ->relationship('subject', 'name')
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('branch_id')
+                    ->label(__('Branch'))
+                    ->relationship('branch', 'name')
                     ->searchable()
                     ->preload(),
                 SelectFilter::make('trainer_id')

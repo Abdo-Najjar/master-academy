@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             GovernorateSeeder::class,
             CitySeeder::class,
+            BranchSeeder::class,
             PaymentTypeSeeder::class,
             CourseTypeSeeder::class,
             SubjectSeeder::class,

@@ -125,11 +125,6 @@ class RegistrationForm
                                     }
                                 },
                             ]),
-                        Select::make('payment_type_id')
-                            ->label(__('Payment Type'))
-                            ->relationship('paymentType', 'name')
-                            ->searchable()
-                            ->preload(),
                     ])
                     ->columns(1),
 

@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Filament\Admin\Resources\Cities;
+namespace App\Filament\Admin\Resources\Branches;
 
-use App\Filament\Admin\Resources\Cities\Pages\ManageCities;
+use App\Filament\Admin\Resources\Branches\Pages\ManageBranches;
 use App\Filament\Support\DeletionGuard;
-use App\Models\City;
+use App\Models\Branch;
 use BackedEnum;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
@@ -15,9 +15,7 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
-use Illuminate\Support\Collection;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -28,14 +26,15 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Collection;
 
-class CityResource extends Resource
+class BranchResource extends Resource
 {
-    protected static ?string $model = City::class;
+    protected static ?string $model = Branch::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingStorefront;
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -46,17 +45,17 @@ class CityResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return __('City');
+        return __('Branch');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return __('Cities');
+        return __('Branches');
     }
 
     public static function canAccess(): bool
     {
-        return (auth()->user()?->can('city.index') ?? false);
+        return (auth()->user()?->can('branch.index') ?? false);
     }
 
     public static function form(Schema $schema): Schema
@@ -71,7 +70,16 @@ class CityResource extends Resource
                             ->relationship('governorate', 'name')
                             ->searchable()
                             ->preload()
-                            ->required(),
+                            ->live()
+                            ->required()
+                            ->afterStateUpdated(fn ($state, callable $set) => $set('city_id', null)),
+                        Select::make('city_id')
+                            ->label(__('City'))
+                            ->relationship('city', 'name', fn ($query, callable $get) => $query->where('governorate_id', $get('governorate_id')))
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->disabled(fn (callable $get) => empty($get('governorate_id'))),
                     ])
                     ->columns(1)
                     ->columnSpanFull(),
@@ -91,6 +99,13 @@ class CityResource extends Resource
                     ->label(__('Governorate'))
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('city.name')
+                    ->label(__('City'))
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('sections_count')
+                    ->counts('sections')
+                    ->label(__('Sections')),
                 TextColumn::make('created_at')->label(__('Created'))
                     ->dateTime()
                     ->sortable()
@@ -102,15 +117,20 @@ class CityResource extends Resource
                     ->relationship('governorate', 'name')
                     ->searchable()
                     ->preload(),
+                SelectFilter::make('city_id')
+                    ->label(__('City'))
+                    ->relationship('city', 'name')
+                    ->searchable()
+                    ->preload(),
                 TrashedFilter::make(),
             ])
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make(),
                     DeleteAction::make()
-                        ->before(fn (City $record) => static::guardDeletion($record)),
+                        ->before(fn (Branch $record) => static::guardDeletion($record)),
                     ForceDeleteAction::make()
-                        ->before(fn (City $record) => static::guardDeletion($record)),
+                        ->before(fn (Branch $record) => static::guardDeletion($record)),
                     RestoreAction::make(),
                 ]),
             ])
@@ -126,31 +146,27 @@ class CityResource extends Resource
             ->defaultSort('id', 'desc');
     }
 
-    protected static function guardDeletion(City $record): void
+    protected static function guardDeletion(Branch $record): void
     {
         DeletionGuard::ensureUnused($record, [
-            'students' => __('Students'),
-            'trainers' => __('Trainers'),
-            'branches' => __('Branches'),
+            'sections' => __('Sections'),
         ]);
     }
 
     /**
-     * @param  Collection<int, City>  $records
+     * @param  Collection<int, Branch>  $records
      */
     protected static function guardDeletionForMany(Collection $records): void
     {
         DeletionGuard::ensureUnusedForMany($records, [
-            'students' => __('Students'),
-            'trainers' => __('Trainers'),
-            'branches' => __('Branches'),
+            'sections' => __('Sections'),
         ]);
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => ManageCities::route('/'),
+            'index' => ManageBranches::route('/'),
         ];
     }
 

@@ -3,7 +3,6 @@
 namespace App\Filament\Admin\Pages;
 
 use App\Filament\Admin\Resources\Students\StudentResource;
-use App\Models\PaymentType;
 use App\Models\Registration;
 use App\Models\Section;
 use App\Models\SectionTime;
@@ -171,12 +170,6 @@ class QuickEnroll extends Page implements HasForms
                                         }
                                     })
                                     ->columnSpanFull(),
-
-                                Select::make('payment_type_id')
-                                    ->label(__('Payment Type'))
-                                    ->options(PaymentType::all()->pluck('name', 'id'))
-                                    ->searchable()
-                                    ->preload(),
 
                                 TextInput::make('amount_due')
                                     ->label(__('Amount Due'))
@@ -365,7 +358,6 @@ class QuickEnroll extends Page implements HasForms
                     Registration::create([
                         'student_id' => $student->id,
                         'section_id' => $row['section_id'],
-                        'payment_type_id' => $row['payment_type_id'] ?? null,
                         'amount_due' => $row['amount_due'],
                         'amount_paid' => $row['amount_paid'],
                         'exemption_amount' => $row['exemption_amount'] ?? 0,

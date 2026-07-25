@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('sections', function (Blueprint $table): void {
             $table->id();
-            $table->json('name');
+            $table->string('name');
             $table->foreignId('subject_id')->constrained()->cascadeOnDelete();
             $table->foreignId('trainer_id')->nullable()->constrained()->nullOnDelete();
             $table->date('start_date')->nullable();
@@ -18,6 +18,7 @@ return new class extends Migration
             $table->decimal('price', 10, 2)->default(0);
             $table->decimal('trainer_rate', 5, 2)->nullable();
             $table->unsignedInteger('capacity')->nullable();
+            $table->unsignedInteger('training_hours')->nullable();
             $table->string('section_type')->default('mixed');
             $table->string('seat_reservation_type')->nullable();
             $table->decimal('seat_reservation_amount', 10, 2)->nullable();

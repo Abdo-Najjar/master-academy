@@ -25,6 +25,7 @@ class CitySeeder extends Seeder
             ],
             'Deir al-Balah' => [
                 ['ar' => 'دير البلح', 'en' => 'Deir al-Balah'],
+                ['ar' => 'مخيم دير البلح', 'en' => 'Deir al-Balah Camp'],
                 ['ar' => 'النصيرات', 'en' => 'An-Nuseirat'],
                 ['ar' => 'البريج', 'en' => 'Al-Bureij'],
                 ['ar' => 'المغازي', 'en' => 'Al-Maghazi'],
