@@ -40,7 +40,7 @@ class StudentGroupForm
                 Section::make(__('Additional Contacts'))
                     ->description(__('People who are not registered students but should still be reachable through this group.'))
                     ->icon('heroicon-o-phone')
-                    ->afterLabel([
+                    ->afterHeader([
                         Actions::make([
                             Action::make('importContacts')
                                 ->label(__('Import from Excel'))
