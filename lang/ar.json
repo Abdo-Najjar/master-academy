@@ -1522,5 +1522,7 @@
     "A withdrawal of :amount has been made from your wallet": "تم سحب :amount من محفظتك",
     "Group Details": "بيانات المجموعة",
     "The group name and the students who belong to it.": "اسم المجموعة والطلاب المنتمين إليها.",
-    "People who are not registered students but should still be reachable through this group.": "أشخاص غير مسجلين كطلاب لكن يجب أن يكونوا متاحين للتواصل ضمن هذه المجموعة."
+    "People who are not registered students but should still be reachable through this group.": "أشخاص غير مسجلين كطلاب لكن يجب أن يكونوا متاحين للتواصل ضمن هذه المجموعة.",
+    "Download Template": "تحميل نموذج",
+    "Contacts Template": "نموذج جهات الاتصال"
 }

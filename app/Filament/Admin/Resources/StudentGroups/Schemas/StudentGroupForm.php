@@ -12,7 +12,10 @@ use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use OpenSpout\Common\Entity\Row;
 use OpenSpout\Reader\XLSX\Reader;
+use OpenSpout\Writer\XLSX\Writer;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class StudentGroupForm
 {
@@ -42,6 +45,11 @@ class StudentGroupForm
                     ->icon('heroicon-o-phone')
                     ->afterHeader([
                         Actions::make([
+                            Action::make('downloadContactsTemplate')
+                                ->label(__('Download Template'))
+                                ->icon('heroicon-o-arrow-down-tray')
+                                ->color('gray')
+                                ->action(fn (): StreamedResponse => self::downloadContactsTemplate()),
                             Action::make('importContacts')
                                 ->label(__('Import from Excel'))
                                 ->icon('heroicon-o-arrow-up-tray')
@@ -99,6 +107,19 @@ class StudentGroupForm
                     ])
                     ->collapsible(),
             ]);
+    }
+
+    protected static function downloadContactsTemplate(): StreamedResponse
+    {
+        return response()->streamDownload(function (): void {
+            $writer = new Writer();
+            $writer->openToFile('php://output');
+
+            $writer->addRow(Row::fromValues([__('Name'), __('Phone')]));
+            $writer->addRow(Row::fromValues(['خالد أبو شنب', '0599123456']));
+
+            $writer->close();
+        }, __('Contacts Template').'.xlsx');
     }
 
     /** @return array<int, array{name: string, phone: string}> */
