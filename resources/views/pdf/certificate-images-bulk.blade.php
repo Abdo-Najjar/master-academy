@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ __('Download Certificates') }}</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Tajawal:wght@400;700&family=Amiri:wght@400;700&family=Almarai:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;700&display=swap');
         body { margin: 0; font-family: 'Tajawal', 'Segoe UI', Tahoma, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 2rem; }
         #status { font-size: 1.05rem; font-weight: 600; text-align: center; }
         #progress { font-size: .9rem; color: #94a3b8; }
@@ -146,7 +147,7 @@
         }
 
         if (window.fabric && window.JSZip) {
-            renderAll();
+            document.fonts.ready.then(renderAll);
         } else {
             document.getElementById('status').textContent = @json(__('Failed to load. Please try again.'));
         }

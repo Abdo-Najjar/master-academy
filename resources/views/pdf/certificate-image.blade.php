@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ __('Download Image') }}</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Tajawal:wght@400;700&family=Amiri:wght@400;700&family=Almarai:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;700&display=swap');
         body { margin: 0; font-family: 'Tajawal', 'Segoe UI', Tahoma, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 2rem; }
         #status { font-size: 1.05rem; font-weight: 600; }
         .spin { width: 38px; height: 38px; border: 4px solid #334155; border-top-color: #22c55e; border-radius: 50%; animation: sp 1s linear infinite; }
@@ -113,7 +114,9 @@
         }
 
         if (window.fabric) {
-            render();
+            // Wait for the web fonts (Cairo/Tajawal/Amiri/Almarai) to finish loading
+            // so the canvas doesn't bake in a fallback font on first paint.
+            document.fonts.ready.then(render);
         } else {
             document.getElementById('status').textContent = @json(__('Failed to load. Please try again.'));
         }

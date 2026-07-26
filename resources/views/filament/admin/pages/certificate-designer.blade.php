@@ -1,5 +1,6 @@
 <x-filament-panels::page>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Tajawal:wght@400;700&family=Amiri:wght@400;700&family=Almarai:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;700&display=swap');
         .cd-wrap{display:flex;flex-direction:column;gap:1rem;}
         .cd-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;padding:1rem 1.25rem;background:#fff;border:1px solid #e5e7eb;border-radius:1rem;box-shadow:0 4px 14px -8px rgba(0,0,0,.12);}
         .dark .cd-toolbar{background:#1e293b;border-color:#334155;}
@@ -65,8 +66,7 @@
             @foreach ([
                 'student_name_ar' => __('Student Name') . ' (ع)',
                 'student_name_en' => __('Student Name') . ' (EN)',
-                'section_name_ar' => __('Section Name') . ' (ع)',
-                'section_name_en' => __('Section Name') . ' (EN)',
+                'section_name' => __('Section Name'),
                 'subject_name_ar' => __('Subject') . ' (ع)',
                 'subject_name_en' => __('Subject') . ' (EN)',
                 'trainer_name_ar' => __('Trainer Name') . ' (ع)',
@@ -130,9 +130,14 @@
                             <div class="cd-f cd-f--full" x-show="selectedField.key !== 'qr_code'">
                                 <label class="cd-lbl">{{ __('Font') }}</label>
                                 <select class="cd-sel" x-model="selectedField.font_family" @change="updateSelected()">
-                                    <option value="dejavusans">{{ __('Sans') }}</option>
-                                    <option value="dejavuserif">{{ __('Serif') }}</option>
-                                    <option value="dejavusansmono">{{ __('Monospace') }}</option>
+                                    <option value="dejavusans">Sans</option>
+                                    <option value="dejavuserif">Serif</option>
+                                    <option value="dejavusansmono">Monospace</option>
+                                    <option value="cairo">Cairo</option>
+                                    <option value="tajawal">Tajawal</option>
+                                    <option value="amiri">Amiri</option>
+                                    <option value="almarai">Almarai</option>
+                                    <option value="ibmplexsansarabic">IBM Plex Sans Arabic</option>
                                 </select>
                             </div>
                             <div class="cd-f" x-show="selectedField.key !== 'qr_code'">
@@ -232,10 +237,14 @@
                     }, { crossOrigin: 'anonymous' });
                 }
 
-                // Load existing fields
-                if (Array.isArray(initialFields)) {
-                    initialFields.forEach(f => this.addFieldFromConfig(f));
-                }
+                // Load existing fields once the preview web fonts (Cairo/Tajawal/
+                // Amiri/Almarai) are ready, so text isn't baked in with a fallback font.
+                document.fonts.ready.then(() => {
+                    if (Array.isArray(initialFields)) {
+                        initialFields.forEach(f => this.addFieldFromConfig(f));
+                    }
+                    this.canvas.renderAll();
+                });
 
                 // Selection events
                 this.canvas.on('selection:created', (e) => this.onSelect(e.selected[0]));
@@ -273,6 +282,11 @@
                 dejavusans: 'Arial, sans-serif',
                 dejavuserif: 'Georgia, serif',
                 dejavusansmono: '"Courier New", monospace',
+                cairo: '"Cairo", sans-serif',
+                tajawal: '"Tajawal", sans-serif',
+                amiri: '"Amiri", serif',
+                almarai: '"Almarai", sans-serif',
+                ibmplexsansarabic: '"IBM Plex Sans Arabic", sans-serif',
             },
 
             addField(key, label) {

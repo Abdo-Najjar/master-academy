@@ -104,6 +104,8 @@ class CertificateService
             'dpi' => 96,
             'img_dpi' => 300,
             'jpeg_quality' => 95,
+            'custom_font_dir' => resource_path('fonts').'/',
+            'custom_font_data' => self::customFontData(),
         ]);
 
         return $pdf->output();
@@ -139,6 +141,11 @@ class CertificateService
             'dejavusans' => 'Arial, sans-serif',
             'dejavuserif' => 'Georgia, serif',
             'dejavusansmono' => '"Courier New", monospace',
+            'cairo' => '"Cairo", sans-serif',
+            'tajawal' => '"Tajawal", sans-serif',
+            'amiri' => '"Amiri", serif',
+            'almarai' => '"Almarai", sans-serif',
+            'ibmplexsansarabic' => '"IBM Plex Sans Arabic", sans-serif',
         ];
 
         $fields = [];
@@ -175,6 +182,24 @@ class CertificateService
                 'svg' => $qrSvg,
             ] : null,
             'filename' => self::certificateFilename($certificate, (string) ($values['student_name'] ?? '')),
+        ];
+    }
+
+    /**
+     * mPDF font registration for the extra Arabic typefaces offered in the
+     * certificate designer, beyond the built-in DejaVu fonts. Files live in
+     * resources/fonts.
+     *
+     * @return array<string, array<string, string>>
+     */
+    protected static function customFontData(): array
+    {
+        return [
+            'cairo' => ['R' => 'Cairo-Regular.ttf', 'B' => 'Cairo-Bold.ttf'],
+            'tajawal' => ['R' => 'Tajawal-Regular.ttf', 'B' => 'Tajawal-Bold.ttf'],
+            'amiri' => ['R' => 'Amiri-Regular.ttf', 'B' => 'Amiri-Bold.ttf'],
+            'almarai' => ['R' => 'Almarai-Regular.ttf', 'B' => 'Almarai-Bold.ttf'],
+            'ibmplexsansarabic' => ['R' => 'IBMPlexSansArabic-Regular.ttf', 'B' => 'IBMPlexSansArabic-Bold.ttf'],
         ];
     }
 
