@@ -20,7 +20,9 @@ class StudentGroupForm
     {
         return $schema
             ->components([
-                Section::make('')
+                Section::make(__('Group Details'))
+                    ->description(__('The group name and the students who belong to it.'))
+                    ->icon('heroicon-o-user-group')
                     ->schema([
                         TextInput::make('name')
                             ->label(__('Name'))
@@ -34,6 +36,11 @@ class StudentGroupForm
                             ->searchable()
                             ->preload()
                             ->columnSpanFull(),
+                    ]),
+                Section::make(__('Additional Contacts'))
+                    ->description(__('People who are not registered students but should still be reachable through this group.'))
+                    ->icon('heroicon-o-phone')
+                    ->afterLabel([
                         Actions::make([
                             Action::make('importContacts')
                                 ->label(__('Import from Excel'))
@@ -67,8 +74,10 @@ class StudentGroupForm
                                         ->send();
                                 }),
                         ]),
+                    ])
+                    ->schema([
                         Repeater::make('contacts')
-                            ->label(__('Additional Contacts'))
+                            ->hiddenLabel()
                             ->relationship('contacts')
                             ->schema([
                                 TextInput::make('name')
@@ -82,10 +91,13 @@ class StudentGroupForm
                                     ->maxLength(50),
                             ])
                             ->columns(2)
+                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+                            ->collapsible()
                             ->addActionLabel(__('Add Contact'))
                             ->defaultItems(0)
                             ->columnSpanFull(),
-                    ]),
+                    ])
+                    ->collapsible(),
             ]);
     }
 
