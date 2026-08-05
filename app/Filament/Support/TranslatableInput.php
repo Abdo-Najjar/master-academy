@@ -2,6 +2,7 @@
 
 namespace App\Filament\Support;
 
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -30,6 +31,28 @@ class TranslatableInput
                     TextInput::make($field.'.en')
                         ->label($label)
                         ->maxLength(255),
+                ]),
+            ]);
+    }
+
+    /** Same as make(), for longer copy such as descriptions and quotes. */
+    public static function textarea(string $field, string $label, bool $required = true, int $rows = 3): Tabs
+    {
+        return Tabs::make(__('Translations'))
+            ->columnSpanFull()
+            ->tabs([
+                Tab::make(__('Arabic'))->schema([
+                    Textarea::make($field.'.ar')
+                        ->label($label)
+                        ->required($required)
+                        ->rows($rows)
+                        ->maxLength(2000),
+                ]),
+                Tab::make(__('English'))->schema([
+                    Textarea::make($field.'.en')
+                        ->label($label)
+                        ->rows($rows)
+                        ->maxLength(2000),
                 ]),
             ]);
     }

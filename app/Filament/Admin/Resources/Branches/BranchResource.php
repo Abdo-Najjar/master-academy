@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\Branches;
 
 use App\Filament\Admin\Resources\Branches\Pages\ManageBranches;
 use App\Filament\Support\DeletionGuard;
+use App\Filament\Support\TranslatableInput;
 use App\Models\Branch;
 use BackedEnum;
 use Filament\Actions\ActionGroup;
@@ -16,11 +17,14 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
@@ -55,7 +59,7 @@ class BranchResource extends Resource
 
     public static function canAccess(): bool
     {
-        return (auth()->user()?->can('branch.index') ?? false);
+        return auth()->user()?->can('branch.index') ?? false;
     }
 
     public static function form(Schema $schema): Schema
@@ -64,7 +68,7 @@ class BranchResource extends Resource
             ->components([
                 Section::make('')
                     ->schema([
-                        \App\Filament\Support\TranslatableInput::make('name', __('Name')),
+                        TranslatableInput::make('name', __('Name')),
                         Select::make('governorate_id')
                             ->label(__('Governorate'))
                             ->relationship('governorate', 'name')
@@ -80,6 +84,21 @@ class BranchResource extends Resource
                             ->preload()
                             ->required()
                             ->disabled(fn (callable $get) => empty($get('governorate_id'))),
+                    ])
+                    ->columns(1)
+                    ->columnSpanFull(),
+
+                Section::make(__('Public Site'))
+                    ->schema([
+                        TranslatableInput::make('address', __('Address'), required: false),
+                        TextInput::make('sort_order')
+                            ->label(__('Sort Order'))
+                            ->numeric()
+                            ->default(0),
+                        Toggle::make('show_on_site')
+                            ->label(__('Show on site'))
+                            ->default(true)
+                            ->inline(false),
                     ])
                     ->columns(1)
                     ->columnSpanFull(),
@@ -106,6 +125,8 @@ class BranchResource extends Resource
                 TextColumn::make('sections_count')
                     ->counts('sections')
                     ->label(__('Sections')),
+                ToggleColumn::make('show_on_site')
+                    ->label(__('Show on site')),
                 TextColumn::make('created_at')->label(__('Created'))
                     ->dateTime()
                     ->sortable()

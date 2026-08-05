@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Support\Facades\Log;
 
 beforeEach(function () {
     $this->admin = User::firstOrCreate(
@@ -40,6 +39,11 @@ $pages = [
     '/admin/whats-app-settings',
     '/admin/manage-app-settings',
     '/admin/login-activities',
+    '/admin/programs',
+    '/admin/testimonials',
+    '/admin/site-media',
+    '/admin/join-applications',
+    '/admin/manage-site-settings',
 ];
 
 it('renders admin page without server error: {page}', function (string $page) {

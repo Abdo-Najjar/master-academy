@@ -50,6 +50,17 @@ class AppBranding
         return asset("images/{$theme}/favicon.ico");
     }
 
+    /**
+     * Horizontal wordmark used by the public marketing site. The `color`
+     * variant sits on light surfaces, `white` on the dark footer.
+     */
+    public static function siteLogoUrl(string $variant = 'color'): string
+    {
+        $variant = $variant === 'white' ? 'white' : 'color';
+
+        return asset("site/assets/logo-horizontal-{$variant}.png");
+    }
+
     public static function appName(): string
     {
         return self::settings()['app_name'] ?? config('app.name', 'ماستر أكاديمي');

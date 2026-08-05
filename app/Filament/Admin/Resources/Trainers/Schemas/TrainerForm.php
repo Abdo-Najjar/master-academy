@@ -3,12 +3,12 @@
 namespace App\Filament\Admin\Resources\Trainers\Schemas;
 
 use App\Filament\Admin\Resources\Trainers\Pages\CreateTrainer;
-use App\Models\Trainer;
+use App\Filament\Support\TranslatableInput;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -31,7 +31,7 @@ class TrainerForm
                             ->imageEditor()
                             ->avatar()
                             ->columnSpanFull(),
-                        \App\Filament\Support\TranslatableInput::make('name', __('Full Name')),
+                        TranslatableInput::make('name', __('Full Name')),
                         DatePicker::make('dob')
                             ->label(__('Date of Birth'))
                             ->native(false)
@@ -139,6 +139,27 @@ class TrainerForm
                             ->default(true)
                             ->inline(false)
                             ->columnSpanFull(),
+                    ])
+                    ->columns(1),
+
+                Section::make(__('Public Site Profile'))
+                    ->description(__('Shown in the Academic Staff section of the public website.'))
+                    ->schema([
+                        Toggle::make('show_on_site')
+                            ->label(__('Show on site'))
+                            ->helperText(__('The bio and photo above are used as the public profile.'))
+                            ->inline(false)
+                            ->live()
+                            ->columnSpanFull(),
+                        TranslatableInput::make('specialty', __('Specialty'), required: false)
+                            ->visible(fn (callable $get): bool => (bool) $get('show_on_site')),
+                        TranslatableInput::textarea('student_opinion', __('Trainee Opinion'), required: false)
+                            ->visible(fn (callable $get): bool => (bool) $get('show_on_site')),
+                        TextInput::make('site_sort_order')
+                            ->label(__('Sort Order'))
+                            ->numeric()
+                            ->default(0)
+                            ->visible(fn (callable $get): bool => (bool) $get('show_on_site')),
                     ])
                     ->columns(1),
             ]);

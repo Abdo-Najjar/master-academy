@@ -60,7 +60,9 @@
         .mp-card--trainers { --mp-a1: #f59e0b; --mp-a2: #b45309; }
         .mp-card--students { --mp-a1: #64748b; --mp-a2: #334155; }
 
-        .mp-footer { position: relative; z-index: 1; text-align: center; padding: 18px 0 26px; color: var(--mp-footer); font-size: .85rem; font-weight: 500; }
+        .mp-footer { position: relative; z-index: 1; display: grid; gap: 10px; text-align: center; padding: 18px 0 26px; color: var(--mp-footer); font-size: .85rem; font-weight: 500; }
+        .mp-back-link { font-weight: 700; color: #dc2626; }
+        .mp-back-link:hover { text-decoration: underline; }
 
         @media (max-width: 640px) {
             .mp-wrap { padding-top: 36px; }
@@ -126,5 +128,8 @@
         </div>
     </div>
 
-    <div class="mp-footer">© {{ now()->year }} {{ __('Manba Al-Tamayoz Center') }}</div>
+    <div class="mp-footer">
+        <a href="{{ route('site.landing') }}" wire:navigate class="mp-back-link">← {{ __('Back to the website') }}</a>
+        <div>© {{ now()->year }} {{ __('Manba Al-Tamayoz Center') }}</div>
+    </div>
 </div>

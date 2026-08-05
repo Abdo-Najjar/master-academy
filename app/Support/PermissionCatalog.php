@@ -175,6 +175,32 @@ class PermissionCatalog
                 'role.update' => __('Update'),
                 'role.delete' => __('Delete'),
             ],
+            'program' => [
+                'program.index' => __('View'),
+                'program.create' => __('Create'),
+                'program.update' => __('Update'),
+                'program.delete' => __('Delete'),
+            ],
+            'testimonial' => [
+                'testimonial.index' => __('View'),
+                'testimonial.create' => __('Create'),
+                'testimonial.update' => __('Update'),
+                'testimonial.delete' => __('Delete'),
+            ],
+            'site_media' => [
+                'site_media.index' => __('View'),
+                'site_media.create' => __('Create'),
+                'site_media.update' => __('Update'),
+                'site_media.delete' => __('Delete'),
+            ],
+            'join_application' => [
+                'join_application.index' => __('View'),
+                'join_application.update' => __('Update'),
+                'join_application.delete' => __('Delete'),
+            ],
+            'site_settings' => [
+                'site_settings.manage' => __('Manage Site Settings'),
+            ],
         ];
     }
 
@@ -218,6 +244,11 @@ class PermissionCatalog
             'login_activity' => __('Login Activities'),
             'reports' => __('Reports'),
             'role' => __('Roles & Permissions'),
+            'program' => __('Programs'),
+            'testimonial' => __('Testimonials'),
+            'site_media' => __('Gallery'),
+            'join_application' => __('Join Requests'),
+            'site_settings' => __('Site Settings'),
         ];
     }
 }

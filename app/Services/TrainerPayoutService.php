@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Registration;
 use App\Models\Student;
-use App\Services\FinancialDueService;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -22,7 +21,7 @@ class TrainerPayoutService
      */
     public static function applyFundedDelta(Registration $registration, float $newFundedAmount): void
     {
-        $registration->loadMissing('section.trainer');
+        $registration->loadMissing(['section.trainer', 'section.subject', 'student']);
         $trainer = $registration->section?->trainer;
 
         $amountPaid = (float) $registration->amount_paid;
@@ -38,17 +37,23 @@ class TrainerPayoutService
             return;
         }
 
-        $studentName = $registration->student?->getTranslation('name', app()->getLocale(), false) ?? '#'.$registration->student_id;
+        $locale = app()->getLocale();
+        $studentName = $registration->student?->getTranslation('name', $locale, false) ?? '#'.$registration->student_id;
         $sectionName = $registration->section?->name ?? '#'.$registration->section_id;
+        $courseName = $registration->section?->subject?->getTranslation('name', $locale, false);
+
+        // The trainer only sees the description column in their portal, so it
+        // carries who paid and which course/section the share came from.
+        $target = $courseName ? $courseName.' — '.__('Section').' '.$sectionName : $sectionName;
 
         if ($trainer && $trainerDelta > 0) {
             $trainer->depositFloat($trainerDelta, [
-                'description' => __('Trainer share for registration: :name', ['name' => $sectionName]),
+                'description' => __('Trainer share from :student — :name', ['student' => $studentName, 'name' => $target]),
                 'note' => __('Registration #:id — :student', ['id' => $registration->id, 'student' => $studentName]),
             ]);
         } elseif ($trainer && $trainerDelta < 0) {
             $trainer->forceWithdrawFloat(abs($trainerDelta), [
-                'description' => __('Trainer share adjustment for registration: :name', ['name' => $sectionName]),
+                'description' => __('Trainer share adjustment from :student — :name', ['student' => $studentName, 'name' => $target]),
                 'note' => __('Registration #:id — :student', ['id' => $registration->id, 'student' => $studentName]),
             ]);
         }

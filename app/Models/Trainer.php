@@ -8,6 +8,7 @@ use Bavix\Wallet\Interfaces\Wallet;
 use Bavix\Wallet\Interfaces\WalletFloat;
 use Bavix\Wallet\Traits\HasWalletFloat;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -44,13 +45,17 @@ class Trainer extends Authenticatable implements HasMedia, Wallet, WalletFloat
         'default_rate',
         'bio',
         'is_active',
+        'specialty',
+        'student_opinion',
+        'show_on_site',
+        'site_sort_order',
     ];
 
     /** @var list<string> */
     protected $hidden = ['password', 'remember_token'];
 
     /** @var list<string> */
-    public array $translatable = ['name'];
+    public array $translatable = ['name', 'specialty', 'student_opinion'];
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -60,7 +65,22 @@ class Trainer extends Authenticatable implements HasMedia, Wallet, WalletFloat
             'dob' => 'date',
             'default_rate' => 'decimal:2',
             'is_active' => 'boolean',
+            'show_on_site' => 'boolean',
+            'site_sort_order' => 'integer',
         ];
+    }
+
+    /**
+     * Trainers opted in to the public site's academic staff section.
+     *
+     * @param  Builder<Trainer>  $query
+     */
+    public function scopeOnSite(Builder $query): void
+    {
+        $query->where('show_on_site', true)
+            ->where('is_active', true)
+            ->orderBy('site_sort_order')
+            ->orderBy('id');
     }
 
     public function getAuthIdentifierName(): string

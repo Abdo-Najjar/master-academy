@@ -6,8 +6,11 @@ use App\Models\PaymentType;
 use App\Models\Student;
 use App\Notifications\WalletTransaction;
 use App\Services\TrainerPayoutService;
+use Bavix\Wallet\Models\Transaction;
 use Bavix\Wallet\Models\Wallet;
+use Carbon\Carbon;
 use Filament\Actions\Action;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -27,10 +30,12 @@ class WalletActions
             ->action(function (Student $record, array $data): void {
                 self::ensureWallet($record);
 
-                $record->depositFloat(
+                $transaction = $record->depositFloat(
                     (float) $data['amount'],
                     self::buildMeta($data, __('Deposit to student wallet'))
                 );
+
+                self::applyTransactionDate($transaction, $data);
 
                 TrainerPayoutService::settleForStudent($record, (float) $data['amount']);
 
@@ -55,10 +60,12 @@ class WalletActions
             ->action(function (Student $record, array $data): void {
                 self::ensureWallet($record);
 
-                $record->forceWithdrawFloat(
+                $transaction = $record->forceWithdrawFloat(
                     (float) $data['amount'],
                     self::buildMeta($data, __('Withdraw from student wallet'))
                 );
+
+                self::applyTransactionDate($transaction, $data);
 
                 $record->notify(new WalletTransaction('withdraw', (float) $data['amount']));
 
@@ -80,6 +87,12 @@ class WalletActions
                 ->required()
                 ->minValue(0.01)
                 ->step(0.01),
+            DateTimePicker::make('transaction_date')
+                ->label(__('Transaction Date'))
+                ->seconds(false)
+                ->default(now())
+                ->maxDate(now())
+                ->native(false),
             Select::make('payment_type_id')
                 ->label(__('Payment Type'))
                 ->options(PaymentType::all()->pluck('name', 'id'))
@@ -111,7 +124,23 @@ class WalletActions
             'note' => $data['note'] ?? null,
             'payment_type_id' => $data['payment_type_id'] ?? null,
             'receipt_path' => $data['receipt'] ?? null,
+            'transaction_date' => $data['transaction_date'] ?? null,
         ];
+    }
+
+    /**
+     * Back-date the wallet transaction when the operator entered a date other
+     * than "now", so statements list the payment on the day it actually happened.
+     */
+    protected static function applyTransactionDate(?Transaction $transaction, array $data): void
+    {
+        $date = $data['transaction_date'] ?? null;
+
+        if (! $transaction || ! $date) {
+            return;
+        }
+
+        $transaction->forceFill(['created_at' => Carbon::parse($date)])->saveQuietly();
     }
 
     protected static function ensureWallet(Student $student): void

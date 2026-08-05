@@ -40,6 +40,12 @@
     </button>
 
     {{ $slot }}
+
+    {{-- Outside the Livewire root on purpose: Alpine renders the toasts itself,
+         so anything living inside a component would be stripped by the morph
+         that follows the very update which asked for the toast. --}}
+    @include('livewire.partials.portal-toast')
+
     @livewireScripts
 </body>
 </html>

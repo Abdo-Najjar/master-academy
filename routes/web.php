@@ -11,9 +11,14 @@ use App\Livewire\TrainerAssignmentSubmissions;
 use App\Livewire\TrainerDashboard;
 use App\Livewire\TrainerLogin;
 use App\Livewire\TrainerLoginActivities;
+use App\Models\Certificate;
 use Illuminate\Support\Facades\Route;
+use Livewire\Volt\Volt;
 
-Route::get('/', Portal::class)->name('portal');
+Volt::route('/', 'site.landing')->name('site.landing');
+Volt::route('/join', 'site.join')->name('site.join');
+
+Route::get('/portal', Portal::class)->name('portal');
 
 Route::get('/trainer/login', TrainerLogin::class)->name('trainer.login');
 Route::get('/trainer/dashboard', TrainerDashboard::class)->name('trainer.dashboard')->middleware('trainer.auth');
@@ -27,7 +32,8 @@ Route::get('/student/certificates/{certificate}/download', [PdfController::class
 Route::get('/student/login-activities', StudentLoginActivities::class)->name('student.login-activities')->middleware('student.auth');
 
 Route::get('/certificates/verify/{token}', function (string $token) {
-    $cert = \App\Models\Certificate::where('verification_token', $token)->with(['student', 'section.subject', 'template'])->firstOrFail();
+    $cert = Certificate::where('verification_token', $token)->with(['student', 'section.subject', 'template'])->firstOrFail();
+
     return view('certificates.verify', ['certificate' => $cert]);
 })->name('certificates.verify');
 

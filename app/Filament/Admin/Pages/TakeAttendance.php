@@ -6,7 +6,6 @@ use App\Models\Attendance;
 use App\Models\Section;
 use App\Services\AttendanceAlertService;
 use BackedEnum;
-use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -57,7 +56,7 @@ class TakeAttendance extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return (auth()->user()?->can('attendance.update') ?? false);
+        return auth()->user()?->can('attendance.update') ?? false;
     }
 
     public function mount(): void
@@ -112,6 +111,7 @@ class TakeAttendance extends Page implements HasForms
         if (! $this->sectionId) {
             $this->statuses = [];
             $this->notes = [];
+
             return;
         }
 
@@ -157,6 +157,7 @@ class TakeAttendance extends Page implements HasForms
     {
         if (! $this->sectionId) {
             Notification::make()->warning()->title(__('Please select a section first.'))->send();
+
             return;
         }
 
@@ -165,19 +166,7 @@ class TakeAttendance extends Page implements HasForms
             return;
         }
 
-        foreach ($this->statuses as $studentId => $status) {
-            Attendance::query()->updateOrCreate(
-                [
-                    'section_id' => $this->sectionId,
-                    'student_id' => $studentId,
-                    'date' => $this->date,
-                ],
-                [
-                    'status' => $status,
-                    'note' => $this->notes[$studentId] ?? null,
-                ]
-            );
-        }
+        Attendance::recordDay($this->sectionId, $this->date, $this->statuses, $this->notes);
 
         app(AttendanceAlertService::class)->checkForSection($section, $this->statuses);
 
@@ -207,6 +196,7 @@ class TakeAttendance extends Page implements HasForms
                 $tally[$status]++;
             }
         }
+
         return $tally;
     }
 
@@ -218,6 +208,7 @@ class TakeAttendance extends Page implements HasForms
             return 0.0;
         }
         $present = $this->counts['present'] + $this->counts['late'];
+
         return round(($present / $total) * 100, 1);
     }
 }

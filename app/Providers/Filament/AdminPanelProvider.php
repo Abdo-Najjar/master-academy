@@ -2,13 +2,13 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Admin\Pages\EditProfile;
 use App\Support\AppBranding;
+use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use App\Filament\Admin\Pages\EditProfile;
-use Filament\Enums\ThemeMode;
 use Filament\Navigation\MenuItem;
 use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
@@ -34,12 +34,12 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName(fn(): string => AppBranding::appName())
-            ->brandLogo(fn(): string => AppBranding::logoUrl('light'))
-            ->darkModeBrandLogo(fn(): string => AppBranding::logoUrl('dark'))
+            ->brandName(fn (): string => AppBranding::appName())
+            ->brandLogo(fn (): string => AppBranding::logoUrl('light'))
+            ->darkModeBrandLogo(fn (): string => AppBranding::logoUrl('dark'))
             ->brandLogoHeight('4rem')
-            ->favicon(fn(): string => AppBranding::faviconUrl('light'))
-            ->colors(fn(): array => AppBranding::panelColors())
+            ->favicon(fn (): string => AppBranding::faviconUrl('light'))
+            ->colors(fn (): array => AppBranding::panelColors())
             ->defaultThemeMode(ThemeMode::Dark)
             ->maxContentWidth(Width::Full)
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
@@ -50,6 +50,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()->label(__('Reports'))->collapsed(false),
                 NavigationGroup::make()->label(__('Finance'))->collapsed(true),
                 NavigationGroup::make()->label(__('Communication'))->collapsed(true),
+                NavigationGroup::make()->label(__('Website'))->collapsed(true),
                 NavigationGroup::make()->label(__('Administration'))->collapsed(true),
                 NavigationGroup::make()->label(__('Locations'))->collapsed(true),
                 NavigationGroup::make()->label(__('Settings'))->collapsed(true),
@@ -61,8 +62,8 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([])
             ->userMenuItems([
                 'profile' => MenuItem::make()
-                    ->label(fn(): string => __('My Profile'))
-                    ->url(fn(): string => EditProfile::getUrl())
+                    ->label(fn (): string => __('My Profile'))
+                    ->url(fn (): string => EditProfile::getUrl())
                     ->icon(Heroicon::OutlinedUserCircle),
             ])
             ->middleware([
@@ -86,7 +87,7 @@ class AdminPanelProvider extends PanelProvider
             ->authGuard('web')
             ->renderHook(
                 PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
-                fn(): string => Blade::render(<<<'BLADE'
+                fn (): string => Blade::render(<<<'BLADE'
                     <div style="margin-top:1rem; display:flex; justify-content:center;">
                         <a href="{{ route('portal') }}"
                            class="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300">
@@ -97,11 +98,11 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 PanelsRenderHook::SIMPLE_PAGE_START,
-                fn(): string => view('filament.admin.partials.theme-toggle')->render(),
+                fn (): string => view('filament.admin.partials.theme-toggle')->render(),
             )
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
-                fn(): string => view('filament.admin.partials.theme-toggle-topbar')->render(),
+                fn (): string => view('filament.admin.partials.theme-toggle-topbar')->render(),
             );
     }
 }

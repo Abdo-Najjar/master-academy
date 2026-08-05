@@ -3,12 +3,14 @@
 namespace App\Livewire;
 
 use App\Livewire\Concerns\InteractsWithTrainerAuth;
+use App\Livewire\Concerns\NotifiesPortal;
 use App\Models\Assignment;
 use App\Models\Attendance;
 use App\Models\Complaint;
 use App\Models\Section;
 use App\Notifications\AssignmentCreated;
 use App\Services\ComplaintAlertService;
+use App\Services\SectionScheduleService;
 use Bavix\Wallet\Models\Transaction;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -21,11 +23,12 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 #[Layout('components.layouts.app')]
 class TrainerDashboard extends Component
 {
-    use InteractsWithTrainerAuth, WithFileUploads;
+    use InteractsWithTrainerAuth, NotifiesPortal, WithFileUploads;
 
     /** Mirrored to ?tab= so tabs are linkable and browser back/forward works. */
     #[Url(as: 'tab', history: true)]
@@ -39,7 +42,6 @@ class TrainerDashboard extends Component
 
     public TemporaryUploadedFile|UploadedFile|null $newAvatar = null;
 
-    /** @var int|null */
     public ?int $attendanceSectionId = null;
 
     public string $attendanceDate = '';
@@ -50,7 +52,6 @@ class TrainerDashboard extends Component
     /** @var array<int, string> student_id => optional note */
     public array $attendanceNotes = [];
 
-    /** @var int|null */
     public ?int $materialsSectionId = null;
 
     /** @var array<int, TemporaryUploadedFile|UploadedFile> */
@@ -119,7 +120,7 @@ class TrainerDashboard extends Component
         $trainer->update(['password' => $this->newPassword]);
 
         $this->reset(['currentPassword', 'newPassword', 'newPasswordConfirmation']);
-        session()->flash('message', __('Password updated successfully'));
+        $this->portalToast(__('Password updated successfully'));
     }
 
     public function updateProfile(): void
@@ -137,7 +138,7 @@ class TrainerDashboard extends Component
         }
 
         $this->reset('newAvatar');
-        session()->flash('message', __('Profile updated successfully'));
+        $this->portalToast(__('Profile updated successfully'));
     }
 
     public function removeAvatar(): void
@@ -146,13 +147,22 @@ class TrainerDashboard extends Component
         $trainer?->clearMediaCollection('main');
 
         $this->reset('newAvatar');
-        session()->flash('message', __('Profile picture removed'));
+        $this->portalToast(__('Profile picture removed'));
     }
 
     public function openAttendance(int $sectionId): void
     {
         $this->activeTab = 'attendance';
         $this->attendanceSectionId = $sectionId;
+        $this->loadAttendance();
+    }
+
+    /** Jump the attendance editor to a session that was already recorded. */
+    public function goToSession(int $sectionId, string $date): void
+    {
+        $this->activeTab = 'attendance';
+        $this->attendanceSectionId = $sectionId;
+        $this->attendanceDate = $date;
         $this->loadAttendance();
     }
 
@@ -225,13 +235,14 @@ class TrainerDashboard extends Component
         if (! $this->attendanceSectionId) {
             return;
         }
-        foreach ($this->attendanceStatuses as $studentId => $status) {
-            Attendance::query()->updateOrCreate(
-                ['section_id' => $this->attendanceSectionId, 'student_id' => $studentId, 'date' => $this->attendanceDate],
-                ['status' => $status, 'note' => $this->attendanceNotes[$studentId] ?? null]
-            );
-        }
-        session()->flash('message', __('Attendance saved'));
+        Attendance::recordDay(
+            $this->attendanceSectionId,
+            $this->attendanceDate,
+            $this->attendanceStatuses,
+            $this->attendanceNotes
+        );
+
+        $this->portalToast(__('Attendance saved'));
     }
 
     public function openMaterials(int $sectionId): void
@@ -261,7 +272,7 @@ class TrainerDashboard extends Component
         }
 
         $this->reset('newMaterials');
-        session()->flash('message', __('Materials uploaded'));
+        $this->portalToast(__('Materials uploaded'));
     }
 
     public function submitComplaint(): void
@@ -286,7 +297,7 @@ class TrainerDashboard extends Component
         app(ComplaintAlertService::class)->notifyNewComplaint($complaint);
 
         $this->reset(['complaintSubject', 'complaintBody']);
-        session()->flash('message', __('Complaint submitted successfully'));
+        $this->portalToast(__('Complaint submitted successfully'));
     }
 
     public function removeMaterial(int $mediaId): void
@@ -295,7 +306,7 @@ class TrainerDashboard extends Component
         if (! $trainer) {
             return;
         }
-        $media = \Spatie\MediaLibrary\MediaCollections\Models\Media::query()
+        $media = Media::query()
             ->where('id', $mediaId)
             ->where('model_type', Section::class)
             ->whereIn('model_id', $trainer->sections()->pluck('id'))
@@ -334,7 +345,7 @@ class TrainerDashboard extends Component
 
         $this->reset(['newAssignmentSectionId', 'newAssignmentTitle', 'newAssignmentDescription', 'newAssignmentDueDate']);
         $this->showNewAssignmentForm = false;
-        session()->flash('message', __('Assignment created'));
+        $this->portalToast(__('Assignment created'));
     }
 
     public function render()
@@ -342,9 +353,15 @@ class TrainerDashboard extends Component
         $trainer = Auth::guard('trainer')->user();
 
         $sections = $trainer->sections()
-            ->with(['subject', 'times.room', 'registrations'])
+            ->with(['subject', 'times.room', 'registrations', 'attendances:id,section_id,date,status'])
             ->orderByDesc('id')
             ->get();
+
+        // Keyed by section id so both the sections list and the attendance tab
+        // can read the held/remaining counts without re-querying.
+        $scheduleSummaries = $sections->mapWithKeys(
+            fn (Section $section) => [$section->id => SectionScheduleService::summary($section)]
+        );
 
         $transactions = collect();
         if ($trainer?->wallet) {
@@ -394,6 +411,7 @@ class TrainerDashboard extends Component
             'notifications' => $trainer->notifications()->limit(15)->get(),
             'unreadNotificationsCount' => $trainer->unreadNotifications()->count(),
             'sections' => $sections,
+            'scheduleSummaries' => $scheduleSummaries,
             'transactions' => $transactions,
             'attendanceSection' => $attendanceSection,
             'materialsSection' => $materialsSection,

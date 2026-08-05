@@ -55,10 +55,6 @@
             ])
 
         <main class="flex-1 min-w-0 p-4 md:p-6">
-            @if (session('message'))
-                <div class="mb-4 p-3 bg-green-100 border border-green-300 text-green-800 rounded-lg">{{ session('message') }}</div>
-            @endif
-
             <div class="mb-6 p-5 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Wallet Balance') }}</p>
                 <p class="text-3xl font-bold text-emerald-600 mt-1">
@@ -70,6 +66,7 @@
             @if ($activeTab === 'sections')
                 <div class="space-y-3">
                     @forelse ($sections as $section)
+                        @php $summary = $scheduleSummaries[$section->id] ?? null; @endphp
                         <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
                             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                                 <div>
@@ -92,6 +89,64 @@
                                     @foreach ($section->times as $time)
                                         <div>{{ __(ucfirst($time->day)) }}: {{ \Carbon\Carbon::parse($time->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($time->end_time)->format('H:i') }}@if ($time->room) · {{ __('Room') }}: {{ $time->room->number }}@endif</div>
                                     @endforeach
+                                </div>
+                            @endif
+
+                            @if ($summary && ($summary['planned'] > 0 || $summary['held'] > 0))
+                                <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                                        <div class="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
+                                            <p class="text-xs text-emerald-700 dark:text-emerald-400">{{ __('Sessions Held') }}</p>
+                                            <p class="text-lg font-bold text-emerald-700 dark:text-emerald-400">{{ $summary['held'] }}</p>
+                                        </div>
+                                        <div class="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                                            <p class="text-xs text-amber-700 dark:text-amber-400">{{ __('Sessions Remaining') }}</p>
+                                            <p class="text-lg font-bold text-amber-700 dark:text-amber-400">{{ $summary['remaining'] }}</p>
+                                        </div>
+                                        <div class="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/40">
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('Total Sessions') }}</p>
+                                            <p class="text-lg font-bold text-gray-700 dark:text-gray-300">{{ $summary['planned'] }}</p>
+                                        </div>
+                                        <div class="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                                            <p class="text-xs text-blue-700 dark:text-blue-400">{{ __('Next Session') }}</p>
+                                            <p class="text-sm font-bold text-blue-700 dark:text-blue-400 mt-1">
+                                                {{ $summary['next_date'] ? \Carbon\Carbon::parse($summary['next_date'])->translatedFormat('d M') : '—' }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    @if ($summary['planned'] > 0)
+                                        <div class="mt-2 h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                                            <div class="h-full bg-emerald-500 rounded-full"
+                                                 style="width: {{ min(100, round($summary['held'] / max(1, $summary['planned']) * 100)) }}%"></div>
+                                        </div>
+                                    @endif
+
+                                    @if ($summary['held_dates']->isNotEmpty())
+                                        <details class="mt-3">
+                                            <summary class="cursor-pointer text-sm text-emerald-700 dark:text-emerald-400 select-none">
+                                                {{ __('Previous sessions') }} ({{ $summary['held'] }})
+                                            </summary>
+                                            <div class="mt-2 space-y-1">
+                                                @foreach ($summary['held_dates'] as $session)
+                                                    <button type="button" wire:click="goToSession({{ $section->id }}, '{{ $session['date'] }}')"
+                                                            class="w-full flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700/40 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-start">
+                                                        <span class="font-medium">{{ \Carbon\Carbon::parse($session['date'])->translatedFormat('l، d M Y') }}</span>
+                                                        <span class="flex gap-1.5 text-xs">
+                                                            <span class="px-1.5 py-0.5 rounded bg-green-100 text-green-700">{{ __('Present') }} {{ $session['present'] }}</span>
+                                                            <span class="px-1.5 py-0.5 rounded bg-red-100 text-red-700">{{ __('Absent') }} {{ $session['absent'] }}</span>
+                                                            @if ($session['late'])
+                                                                <span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">{{ __('Late') }} {{ $session['late'] }}</span>
+                                                            @endif
+                                                            @if ($session['excused'])
+                                                                <span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">{{ __('Excused') }} {{ $session['excused'] }}</span>
+                                                            @endif
+                                                        </span>
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        </details>
+                                    @endif
                                 </div>
                             @endif
                         </div>
@@ -140,6 +195,29 @@
                     </div>
 
                     @if ($attendanceSection)
+                        @php $summary = $scheduleSummaries[$attendanceSection->id] ?? null; @endphp
+                        @if ($summary && ($summary['planned'] > 0 || $summary['held'] > 0))
+                            <p class="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                                {{ __('Sessions Held') }}: <span class="font-semibold text-emerald-600">{{ $summary['held'] }}</span>
+                                / {{ $summary['planned'] }} ·
+                                {{ __('Sessions Remaining') }}: <span class="font-semibold text-amber-600">{{ $summary['remaining'] }}</span>
+                                @if ($summary['next_date'])
+                                    · {{ __('Next Session') }}: {{ \Carbon\Carbon::parse($summary['next_date'])->translatedFormat('d M Y') }}
+                                @endif
+                            </p>
+
+                            @if ($summary['held_dates']->isNotEmpty())
+                                <div class="mt-2 flex flex-wrap gap-1.5">
+                                    @foreach ($summary['held_dates'] as $session)
+                                        <button type="button" wire:click="goToSession({{ $attendanceSection->id }}, '{{ $session['date'] }}')"
+                                                class="px-2 py-1 rounded-lg text-xs border {{ $attendanceDate === $session['date'] ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                                            {{ \Carbon\Carbon::parse($session['date'])->translatedFormat('d M') }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                            @endif
+                        @endif
+
                         <div class="ta-actions">
                             <button type="button" wire:click="markAll('present')" class="ta-btn ta-btn--green">{{ __('Mark All Present') }}</button>
                             <button type="button" wire:click="markAll('absent')" class="ta-btn ta-btn--red">{{ __('Mark All Absent') }}</button>

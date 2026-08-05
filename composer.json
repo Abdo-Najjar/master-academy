@@ -13,6 +13,7 @@
         "filament/spatie-laravel-media-library-plugin": "^4.0",
         "laravel/framework": "^13.8",
         "laravel/tinker": "^3.0",
+        "livewire/volt": "^1.11",
         "simplesoftwareio/simple-qrcode": "*",
         "spatie/laravel-activitylog": "^4.11",
         "spatie/laravel-backup": "^10.2",
