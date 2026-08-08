@@ -24,7 +24,7 @@
                 </div>
             </div>
             <nav class="p-4 space-y-1">
-                @foreach (['sections' => __('My Sections'), 'attendance' => __('Attendance'), 'assignments' => __('Assignments'), 'transactions' => __('Transactions'), 'complaints' => __('Complaints'), 'profile' => __('Edit Profile')] as $tab => $label)
+                @foreach (['sections' => __('My Sections'), 'attendance' => __('Attendance'), 'exams' => __('Exams & Grades'), 'assignments' => __('Assignments'), 'transactions' => __('Transactions'), 'complaints' => __('Complaints'), 'profile' => __('Edit Profile')] as $tab => $label)
                     <button wire:click="setActiveTab('{{ $tab }}')" @click="sidebarOpen = false"
                             class="w-full text-start px-4 py-2.5 rounded-lg transition {{ $activeTab === $tab ? 'bg-emerald-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700' }}">
                         {{ $label }}
@@ -367,6 +367,108 @@
                         @endif
                     @endif
                 </div>
+            @endif
+
+            @if ($activeTab === 'exams')
+                <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6">
+                    <h3 class="text-lg font-semibold mb-4">{{ __('New Exam') }}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">{{ __('Section') }}</label>
+                            <select wire:model="newExamSectionId" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                                <option value="">{{ __('Select section') }}</option>
+                                @foreach ($sections as $s)
+                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('newExamSectionId') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">{{ __('Exam Name') }}</label>
+                            <input type="text" wire:model="newExamName" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                            @error('newExamName') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">{{ __('Date') }}</label>
+                            <input type="date" wire:model="newExamDate" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                            @error('newExamDate') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">{{ __('Max Score') }}</label>
+                            <input type="number" step="0.01" min="1" wire:model="newExamMaxScore" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                            @error('newExamMaxScore') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium mb-1">{{ __('Note') }}</label>
+                            <textarea wire:model="newExamNote" rows="2" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700"></textarea>
+                        </div>
+                    </div>
+                    <button wire:click="createExam" class="mt-4 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">
+                        {{ __('Create Exam') }}
+                    </button>
+                </div>
+
+                <div class="p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold mb-4">{{ __('Exams & Grades') }}</h3>
+                    @forelse ($exams as $exam)
+                        <div class="py-3 border-t border-gray-100 dark:border-gray-700 flex flex-wrap items-center gap-3">
+                            <div class="flex-1 min-w-[200px]">
+                                <p class="font-semibold">{{ $exam->name }}</p>
+                                <p class="text-xs text-gray-500">
+                                    {{ $exam->section?->name }} ·
+                                    {{ $exam->date?->translatedFormat('d M Y') }} ·
+                                    {{ __('Max Score') }}: {{ $exam->max_score }} ·
+                                    {{ __('Grades') }}: {{ $exam->grades_count }}
+                                </p>
+                            </div>
+                            <span class="px-2 py-1 rounded-lg text-xs font-semibold {{ $exam->isGradesPublished() ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
+                                {{ $exam->isGradesPublished() ? __('Published') : __('Not published') }}
+                            </span>
+                            <button wire:click="openExamGrades({{ $exam->id }})" class="px-3 py-1.5 rounded-lg text-xs bg-emerald-600 text-white">
+                                {{ __('Enter Grades') }}
+                            </button>
+                            <button wire:click="togglePublishGrades({{ $exam->id }})" class="px-3 py-1.5 rounded-lg text-xs border border-gray-300 dark:border-gray-600">
+                                {{ $exam->isGradesPublished() ? __('Unpublish Grades') : __('Publish Grades') }}
+                            </button>
+                        </div>
+                    @empty
+                        <p class="text-gray-500 text-sm">{{ __('No records found') }}</p>
+                    @endforelse
+                </div>
+
+                @if ($gradingExam)
+                    <div class="mt-6 p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">
+                                {{ __('Enter Grades') }} — {{ $gradingExam->name }}
+                                <span class="text-sm font-normal text-gray-500">({{ __('Max Score') }}: {{ $gradingExam->max_score }})</span>
+                            </h3>
+                            <button wire:click="closeExamGrades" class="text-sm text-gray-500 hover:underline">{{ __('Close') }}</button>
+                        </div>
+                        @foreach ($gradingExam->section?->registrations ?? [] as $reg)
+                            @php $student = $reg->student; @endphp
+                            @if ($student)
+                                <div class="py-2 border-t border-gray-100 dark:border-gray-700 flex flex-wrap items-center gap-3">
+                                    <div class="flex-1 min-w-[180px]">
+                                        <p class="font-medium">{{ $student->getTranslation('name', app()->getLocale(), false) }}</p>
+                                        <p class="text-xs text-gray-500">{{ $student->student_number }}</p>
+                                    </div>
+                                    <input type="number" step="0.01" min="0" max="{{ $gradingExam->max_score }}"
+                                           wire:model="gradeInputs.{{ $student->id }}"
+                                           placeholder="{{ __('Score') }}"
+                                           class="w-24 px-3 py-1.5 border rounded-lg dark:bg-gray-900 dark:border-gray-700 text-sm">
+                                    <input type="text" wire:model="gradeNotes.{{ $student->id }}"
+                                           placeholder="{{ __('Optional note') }}"
+                                           class="w-48 px-3 py-1.5 border rounded-lg dark:bg-gray-900 dark:border-gray-700 text-sm">
+                                    @error('gradeInputs.'.$student->id) <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                                </div>
+                            @endif
+                        @endforeach
+                        <button wire:click="saveGrades" class="mt-4 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">
+                            {{ __('Save Grades') }}
+                        </button>
+                    </div>
+                @endif
             @endif
 
             @if ($activeTab === 'materials')

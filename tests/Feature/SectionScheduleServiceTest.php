@@ -61,6 +61,11 @@ it('returns nothing when the section has no date range', function () {
 });
 
 it('counts held sessions and what is left', function () {
+    // `next_date` is "the first outstanding date from today onwards", so the
+    // clock has to sit inside the section's fixed date range for the expected
+    // value to be stable — otherwise this test expires on 2026-08-05.
+    $this->travelTo('2026-08-04 09:00:00');
+
     Attendance::create(['section_id' => $this->section->id, 'student_id' => $this->student->id, 'status' => 'present', 'date' => '2026-08-01']);
     Attendance::create(['section_id' => $this->section->id, 'student_id' => $this->student->id, 'status' => 'absent', 'date' => '2026-08-03']);
 

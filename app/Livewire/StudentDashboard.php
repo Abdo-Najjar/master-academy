@@ -243,7 +243,35 @@ class StudentDashboard extends Component
                 'submission' => $mySubmissions->get($a->id),
             ]);
 
+        // Attendance history, grouped per section with a per-section rate so
+        // the student can see where they are actually missing lessons.
+        $attendanceBySection = collect();
+        if ($student) {
+            $attendanceBySection = $student->attendances()
+                ->with(['section.subject', 'session'])
+                ->orderByDesc('date')
+                ->get()
+                ->groupBy('section_id')
+                ->map(function ($rows) {
+                    $total = $rows->count();
+                    $present = $rows->whereIn('status', ['present', 'late'])->count();
+
+                    return [
+                        'section' => $rows->first()->section,
+                        'rows' => $rows,
+                        'total' => $total,
+                        'present' => $rows->where('status', 'present')->count(),
+                        'absent' => $rows->where('status', 'absent')->count(),
+                        'late' => $rows->where('status', 'late')->count(),
+                        'excused' => $rows->where('status', 'excused')->count(),
+                        'rate' => $total > 0 ? round(($present / $total) * 100, 1) : 0.0,
+                    ];
+                })
+                ->values();
+        }
+
         return view('livewire.student-dashboard', [
+            'attendanceBySection' => $attendanceBySection,
             'student' => $student,
             'notifications' => $student->notifications()->limit(15)->get(),
             'unreadNotificationsCount' => $student->unreadNotifications()->count(),

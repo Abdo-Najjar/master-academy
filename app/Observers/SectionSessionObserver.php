@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\SectionSession;
+use App\Models\User;
 use App\Services\SessionBillingService;
 
 class SectionSessionObserver
@@ -15,7 +16,9 @@ class SectionSessionObserver
             $session->counts_toward_billing = false;
         }
 
-        if (! $session->created_by && auth()->check()) {
+        // `created_by` points at the admin users table, and the trainer guard's
+        // identifier is a username string — so only stamp it for real admins.
+        if (! $session->created_by && auth()->user() instanceof User) {
             $session->created_by = auth()->id();
         }
     }

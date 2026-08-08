@@ -7,6 +7,8 @@ use App\Livewire\Concerns\NotifiesPortal;
 use App\Models\Assignment;
 use App\Models\Attendance;
 use App\Models\Complaint;
+use App\Models\Exam;
+use App\Models\ExamGrade;
 use App\Models\Section;
 use App\Notifications\AssignmentCreated;
 use App\Services\ComplaintAlertService;
@@ -61,6 +63,25 @@ class TrainerDashboard extends Component
 
     public ?int $materialsSectionId = null;
 
+    public ?int $newExamSectionId = null;
+
+    public string $newExamName = '';
+
+    public string $newExamDate = '';
+
+    public string $newExamMaxScore = '100';
+
+    public string $newExamNote = '';
+
+    /** Exam whose grade sheet is currently open. */
+    public ?int $gradingExamId = null;
+
+    /** @var array<int, string> student_id => score */
+    public array $gradeInputs = [];
+
+    /** @var array<int, string> student_id => note */
+    public array $gradeNotes = [];
+
     /** @var array<int, TemporaryUploadedFile|UploadedFile> */
     public array $newMaterials = [];
 
@@ -106,6 +127,11 @@ class TrainerDashboard extends Component
             'newAssignmentTitle' => __('Title'),
             'newAssignmentDescription' => __('Description'),
             'newAssignmentDueDate' => __('Due Date'),
+            'newExamSectionId' => __('Section'),
+            'newExamName' => __('Exam Name'),
+            'newExamDate' => __('Date'),
+            'newExamMaxScore' => __('Max Score'),
+            'newExamNote' => __('Note'),
         ];
     }
 
@@ -332,6 +358,146 @@ class TrainerDashboard extends Component
         return ['synced' => $synced, 'rejected' => $rejected];
     }
 
+    // -------------------------------------------------------------------------
+    // Exams & grades
+    // -------------------------------------------------------------------------
+
+    public function createExam(): void
+    {
+        $trainer = Auth::guard('trainer')->user();
+
+        $this->validate([
+            'newExamSectionId' => ['required', 'integer'],
+            'newExamName' => ['required', 'string', 'max:255'],
+            'newExamDate' => ['required', 'date'],
+            'newExamMaxScore' => ['required', 'numeric', 'min:1'],
+            'newExamNote' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        // A trainer may only create exams for their own sections.
+        $section = $trainer?->sections()->find($this->newExamSectionId);
+
+        if (! $section) {
+            throw ValidationException::withMessages([
+                'newExamSectionId' => __('Section not found.'),
+            ]);
+        }
+
+        $exam = Exam::create([
+            'section_id' => $section->id,
+            'name' => $this->newExamName,
+            'date' => $this->newExamDate,
+            'max_score' => (float) $this->newExamMaxScore,
+            'note' => $this->newExamNote ?: null,
+        ]);
+
+        $this->reset(['newExamSectionId', 'newExamName', 'newExamDate', 'newExamMaxScore', 'newExamNote']);
+        $this->newExamMaxScore = '100';
+
+        $this->openExamGrades($exam->id);
+        $this->portalToast(__('Exam created successfully'));
+    }
+
+    /** Load the grade sheet for one of the trainer's own exams. */
+    public function openExamGrades(int $examId): void
+    {
+        $exam = $this->trainerExam($examId);
+
+        if (! $exam) {
+            return;
+        }
+
+        $this->activeTab = 'exams';
+        $this->gradingExamId = $exam->id;
+
+        $existing = $exam->grades()->get()->keyBy('student_id');
+
+        $this->gradeInputs = [];
+        $this->gradeNotes = [];
+
+        foreach ($exam->section?->registrations ?? [] as $registration) {
+            $row = $existing->get($registration->student_id);
+            $this->gradeInputs[$registration->student_id] = $row?->score !== null ? (string) $row->score : '';
+            $this->gradeNotes[$registration->student_id] = $row?->note ?? '';
+        }
+    }
+
+    public function closeExamGrades(): void
+    {
+        $this->gradingExamId = null;
+        $this->gradeInputs = [];
+        $this->gradeNotes = [];
+    }
+
+    public function saveGrades(): void
+    {
+        $exam = $this->trainerExam($this->gradingExamId);
+
+        if (! $exam) {
+            return;
+        }
+
+        $max = (float) $exam->max_score;
+
+        foreach ($this->gradeInputs as $studentId => $score) {
+            if ($score === '' || $score === null) {
+                continue;
+            }
+
+            if (! is_numeric($score) || (float) $score < 0 || (float) $score > $max) {
+                throw ValidationException::withMessages([
+                    'gradeInputs.'.$studentId => __('Score must be between 0 and :max', ['max' => $max]),
+                ]);
+            }
+        }
+
+        foreach ($this->gradeInputs as $studentId => $score) {
+            if ($score === '' || $score === null) {
+                continue;
+            }
+
+            ExamGrade::updateOrCreate(
+                ['exam_id' => $exam->id, 'student_id' => (int) $studentId],
+                ['score' => (float) $score, 'note' => $this->gradeNotes[$studentId] ?? null],
+            );
+        }
+
+        $this->portalToast(__('Grades saved successfully'));
+    }
+
+    /** Publish / unpublish results — students only see published grades. */
+    public function togglePublishGrades(int $examId): void
+    {
+        $exam = $this->trainerExam($examId);
+
+        if (! $exam) {
+            return;
+        }
+
+        $exam->update([
+            'grades_published_at' => $exam->isGradesPublished() ? null : now(),
+        ]);
+
+        $this->portalToast($exam->isGradesPublished()
+            ? __('Grades published')
+            : __('Grades hidden from students'));
+    }
+
+    /** An exam that belongs to one of the signed-in trainer's sections, or null. */
+    protected function trainerExam(?int $examId): ?Exam
+    {
+        $trainer = Auth::guard('trainer')->user();
+
+        if (! $trainer || ! $examId) {
+            return null;
+        }
+
+        return Exam::query()
+            ->with(['section.registrations.student', 'grades'])
+            ->whereHas('section', fn ($q) => $q->where('trainer_id', $trainer->id))
+            ->find($examId);
+    }
+
     public function openMaterials(int $sectionId): void
     {
         $this->activeTab = 'materials';
@@ -493,7 +659,15 @@ class TrainerDashboard extends Component
             $assignments = $query->orderByDesc('due_date')->get();
         }
 
+        $exams = $trainer
+            ? $trainer->exams()->with('section')->withCount('grades')->orderByDesc('date')->get()
+            : collect();
+
+        $gradingExam = $this->gradingExamId ? $this->trainerExam($this->gradingExamId) : null;
+
         return view('livewire.trainer-dashboard', [
+            'exams' => $exams,
+            'gradingExam' => $gradingExam,
             'trainer' => $trainer,
             'notifications' => $trainer->notifications()->limit(15)->get(),
             'unreadNotificationsCount' => $trainer->unreadNotifications()->count(),

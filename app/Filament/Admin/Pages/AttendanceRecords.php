@@ -192,7 +192,7 @@ class AttendanceRecords extends Page implements HasTable
     {
         return $table
             ->query(
-                Attendance::query()->with(['student', 'section.subject'])
+                Attendance::query()->with(['student', 'section.subject', 'session', 'recordedBy', 'updatedBy'])
             )
             ->columns([
                 TextColumn::make('date')
@@ -221,6 +221,25 @@ class AttendanceRecords extends Page implements HasTable
                 IconColumn::make('is_makeup')
                     ->label(__('Makeup'))
                     ->boolean(),
+                TextColumn::make('session.type')
+                    ->label(__('Session Type'))
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => $state
+                        ? (\App\Models\SectionSession::typeOptions()[$state] ?? $state)
+                        : '—')
+                    ->toggleable(),
+                TextColumn::make('recorded_by')
+                    ->label(__('Recorded By'))
+                    ->state(fn (Attendance $record): ?string => $record->actorName())
+                    ->toggleable(),
+                TextColumn::make('recorded_at')
+                    ->label(__('Recorded At'))
+                    ->dateTime()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('updated_at')
+                    ->label(__('Last Modified'))
+                    ->dateTime()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('note')
                     ->label(__('Note'))
                     ->limit(30)

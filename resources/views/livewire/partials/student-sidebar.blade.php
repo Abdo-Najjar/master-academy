@@ -1,5 +1,5 @@
 @php
-    $studentSidebarTabs = ['registrations' => __('My Sections'), 'schedule' => __('Schedule'), 'materials' => __('Materials'), 'assignments' => __('Assignments'), 'grades' => __('Grades'), 'transactions' => __('Transactions'), 'certificates' => __('Certificates'), 'complaints' => __('Complaints'), 'profile' => __('Edit Profile')];
+    $studentSidebarTabs = ['registrations' => __('My Sections'), 'schedule' => __('Schedule'), 'attendance' => __('Attendance'), 'materials' => __('Materials'), 'assignments' => __('Assignments'), 'grades' => __('Grades'), 'transactions' => __('Transactions'), 'certificates' => __('Certificates'), 'complaints' => __('Complaints'), 'profile' => __('Edit Profile')];
     $studentSidebarCurrentTab = $activeTab ?? null;
     $studentSidebarUseWireClick = $useWireClick ?? false;
 @endphp

@@ -4,7 +4,9 @@ namespace App\Filament\Admin\Resources\Exams\Actions;
 
 use App\Models\Exam;
 use App\Models\ExamGrade;
+use App\Support\AuditReason;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
@@ -60,29 +62,39 @@ class EnterGradesAction
                         ]);
                 }
 
+                // Grade changes are audited, so the operator can say why.
+                $fields[] = Textarea::make('audit_reason')
+                    ->label(__('Reason for change'))
+                    ->helperText(__('Recorded in the audit log with this change.'))
+                    ->rows(2)
+                    ->maxLength(500)
+                    ->columnSpanFull();
+
                 return $fields;
             })
             ->action(function (Exam $record, array $data): void {
                 $notes = $data['notes'] ?? [];
 
-                foreach (($data['scores'] ?? []) as $studentId => $score) {
-                    $note = $notes[$studentId] ?? null;
-                    $note = $note === '' ? null : $note;
+                AuditReason::using($data['audit_reason'] ?? null, function () use ($record, $data, $notes): void {
+                    foreach (($data['scores'] ?? []) as $studentId => $score) {
+                        $note = $notes[$studentId] ?? null;
+                        $note = $note === '' ? null : $note;
 
-                    if ($score === null || $score === '') {
-                        ExamGrade::query()
-                            ->where('exam_id', $record->id)
-                            ->where('student_id', (int) $studentId)
-                            ->delete();
+                        if ($score === null || $score === '') {
+                            ExamGrade::query()
+                                ->where('exam_id', $record->id)
+                                ->where('student_id', (int) $studentId)
+                                ->delete();
 
-                        continue;
+                            continue;
+                        }
+
+                        ExamGrade::query()->updateOrCreate(
+                            ['exam_id' => $record->id, 'student_id' => (int) $studentId],
+                            ['score' => (float) $score, 'note' => $note]
+                        );
                     }
-
-                    ExamGrade::query()->updateOrCreate(
-                        ['exam_id' => $record->id, 'student_id' => (int) $studentId],
-                        ['score' => (float) $score, 'note' => $note]
-                    );
-                }
+                });
 
                 Notification::make()->success()->title(__('Grades saved'))->send();
             });

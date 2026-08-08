@@ -111,6 +111,85 @@
                 </div>
             @endif
 
+            @if ($activeTab === 'attendance')
+                <div class="space-y-5">
+                    @forelse ($attendanceBySection as $group)
+                        @php $section = $group['section']; @endphp
+                        <div wire:key="attendance-section-{{ $section?->id }}" class="p-5 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
+                            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                                <div>
+                                    <p class="font-semibold">{{ $section?->name }}</p>
+                                    <p class="text-xs text-gray-500">{{ $section?->subject?->getTranslation('name', app()->getLocale(), false) }}</p>
+                                </div>
+                                <div class="text-end">
+                                    <p class="text-xs text-gray-500">{{ __('Attendance Rate') }}</p>
+                                    <p class="text-2xl font-bold {{ $group['rate'] >= 75 ? 'text-emerald-600' : ($group['rate'] >= 50 ? 'text-amber-600' : 'text-red-600') }}">
+                                        {{ $group['rate'] }}%
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                                <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-center">
+                                    <p class="text-xs text-emerald-700 dark:text-emerald-300">{{ __('Present') }}</p>
+                                    <p class="text-xl font-bold text-emerald-700 dark:text-emerald-300">{{ $group['present'] }}</p>
+                                </div>
+                                <div class="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-center">
+                                    <p class="text-xs text-red-700 dark:text-red-300">{{ __('Absent') }}</p>
+                                    <p class="text-xl font-bold text-red-700 dark:text-red-300">{{ $group['absent'] }}</p>
+                                </div>
+                                <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-center">
+                                    <p class="text-xs text-amber-700 dark:text-amber-300">{{ __('Late') }}</p>
+                                    <p class="text-xl font-bold text-amber-700 dark:text-amber-300">{{ $group['late'] }}</p>
+                                </div>
+                                <div class="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-center">
+                                    <p class="text-xs text-blue-700 dark:text-blue-300">{{ __('Excused') }}</p>
+                                    <p class="text-xl font-bold text-blue-700 dark:text-blue-300">{{ $group['excused'] }}</p>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="text-start text-xs text-gray-500 border-b border-gray-200 dark:border-gray-700">
+                                            <th class="py-2 text-start">{{ __('Date') }}</th>
+                                            <th class="py-2 text-start">{{ __('Status') }}</th>
+                                            <th class="py-2 text-start">{{ __('Session Type') }}</th>
+                                            <th class="py-2 text-start">{{ __('Note') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($group['rows'] as $row)
+                                            @php
+                                                [$label, $classes] = match ($row->status) {
+                                                    'present' => [__('Present'), 'bg-emerald-100 text-emerald-700'],
+                                                    'absent' => [__('Absent'), 'bg-red-100 text-red-700'],
+                                                    'late' => [__('Late'), 'bg-amber-100 text-amber-700'],
+                                                    'excused' => [__('Excused'), 'bg-blue-100 text-blue-700'],
+                                                    default => [$row->status, 'bg-gray-100 text-gray-700'],
+                                                };
+                                            @endphp
+                                            <tr class="border-b border-gray-100 dark:border-gray-700/60">
+                                                <td class="py-2">{{ $row->date?->translatedFormat('d M Y') }}</td>
+                                                <td class="py-2">
+                                                    <span class="px-2 py-0.5 rounded-lg text-xs font-semibold {{ $classes }}">{{ $label }}</span>
+                                                </td>
+                                                <td class="py-2 text-xs text-gray-500">
+                                                    {{ $row->session ? (\App\Models\SectionSession::typeOptions()[$row->session->type] ?? '—') : '—' }}
+                                                </td>
+                                                <td class="py-2 text-xs text-gray-500">{{ $row->note ?: '—' }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="p-6 text-center text-gray-500">{{ __('No attendance records yet') }}</div>
+                    @endforelse
+                </div>
+            @endif
+
             @if ($activeTab === 'materials')
                 <div class="space-y-3">
                     @forelse ($materials as $item)
