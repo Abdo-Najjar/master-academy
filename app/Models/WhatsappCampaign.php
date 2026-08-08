@@ -19,11 +19,23 @@ class WhatsappCampaign extends Model
 
     public const STATUS_CANCELLED = 'cancelled';
 
+    public const TARGET_GROUP = 'group';
+
+    public const TARGET_SECTION = 'section';
+
+    public const TARGET_SUBJECT = 'subject';
+
+    public const TARGET_TRAINER = 'trainer';
+
+    public const TARGET_ALL = 'all';
+
     /** @var list<string> */
     protected $fillable = [
         'name',
         'message',
         'student_group_id',
+        'target_type',
+        'target_id',
         'status',
         'total_count',
         'sent_count',
@@ -39,6 +51,32 @@ class WhatsappCampaign extends Model
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
         ];
+    }
+
+    /** @return array<string, string> */
+    public static function targetTypeOptions(): array
+    {
+        return [
+            self::TARGET_GROUP => __('Student Group'),
+            self::TARGET_SECTION => __('Section'),
+            self::TARGET_SUBJECT => __('Course'),
+            self::TARGET_TRAINER => __('Trainer'),
+            self::TARGET_ALL => __('All active students'),
+        ];
+    }
+
+    /** Human-readable description of who this campaign goes to. */
+    public function targetLabel(): string
+    {
+        $locale = app()->getLocale();
+
+        return match ($this->target_type) {
+            self::TARGET_SECTION => (string) (Section::find($this->target_id)?->name ?? '—'),
+            self::TARGET_SUBJECT => (string) (Subject::find($this->target_id)?->getTranslation('name', $locale, false) ?? '—'),
+            self::TARGET_TRAINER => (string) (Trainer::find($this->target_id)?->getTranslation('name', $locale, false) ?? '—'),
+            self::TARGET_ALL => __('All active students'),
+            default => (string) ($this->studentGroup?->name ?? '—'),
+        };
     }
 
     public function studentGroup(): BelongsTo

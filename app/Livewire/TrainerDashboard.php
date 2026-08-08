@@ -11,6 +11,7 @@ use App\Models\Section;
 use App\Notifications\AssignmentCreated;
 use App\Services\ComplaintAlertService;
 use App\Services\SectionScheduleService;
+use App\Support\AuditReason;
 use Bavix\Wallet\Models\Transaction;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -51,6 +52,12 @@ class TrainerDashboard extends Component
 
     /** @var array<int, string> student_id => optional note */
     public array $attendanceNotes = [];
+
+    /** Why an already-recorded day is being changed; stored in the audit log. */
+    public string $attendanceEditReason = '';
+
+    /** True once the selected day already has attendance rows. */
+    public bool $attendanceDayHasRecords = false;
 
     public ?int $materialsSectionId = null;
 
@@ -180,6 +187,8 @@ class TrainerDashboard extends Component
         $section = Section::query()->with('registrations.student')->find($this->attendanceSectionId);
         $this->attendanceStatuses = [];
         $this->attendanceNotes = [];
+        $this->attendanceEditReason = '';
+        $this->attendanceDayHasRecords = $existing->isNotEmpty();
         foreach ($section?->registrations ?? [] as $reg) {
             $row = $existing->get($reg->student_id);
             $this->attendanceStatuses[$reg->student_id] = $row?->status ?? 'present';
@@ -235,14 +244,92 @@ class TrainerDashboard extends Component
         if (! $this->attendanceSectionId) {
             return;
         }
-        Attendance::recordDay(
-            $this->attendanceSectionId,
-            $this->attendanceDate,
-            $this->attendanceStatuses,
-            $this->attendanceNotes
-        );
+
+        AuditReason::using($this->attendanceEditReason ?: null, function (): void {
+            Attendance::recordDay(
+                $this->attendanceSectionId,
+                $this->attendanceDate,
+                $this->attendanceStatuses,
+                $this->attendanceNotes,
+                Auth::guard('trainer')->user(),
+            );
+        });
+
+        $this->attendanceEditReason = '';
 
         $this->portalToast(__('Attendance saved'));
+    }
+
+    /**
+     * Flush attendance that was taken while the device was offline.
+     *
+     * The browser queues each day's sheet in localStorage and replays it here
+     * once the connection is back. Every entry is re-checked against the
+     * trainer's own sections — the payload comes from the client and cannot be
+     * trusted to only contain sections they teach.
+     *
+     * @param  array<int, array{section_id: mixed, date: mixed, statuses?: array<mixed, mixed>, notes?: array<mixed, mixed>, reason?: string|null}>  $entries
+     * @return array{synced: int, rejected: int}
+     */
+    public function syncOfflineAttendance(array $entries): array
+    {
+        $trainer = Auth::guard('trainer')->user();
+
+        if (! $trainer) {
+            return ['synced' => 0, 'rejected' => count($entries)];
+        }
+
+        $ownSectionIds = Section::query()
+            ->where('trainer_id', $trainer->id)
+            ->pluck('id')
+            ->all();
+
+        $allowedStatuses = ['present', 'absent', 'late', 'excused'];
+        $synced = 0;
+        $rejected = 0;
+
+        foreach ($entries as $entry) {
+            $sectionId = (int) ($entry['section_id'] ?? 0);
+            $date = (string) ($entry['date'] ?? '');
+
+            if (! in_array($sectionId, $ownSectionIds, true) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+                $rejected++;
+
+                continue;
+            }
+
+            $statuses = [];
+            foreach ((array) ($entry['statuses'] ?? []) as $studentId => $status) {
+                if (in_array($status, $allowedStatuses, true)) {
+                    $statuses[(int) $studentId] = $status;
+                }
+            }
+
+            if ($statuses === []) {
+                $rejected++;
+
+                continue;
+            }
+
+            $notes = [];
+            foreach ((array) ($entry['notes'] ?? []) as $studentId => $note) {
+                $notes[(int) $studentId] = is_string($note) ? mb_substr($note, 0, 255) : null;
+            }
+
+            AuditReason::using(
+                $entry['reason'] ?? __('Synced from offline attendance'),
+                fn () => Attendance::recordDay($sectionId, $date, $statuses, $notes, $trainer),
+            );
+
+            $synced++;
+        }
+
+        if ($synced > 0) {
+            $this->loadAttendance();
+            $this->portalToast(__(':count offline session(s) synced', ['count' => $synced]));
+        }
+
+        return ['synced' => $synced, 'rejected' => $rejected];
     }
 
     public function openMaterials(int $sectionId): void

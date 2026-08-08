@@ -107,6 +107,12 @@ class AttendanceAlertService
             return false;
         }
 
+        // The guardian is told directly (there is no guardian portal — the
+        // contact numbers live on the student record).
+        if ($guardianPhone = $student->guardianContact()) {
+            WhatsAppService::send($guardianPhone, $body);
+        }
+
         $admins = User::query()->get();
         if ($admins->isEmpty()) {
             return true;

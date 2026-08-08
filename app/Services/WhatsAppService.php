@@ -118,6 +118,15 @@ class WhatsAppService
                     'type'  => 'student',
                 ];
             }
+
+            if ($guardianPhone = $student->guardianContact()) {
+                $contacts[] = [
+                    'name'  => $student->parent_name ?: __('Guardian of :name', ['name' => $name]),
+                    'phone' => $guardianPhone,
+                    'url'   => self::buildUrl($guardianPhone, $message),
+                    'type'  => 'guardian',
+                ];
+            }
         }
 
         return $contacts;

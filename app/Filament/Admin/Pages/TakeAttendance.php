@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Pages;
 use App\Models\Attendance;
 use App\Models\Section;
 use App\Services\AttendanceAlertService;
+use App\Support\AuditReason;
 use BackedEnum;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -38,6 +39,12 @@ class TakeAttendance extends Page implements HasForms
 
     /** @var array<int,string> student_id => optional note */
     public array $notes = [];
+
+    /** Why an already-recorded day is being changed; stored in the audit log. */
+    public string $editReason = '';
+
+    /** True once the selected day already has attendance rows. */
+    public bool $isEditingExistingDay = false;
 
     public static function getNavigationGroup(): ?string
     {
@@ -128,6 +135,8 @@ class TakeAttendance extends Page implements HasForms
 
         $this->statuses = [];
         $this->notes = [];
+        $this->editReason = '';
+        $this->isEditingExistingDay = $existing->isNotEmpty();
 
         foreach ($section->registrations as $reg) {
             $row = $existing->get($reg->student_id);
@@ -166,9 +175,20 @@ class TakeAttendance extends Page implements HasForms
             return;
         }
 
-        Attendance::recordDay($this->sectionId, $this->date, $this->statuses, $this->notes);
+        AuditReason::using($this->editReason, function () use ($section): void {
+            Attendance::recordDay(
+                $this->sectionId,
+                $this->date,
+                $this->statuses,
+                $this->notes,
+                auth()->user(),
+            );
+        });
 
         app(AttendanceAlertService::class)->checkForSection($section, $this->statuses);
+
+        $this->editReason = '';
+        $this->isEditingExistingDay = true;
 
         Notification::make()
             ->success()

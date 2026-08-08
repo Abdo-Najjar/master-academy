@@ -2,6 +2,9 @@
 
 namespace App\Filament\Admin\Resources\Registrations\Tables;
 
+use App\Filament\Admin\Resources\Registrations\Actions\CollectCycleAction;
+use App\Filament\Admin\Resources\Registrations\Actions\PauseCountingAction;
+use App\Filament\Admin\Resources\Registrations\Actions\TransferSectionAction;
 use App\Models\Registration;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -44,6 +47,37 @@ class RegistrationsTable
                     ->color(fn (Registration $record): string => (float) $record->trainer_credited_amount >= (float) $record->trainer_amount ? 'success' : 'warning')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
+                TextColumn::make('sessions_counted')
+                    ->label(__('Sessions Counted'))
+                    ->state(fn (Registration $record): string => $record->isPerSessionBilled()
+                        ? $record->sessions_counted.' / '.$record->paid_through_session
+                        : '—')
+                    ->badge()
+                    ->color(fn (Registration $record): string => match (true) {
+                        ! $record->isPerSessionBilled() => 'gray',
+                        $record->remainingSessions() <= 0 => 'danger',
+                        $record->remainingSessions() <= 2 => 'warning',
+                        default => 'success',
+                    })
+                    ->toggleable(),
+                TextColumn::make('financial_status')
+                    ->label(__('Financial Status'))
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'ok' => __('Paid'),
+                        'warning' => __('Payment due soon'),
+                        'due' => __('Payment Due'),
+                        'overdue' => __('Overdue'),
+                        default => (string) $state,
+                    })
+                    ->color(fn (?string $state): string => match ($state) {
+                        'ok' => 'success',
+                        'warning' => 'warning',
+                        'due' => 'warning',
+                        'overdue' => 'danger',
+                        default => 'gray',
+                    })
+                    ->toggleable(),
                 TextColumn::make('created_at')->label(__('Date'))->dateTime()->sortable(),
             ])
             ->filters([
@@ -60,6 +94,14 @@ class RegistrationsTable
                     ->label(__('Exemption Type'))
                     ->relationship('exemptionType', 'name')
                     ->preload(),
+                SelectFilter::make('financial_status')
+                    ->label(__('Financial Status'))
+                    ->options([
+                        'ok' => __('Paid'),
+                        'warning' => __('Payment due soon'),
+                        'due' => __('Payment Due'),
+                        'overdue' => __('Overdue'),
+                    ]),
                 TrashedFilter::make(),
             ])
             ->recordActions([
@@ -71,6 +113,9 @@ class RegistrationsTable
                         ->icon('heroicon-o-printer')
                         ->color('info')
                         ->url(fn (Registration $record): string => route('admin.pdf.receipt', $record), shouldOpenInNewTab: true),
+                    CollectCycleAction::make(),
+                    TransferSectionAction::make(),
+                    PauseCountingAction::make(),
                     Action::make('cancel')
                         ->label(__('Cancel & Refund'))
                         ->icon('heroicon-o-x-circle')

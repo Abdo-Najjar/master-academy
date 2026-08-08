@@ -55,8 +55,14 @@ class RegistrationForm
                                 if ($state) {
                                     $section = Section::find($state);
                                     if ($section) {
-                                        $set('amount_due', $section->price);
-                                        $set('amount_paid', $section->price);
+                                        // Per-session sections are billed one
+                                        // cycle at a time, so the first charge
+                                        // is the cycle fee, not a course price.
+                                        $amount = $section->isPerSessionBilled()
+                                            ? (float) $section->cycle_fee
+                                            : (float) $section->price;
+                                        $set('amount_due', $amount);
+                                        $set('amount_paid', $amount);
                                     }
                                 }
                             })
@@ -197,6 +203,7 @@ class RegistrationForm
                             ->label(__('Note'))
                             ->rows(2)
                             ->columnSpanFull(),
+                        \App\Filament\Support\AuditReasonField::make(),
                     ]),
             ]);
     }

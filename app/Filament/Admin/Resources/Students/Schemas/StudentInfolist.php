@@ -25,6 +25,12 @@ class StudentInfolist
                         TextEntry::make('dob')->label(__('Date of Birth'))->date()->placeholder('—'),
                         TextEntry::make('phone_number')->label(__('Phone'))->placeholder('—'),
                         TextEntry::make('whatsapp_number')->label(__('WhatsApp'))->placeholder('—'),
+                        TextEntry::make('school')->label(__('School'))->placeholder('—'),
+                        TextEntry::make('grade_level')->label(__('Grade Level'))->placeholder('—'),
+                        TextEntry::make('parent_name')->label(__('Guardian Name'))->placeholder('—'),
+                        TextEntry::make('parent_phone')->label(__('Guardian Phone'))->placeholder('—'),
+                        TextEntry::make('parent_whatsapp')->label(__('Guardian WhatsApp'))->placeholder('—'),
+                        TextEntry::make('enrolled_at')->label(__('Enrollment Date'))->date()->placeholder('—'),
                         TextEntry::make('governorate.name')->label(__('Governorate'))->placeholder('—'),
                         TextEntry::make('city.name')->label(__('City'))->placeholder('—'),
                         TextEntry::make('balanceFloat')

@@ -218,54 +218,150 @@
                             @endif
                         @endif
 
-                        <div class="ta-actions">
-                            <button type="button" wire:click="markAll('present')" class="ta-btn ta-btn--green">{{ __('Mark All Present') }}</button>
-                            <button type="button" wire:click="markAll('absent')" class="ta-btn ta-btn--red">{{ __('Mark All Absent') }}</button>
-                        </div>
-
-                        <div class="ta-stats">
-                            <div class="ta-stat ta-stat--gray"><p class="ta-stat__label">{{ __('Total Students') }}</p><p class="ta-stat__value">{{ count($attendanceStatuses) }}</p></div>
-                            <div class="ta-stat ta-stat--green"><p class="ta-stat__label">{{ __('Present') }}</p><p class="ta-stat__value">{{ $this->attendanceCounts['present'] }}</p></div>
-                            <div class="ta-stat ta-stat--red"><p class="ta-stat__label">{{ __('Absent') }}</p><p class="ta-stat__value">{{ $this->attendanceCounts['absent'] }}</p></div>
-                            <div class="ta-stat ta-stat--amber"><p class="ta-stat__label">{{ __('Late') }}</p><p class="ta-stat__value">{{ $this->attendanceCounts['late'] }}</p></div>
-                            <div class="ta-stat ta-stat--blue"><p class="ta-stat__label">{{ __('Attendance Rate') }}</p><p class="ta-stat__value">{{ $this->attendanceRate }}%</p></div>
-                        </div>
-
                         @if ($attendanceSection->registrations->isNotEmpty())
-                            <p class="text-sm text-gray-500 mb-1">{{ \Carbon\Carbon::parse($attendanceDate)->translatedFormat('l, d M Y') }}</p>
-                            <div>
-                                @foreach ($attendanceSection->registrations as $reg)
-                                    @php
-                                        $student = $reg->student;
-                                        $sid = $student?->id;
-                                        $current = $attendanceStatuses[$sid] ?? 'present';
-                                        $avatar = $student?->getFirstMediaUrl('main');
-                                    @endphp
-                                    @if ($student)
-                                        <div class="ta-row">
-                                            <div class="ta-row__info">
-                                                @if ($avatar)
-                                                    <img src="{{ $avatar }}" class="ta-avatar" alt="">
-                                                @else
-                                                    <div class="ta-avatar ta-avatar--initials">{{ mb_substr($student->getTranslation('name', app()->getLocale(), false) ?? 'S', 0, 1) }}</div>
-                                                @endif
-                                                <div>
-                                                    <p class="ta-row__name">{{ $student->getTranslation('name', app()->getLocale(), false) }}</p>
-                                                    <p class="ta-row__id">{{ $student->student_number }}</p>
+                            {{--
+                                The sheet is driven entirely by Alpine (not wire:click) so it keeps
+                                working with no connection: toggles, counters and notes are local
+                                state, and saving either goes straight to the server or is queued in
+                                localStorage and replayed by syncOfflineAttendance() once back online.
+                                wire:key re-seeds the local state whenever the section or day changes.
+                            --}}
+                            <div wire:key="attendance-sheet-{{ $attendanceSection->id }}-{{ $attendanceDate }}"
+                                 x-data="{
+                                    storageKey: 'ma.offline-attendance',
+                                    sectionId: {{ $attendanceSection->id }},
+                                    date: @js($attendanceDate),
+                                    statuses: @js((object) $attendanceStatuses),
+                                    notes: @js((object) $attendanceNotes),
+                                    reason: '',
+                                    online: navigator.onLine,
+                                    pending: 0,
+                                    justQueued: false,
+                                    init() {
+                                        this.pending = this.readQueue().length;
+                                        window.addEventListener('online', () => { this.online = true; this.flush(); });
+                                        window.addEventListener('offline', () => { this.online = false; });
+                                        if (this.online) { this.flush(); }
+                                    },
+                                    readQueue() {
+                                        try { return JSON.parse(localStorage.getItem(this.storageKey) || '[]'); }
+                                        catch (e) { return []; }
+                                    },
+                                    writeQueue(list) {
+                                        localStorage.setItem(this.storageKey, JSON.stringify(list));
+                                        this.pending = list.length;
+                                    },
+                                    payload() {
+                                        return {
+                                            section_id: this.sectionId,
+                                            date: this.date,
+                                            statuses: this.statuses,
+                                            notes: this.notes,
+                                            reason: this.reason || null,
+                                        };
+                                    },
+                                    set(id, status) { this.statuses[id] = status; },
+                                    markAll(status) { Object.keys(this.statuses).forEach(id => this.statuses[id] = status); },
+                                    count(status) { return Object.values(this.statuses).filter(s => s === status).length; },
+                                    total() { return Object.keys(this.statuses).length; },
+                                    rate() {
+                                        const total = this.total();
+                                        if (! total) return 0;
+                                        return Math.round(((this.count('present') + this.count('late')) / total) * 1000) / 10;
+                                    },
+                                    async save() {
+                                        if (! navigator.onLine) {
+                                            const queue = this.readQueue().filter(e => ! (e.section_id === this.sectionId && e.date === this.date));
+                                            queue.push(this.payload());
+                                            this.writeQueue(queue);
+                                            this.online = false;
+                                            this.justQueued = true;
+                                            return;
+                                        }
+                                        this.justQueued = false;
+                                        await $wire.syncOfflineAttendance([this.payload()]);
+                                        this.reason = '';
+                                    },
+                                    async flush() {
+                                        const queue = this.readQueue();
+                                        if (! queue.length) return;
+                                        await $wire.syncOfflineAttendance(queue);
+                                        this.writeQueue([]);
+                                    },
+                                 }">
+
+                                <div x-show="! online" x-cloak
+                                     class="mt-3 p-3 rounded-lg text-sm bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-200 dark:border-amber-800">
+                                    {{ __('You are offline — attendance is saved on this device and synced automatically once the connection is back.') }}
+                                </div>
+                                <div x-show="pending > 0" x-cloak
+                                     class="mt-3 p-3 rounded-lg text-sm bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-200 dark:border-blue-800">
+                                    <span x-text="pending"></span> {{ __('session(s) waiting to sync') }}
+                                    <button type="button" @click="flush()" class="underline font-semibold ms-2">{{ __('Sync now') }}</button>
+                                </div>
+
+                                <div class="ta-actions">
+                                    <button type="button" @click="markAll('present')" class="ta-btn ta-btn--green">{{ __('Mark All Present') }}</button>
+                                    <button type="button" @click="markAll('absent')" class="ta-btn ta-btn--red">{{ __('Mark All Absent') }}</button>
+                                </div>
+
+                                <div class="ta-stats">
+                                    <div class="ta-stat ta-stat--gray"><p class="ta-stat__label">{{ __('Total Students') }}</p><p class="ta-stat__value" x-text="total()"></p></div>
+                                    <div class="ta-stat ta-stat--green"><p class="ta-stat__label">{{ __('Present') }}</p><p class="ta-stat__value" x-text="count('present')"></p></div>
+                                    <div class="ta-stat ta-stat--red"><p class="ta-stat__label">{{ __('Absent') }}</p><p class="ta-stat__value" x-text="count('absent')"></p></div>
+                                    <div class="ta-stat ta-stat--amber"><p class="ta-stat__label">{{ __('Late') }}</p><p class="ta-stat__value" x-text="count('late')"></p></div>
+                                    <div class="ta-stat ta-stat--blue"><p class="ta-stat__label">{{ __('Attendance Rate') }}</p><p class="ta-stat__value"><span x-text="rate()"></span>%</p></div>
+                                </div>
+
+                                <p class="text-sm text-gray-500 mb-1">{{ \Carbon\Carbon::parse($attendanceDate)->translatedFormat('l, d M Y') }}</p>
+                                <div>
+                                    @foreach ($attendanceSection->registrations as $reg)
+                                        @php
+                                            $student = $reg->student;
+                                            $sid = $student?->id;
+                                            $avatar = $student?->getFirstMediaUrl('main');
+                                        @endphp
+                                        @if ($student)
+                                            <div class="ta-row">
+                                                <div class="ta-row__info">
+                                                    @if ($avatar)
+                                                        <img src="{{ $avatar }}" class="ta-avatar" alt="">
+                                                    @else
+                                                        <div class="ta-avatar ta-avatar--initials">{{ mb_substr($student->getTranslation('name', app()->getLocale(), false) ?? 'S', 0, 1) }}</div>
+                                                    @endif
+                                                    <div>
+                                                        <p class="ta-row__name">{{ $student->getTranslation('name', app()->getLocale(), false) }}</p>
+                                                        <p class="ta-row__id">{{ $student->student_number }}</p>
+                                                    </div>
                                                 </div>
+                                                <div class="ta-toggles">
+                                                    @foreach (['present' => [__('Present'),'green'], 'absent' => [__('Absent'),'red'], 'late' => [__('Late'),'amber'], 'excused' => [__('Excused'),'blue']] as $key => [$label, $color])
+                                                        <button type="button" @click="set({{ $sid }}, '{{ $key }}')"
+                                                                :class="statuses[{{ $sid }}] === '{{ $key }}' ? 'is-active' : ''"
+                                                                class="ta-toggle ta-toggle--{{ $color }}">{{ $label }}</button>
+                                                    @endforeach
+                                                </div>
+                                                <input type="text" x-model="notes[{{ $sid }}]" placeholder="{{ __('Optional note') }}" class="ta-note">
                                             </div>
-                                            <div class="ta-toggles">
-                                                @foreach (['present' => [__('Present'),'green'], 'absent' => [__('Absent'),'red'], 'late' => [__('Late'),'amber'], 'excused' => [__('Excused'),'blue']] as $key => [$label, $color])
-                                                    <button type="button" wire:click="setStatus({{ $sid }}, '{{ $key }}')"
-                                                            class="ta-toggle ta-toggle--{{ $color }} @if ($current === $key) is-active @endif">{{ $label }}</button>
-                                                @endforeach
-                                            </div>
-                                            <input type="text" wire:model="attendanceNotes.{{ $sid }}" placeholder="{{ __('Optional note') }}" class="ta-note">
-                                        </div>
-                                    @endif
-                                @endforeach
+                                        @endif
+                                    @endforeach
+                                </div>
+
+                                @if ($attendanceDayHasRecords)
+                                    <div class="mt-4">
+                                        <label class="block text-sm font-semibold mb-1">{{ __('Reason for change') }}</label>
+                                        <input type="text" x-model="reason" placeholder="{{ __('Recorded in the audit log with this change.') }}"
+                                               class="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700 text-sm">
+                                    </div>
+                                @endif
+
+                                <div class="mt-4 flex items-center gap-3">
+                                    <button type="button" @click="save()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">
+                                        {{ __('Save Attendance') }}
+                                    </button>
+                                    <span x-show="justQueued" x-cloak class="text-sm text-amber-600">{{ __('Saved on this device') }}</span>
+                                </div>
                             </div>
-                            <button wire:click="saveAttendance" class="mt-4 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">{{ __('Save Attendance') }}</button>
                         @else
                             <p class="text-gray-500 text-sm">{{ __('No students registered in this section yet.') }}</p>
                         @endif

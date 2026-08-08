@@ -11,6 +11,8 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditSection extends EditRecord
 {
+    use \App\Filament\Support\CapturesAuditReason;
+
     protected static string $resource = SectionResource::class;
 
     protected function getRedirectUrl(): string

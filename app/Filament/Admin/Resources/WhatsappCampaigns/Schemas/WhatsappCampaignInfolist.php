@@ -16,7 +16,12 @@ class WhatsappCampaignInfolist
                 Section::make('')
                     ->schema([
                         TextEntry::make('name')->label(__('Name'))->columnSpanFull(),
-                        TextEntry::make('studentGroup.name')->label(__('Student Group'))->placeholder('—'),
+                        TextEntry::make('target_type')
+                            ->label(__('Send To'))
+                            ->formatStateUsing(fn (?string $state): string => WhatsappCampaign::targetTypeOptions()[$state] ?? (string) $state),
+                        TextEntry::make('target')
+                            ->label(__('Target'))
+                            ->state(fn (WhatsappCampaign $record): string => $record->targetLabel()),
                         TextEntry::make('status')
                             ->label(__('Status'))
                             ->badge()

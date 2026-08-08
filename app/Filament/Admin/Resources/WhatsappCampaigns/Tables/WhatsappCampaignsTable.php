@@ -20,7 +20,13 @@ class WhatsappCampaignsTable
             ->columns([
                 TextColumn::make('id')->label('#')->sortable(),
                 TextColumn::make('name')->label(__('Name'))->searchable()->sortable(),
-                TextColumn::make('studentGroup.name')->label(__('Student Group')),
+                TextColumn::make('target_type')
+                    ->label(__('Send To'))
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => WhatsappCampaign::targetTypeOptions()[$state] ?? (string) $state),
+                TextColumn::make('target')
+                    ->label(__('Target'))
+                    ->state(fn (WhatsappCampaign $record): string => $record->targetLabel()),
                 TextColumn::make('status')
                     ->label(__('Status'))
                     ->badge()
@@ -58,7 +64,7 @@ class WhatsappCampaignsTable
                     ->color('success')
                     ->visible(fn (WhatsappCampaign $record): bool => $record->status === WhatsappCampaign::STATUS_DRAFT)
                     ->requiresConfirmation()
-                    ->modalDescription(fn (WhatsappCampaign $record): string => __('This will send the message to :count recipient(s), 40-60 seconds apart. It cannot be undone.', ['count' => $record->recipients()->count() ?: $record->studentGroup?->students()->count() ?? 0]))
+                    ->modalDescription(fn (WhatsappCampaign $record): string => __('This will send the message to :count recipient(s), 40-60 seconds apart. It cannot be undone.', ['count' => $record->recipients()->count() ?: \App\Services\WhatsappCampaignService::resolveStudents($record)->count()]))
                     ->action(function (WhatsappCampaign $record): void {
                         $count = \App\Services\WhatsappCampaignService::buildRecipients($record);
 

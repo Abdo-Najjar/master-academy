@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Jobs\SendWhatsappCampaignMessage;
+use App\Models\Student;
 use App\Models\StudentGroup;
 use App\Models\WhatsappCampaign;
 use App\Models\WhatsappCampaignRecipient;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class WhatsappCampaignService
@@ -20,13 +22,9 @@ class WhatsappCampaignService
     {
         $campaign->recipients()->delete();
 
-        $group = $campaign->studentGroup;
-        if (! $group instanceof StudentGroup) {
-            return 0;
-        }
-
         $count = 0;
-        foreach ($group->students as $student) {
+
+        foreach (self::resolveStudents($campaign) as $student) {
             $phone = $student->whatsapp_number ?: $student->phone_number;
             $normalized = WhatsAppService::normalizePhone($phone);
 
@@ -49,7 +47,12 @@ class WhatsappCampaignService
             $count++;
         }
 
-        foreach ($group->contacts as $contact) {
+        $group = $campaign->studentGroup;
+        $extraContacts = $campaign->target_type === WhatsappCampaign::TARGET_GROUP && $group instanceof StudentGroup
+            ? $group->contacts
+            : collect();
+
+        foreach ($extraContacts as $contact) {
             $normalized = WhatsAppService::normalizePhone($contact->phone);
 
             if ($normalized === '') {
@@ -70,6 +73,35 @@ class WhatsappCampaignService
         $campaign->update(['total_count' => $count]);
 
         return $count;
+    }
+
+    /**
+     * The students a campaign is aimed at: a saved group, everyone enrolled in
+     * a section / course / with a trainer, or every active student.
+     *
+     * @return \Illuminate\Support\Collection<int, Student>
+     */
+    public static function resolveStudents(WhatsappCampaign $campaign): Collection
+    {
+        $enrolledIn = fn (callable $sectionFilter) => Student::query()
+            ->whereHas('registrations.section', $sectionFilter)
+            ->get();
+
+        return match ($campaign->target_type) {
+            WhatsappCampaign::TARGET_SECTION => $enrolledIn(
+                fn ($q) => $q->where('sections.id', $campaign->target_id)
+            ),
+            WhatsappCampaign::TARGET_SUBJECT => $enrolledIn(
+                fn ($q) => $q->where('sections.subject_id', $campaign->target_id)
+            ),
+            WhatsappCampaign::TARGET_TRAINER => $enrolledIn(
+                fn ($q) => $q->where('sections.trainer_id', $campaign->target_id)
+            ),
+            WhatsappCampaign::TARGET_ALL => Student::query()->where('status', 'active')->get(),
+            default => $campaign->studentGroup instanceof StudentGroup
+                ? $campaign->studentGroup->students
+                : collect(),
+        };
     }
 
     /**

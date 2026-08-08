@@ -11,6 +11,8 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditRegistration extends EditRecord
 {
+    use \App\Filament\Support\CapturesAuditReason;
+
     protected static string $resource = RegistrationResource::class;
 
     protected function getRedirectUrl(): string

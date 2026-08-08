@@ -142,6 +142,17 @@
                     @endforeach
                 </div>
 
+                @if ($isEditingExistingDay)
+                    <div style="margin-top:1rem;">
+                        <label for="ma-ta-edit-reason" style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;">
+                            {{ __('Reason for change') }}
+                        </label>
+                        <input id="ma-ta-edit-reason" type="text" wire:model="editReason"
+                               placeholder="{{ __('Recorded in the audit log with this change.') }}"
+                               style="width:100%;padding:.5rem .75rem;border:1px solid rgb(203,213,225);border-radius:.5rem;font-size:.875rem;" />
+                    </div>
+                @endif
+
                 <div class="ma-ta-save-bar">
                     <span style="font-size:.75rem;color:rgb(100,116,139);" wire:loading.remove wire:target="save">
                         {{ __('Changes are saved when you click "Save".') }}

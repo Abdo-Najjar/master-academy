@@ -35,6 +35,10 @@ class StudentsTable
                 TextColumn::make('username')->label(__('Username'))->searchable(),
                 TextColumn::make('ssn')->label(__('SSN'))->searchable()->toggleable(),
                 TextColumn::make('phone_number')->label(__('Phone'))->searchable(),
+                TextColumn::make('school')->label(__('School'))->searchable()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('grade_level')->label(__('Grade Level'))->searchable()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('parent_name')->label(__('Guardian Name'))->searchable()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('parent_phone')->label(__('Guardian Phone'))->searchable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('governorate.name')->label(__('Governorate'))->toggleable(),
                 TextColumn::make('city.name')->label(__('City'))->toggleable(),
                 TextColumn::make('status')

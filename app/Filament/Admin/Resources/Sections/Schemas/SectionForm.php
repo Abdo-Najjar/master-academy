@@ -106,6 +106,13 @@ class SectionForm
 
                 Section::make(__('Pricing'))
                     ->schema([
+                        Select::make('fee_type')
+                            ->label(__('Fee Type'))
+                            ->options(SectionModel::feeTypeOptions())
+                            ->default(SectionModel::FEE_TYPE_FIXED_COURSE)
+                            ->required()
+                            ->live()
+                            ->helperText(__('Per-session billing charges the cycle fee every N sessions held, regardless of attendance.')),
                         TextInput::make('price')
                             ->label(__('Course Fee'))
                             ->required()
@@ -113,7 +120,23 @@ class SectionForm
                             ->default(0)
                             ->minValue(0)
                             ->step(0.01)
-                            ->prefix('₪'),
+                            ->prefix('₪')
+                            ->visible(fn (Get $get): bool => $get('fee_type') !== SectionModel::FEE_TYPE_PER_SESSIONS),
+                        TextInput::make('sessions_per_cycle')
+                            ->label(__('Sessions Per Payment Cycle'))
+                            ->numeric()
+                            ->minValue(1)
+                            ->default(8)
+                            ->required(fn (Get $get): bool => $get('fee_type') === SectionModel::FEE_TYPE_PER_SESSIONS)
+                            ->visible(fn (Get $get): bool => $get('fee_type') === SectionModel::FEE_TYPE_PER_SESSIONS),
+                        TextInput::make('cycle_fee')
+                            ->label(__('Fee Per Cycle'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->step(0.01)
+                            ->prefix('₪')
+                            ->required(fn (Get $get): bool => $get('fee_type') === SectionModel::FEE_TYPE_PER_SESSIONS)
+                            ->visible(fn (Get $get): bool => $get('fee_type') === SectionModel::FEE_TYPE_PER_SESSIONS),
                         TextInput::make('trainer_rate')
                             ->label(__('Trainer Rate (%)'))
                             ->numeric()
@@ -123,6 +146,7 @@ class SectionForm
                             ->default(40)
                             ->suffix('%')
                             ->helperText(__('Leave empty to use trainer default rate')),
+                        \App\Filament\Support\AuditReasonField::make(),
                         Select::make('seat_reservation_type')
                             ->label(__('Seat Reservation Type'))
                             ->options([

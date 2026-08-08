@@ -97,6 +97,17 @@ class StudentForm
                                 'male' => __('Male'),
                                 'female' => __('Female'),
                             ]),
+                        TextInput::make('school')
+                            ->label(__('School'))
+                            ->maxLength(255),
+                        TextInput::make('grade_level')
+                            ->label(__('Grade Level'))
+                            ->maxLength(255),
+                        DatePicker::make('enrolled_at')
+                            ->label(__('Enrollment Date'))
+                            ->native(false)
+                            ->default(now()),
+                        \App\Filament\Support\AuditReasonField::make(),
                         TextInput::make('withdrawal_reason')
                             ->label(__('Withdrawal Reason'))
                             ->maxLength(255)
@@ -124,6 +135,24 @@ class StudentForm
                             ->label(__('WhatsApp Number'))
                             ->tel()
                             ->maxLength(255),
+                        TextInput::make('parent_name')
+                            ->label(__('Guardian Name'))
+                            ->maxLength(255),
+                        TextInput::make('parent_phone')
+                            ->label(__('Guardian Phone'))
+                            ->tel()
+                            ->maxLength(255)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, callable $get, callable $set) {
+                                if (filled($state) && blank($get('parent_whatsapp'))) {
+                                    $set('parent_whatsapp', $state);
+                                }
+                            }),
+                        TextInput::make('parent_whatsapp')
+                            ->label(__('Guardian WhatsApp'))
+                            ->tel()
+                            ->maxLength(255)
+                            ->helperText(__('Absence and payment alerts are sent to this number.')),
                         Select::make('governorate_id')
                             ->label(__('Governorate'))
                             ->relationship('governorate', 'name')
