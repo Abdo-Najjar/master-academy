@@ -55,6 +55,20 @@ class SectionSession extends Model
         'created_by',
     ];
 
+    /**
+     * Mirrors the column defaults so a freshly created instance behaves the
+     * same in memory as it does after a reload — the billing observer reads
+     * these attributes immediately, before any refetch.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'type' => self::TYPE_REGULAR,
+        'status' => self::STATUS_HELD,
+        'counts_toward_billing' => true,
+        'counted_at_billing' => false,
+    ];
+
     /** @return array<string, string> */
     protected function casts(): array
     {

@@ -3,12 +3,16 @@
 namespace App\Filament\Admin\Resources\Students\Schemas;
 
 use App\Filament\Admin\Resources\Students\Pages\CreateStudent;
+use App\Filament\Support\AuditReasonField;
+use App\Filament\Support\TranslatableInput;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Unique;
@@ -29,7 +33,7 @@ class StudentForm
                             ->imageEditor()
                             ->avatar()
                             ->columnSpanFull(),
-                        \App\Filament\Support\TranslatableInput::make('name', __('Full Name')),
+                        TranslatableInput::make('name', __('Full Name')),
                         DatePicker::make('dob')
                             ->label(__('Date of Birth'))
                             ->native(false)
@@ -107,7 +111,7 @@ class StudentForm
                             ->label(__('Enrollment Date'))
                             ->native(false)
                             ->default(now()),
-                        \App\Filament\Support\AuditReasonField::make(),
+                        AuditReasonField::make(),
                         TextInput::make('withdrawal_reason')
                             ->label(__('Withdrawal Reason'))
                             ->maxLength(255)
@@ -143,7 +147,7 @@ class StudentForm
                             ->tel()
                             ->maxLength(255)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(function ($state, callable $get, callable $set) {
+                            ->afterStateUpdated(function ($state, Get $get, Set $set) {
                                 if (filled($state) && blank($get('parent_whatsapp'))) {
                                     $set('parent_whatsapp', $state);
                                 }
