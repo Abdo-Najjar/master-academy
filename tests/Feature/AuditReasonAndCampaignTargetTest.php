@@ -181,3 +181,19 @@ it('includes the guardian number in a section contact list', function () {
     expect(collect($contacts)->pluck('type')->all())->toBe(['student', 'guardian'])
         ->and(collect($contacts)->firstWhere('type', 'guardian')['name'])->toBe('أبو الطالب');
 });
+
+it('renders the student attendance tab without errors', function () {
+    Attendance::create([
+        'section_id' => $this->section->id,
+        'student_id' => $this->student->id,
+        'date' => '2026-09-01',
+        'status' => 'excused',
+    ]);
+
+    Livewire::actingAs($this->student, 'student')
+        ->test(StudentDashboard::class)
+        ->set('activeTab', 'attendance')
+        ->assertOk()
+        ->assertSee(__('Attendance Rate'))
+        ->assertSee(__('Excused'));
+});

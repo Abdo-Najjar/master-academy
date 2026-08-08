@@ -53,12 +53,12 @@ class SectionSessionResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return __('Session');
+        return __('Class Session');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return __('Sessions');
+        return __('Class Sessions');
     }
 
     public static function canAccess(): bool

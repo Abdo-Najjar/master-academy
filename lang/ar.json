@@ -1766,5 +1766,7 @@
     "Grades published": "تم نشر الدرجات",
     "Score must be between 0 and :max": "يجب أن تكون الدرجة بين 0 و :max",
     "Wallet Transactions": "حركات المحفظة",
-    "Delete profile picture?": "حذف الصورة الشخصية؟"
+    "Delete profile picture?": "حذف الصورة الشخصية؟",
+    "Class Session": "حصة",
+    "Class Sessions": "الحصص"
 }

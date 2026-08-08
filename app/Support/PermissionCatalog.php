@@ -233,7 +233,7 @@ class PermissionCatalog
             'course_type' => __('Course Types'),
             'section' => __('Sections'),
             'registration' => __('Registrations'),
-            'section_session' => __('Sessions'),
+            'section_session' => __('Class Sessions'),
             'attendance' => __('Attendance'),
             'exam' => __('Exams'),
             'assignment' => __('Assignments'),

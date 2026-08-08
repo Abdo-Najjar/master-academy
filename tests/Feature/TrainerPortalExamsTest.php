@@ -165,3 +165,23 @@ it('cannot publish an exam belonging to another trainer', function () {
 
     expect($exam->fresh()->isGradesPublished())->toBeFalse();
 });
+
+it('renders the exams tab and the grade sheet without errors', function () {
+    $exam = Exam::create([
+        'section_id' => $this->section->id,
+        'name' => 'اختبار العرض',
+        'date' => '2026-09-10',
+        'max_score' => 100,
+    ]);
+
+    Livewire::actingAs($this->trainer, 'trainer')
+        ->test(TrainerDashboard::class)
+        ->set('activeTab', 'exams')
+        ->assertOk()
+        ->assertSee(__('Exams & Grades'))
+        ->assertSee(__('New Exam'))
+        ->assertSee('اختبار العرض')
+        ->call('openExamGrades', $exam->id)
+        ->assertOk()
+        ->assertSee(__('Save Grades'));
+});

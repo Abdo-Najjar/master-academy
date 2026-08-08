@@ -21,7 +21,8 @@ class AuditReasonField
             ->rows(2)
             ->maxLength(500)
             ->required($required)
-            ->dehydrated(false)
+            // Must stay dehydrated so the value reaches the form payload —
+            // CapturesAuditReason lifts it out before the record is filled.
             ->visibleOn('edit')
             ->columnSpanFull();
     }
