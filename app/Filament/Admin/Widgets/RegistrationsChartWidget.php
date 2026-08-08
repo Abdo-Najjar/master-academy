@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Widgets;
 use App\Models\Registration;
 use Carbon\CarbonPeriod;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Contracts\Support\Htmlable;
 
 class RegistrationsChartWidget extends ChartWidget
 {
@@ -14,7 +15,12 @@ class RegistrationsChartWidget extends ChartWidget
 
     protected int|string|array $columnSpan = ['md' => 1, 'xl' => 1];
 
-    public function getHeading(): string|\Illuminate\Contracts\Support\Htmlable|null
+    public static function canView(): bool
+    {
+        return auth()->user()?->can('registration.index') ?? false;
+    }
+
+    public function getHeading(): string|Htmlable|null
     {
         return __('Registrations — last 30 days');
     }

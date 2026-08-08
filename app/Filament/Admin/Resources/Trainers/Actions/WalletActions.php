@@ -24,6 +24,7 @@ class WalletActions
             ->label(__('Deposit'))
             ->icon('heroicon-o-plus-circle')
             ->color('success')
+            ->visible(fn (): bool => auth()->user()?->can('trainer.wallet') ?? false)
             ->modalHeading(__('Deposit to Trainer Wallet'))
             ->schema(self::amountSchema())
             ->action(function (Trainer $record, array $data): void {
@@ -51,6 +52,7 @@ class WalletActions
             ->label(__('Withdraw'))
             ->icon('heroicon-o-minus-circle')
             ->color('danger')
+            ->visible(fn (): bool => auth()->user()?->can('trainer.wallet') ?? false)
             ->modalHeading(__('Withdraw from Trainer Wallet'))
             ->schema(self::amountSchema())
             ->action(function (Trainer $record, array $data): void {

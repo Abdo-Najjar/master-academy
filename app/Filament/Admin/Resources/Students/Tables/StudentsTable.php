@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Students\Tables;
 
+use App\Filament\Admin\Resources\Students\Actions\WalletActions;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -75,6 +76,8 @@ class StudentsTable
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make(),
+                    WalletActions::deposit(),
+                    WalletActions::withdraw(),
                     DeleteAction::make(),
                 ]),
             ])

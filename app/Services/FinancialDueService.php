@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Registration;
+use App\Models\Section;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -40,14 +41,27 @@ class FinancialDueService
     }
 
     /**
-     * Compute financial status for a single (fixed-course) registration.
+     * Compute financial status for a single registration.
      *
+     * Sections priced per number of sessions are judged on their session
+     * counter instead (warning two sessions before the cycle ends, due when it
+     * ends, overdue two sessions later) — see SessionBillingService.
+     *
+     * Fixed-course registrations:
      * ok       -> fully funded by real money
      * due      -> partially funded, balance remaining
      * overdue  -> nothing funded yet on a charge that has a balance
      */
     public static function computeStatus(Registration $registration): string
     {
+        $section = $registration->relationLoaded('section')
+            ? $registration->section
+            : ($registration->section_id ? Section::find($registration->section_id) : null);
+
+        if ($section?->isPerSessionBilled()) {
+            return SessionBillingService::computeStatus($registration);
+        }
+
         $remaining = self::remainingBalance($registration);
 
         if ($remaining <= 0.009) {
@@ -67,6 +81,7 @@ class FinancialDueService
 
         Registration::query()
             ->whereNull('deleted_at')
+            ->with('section')
             ->chunk(200, function (Collection $registrations) use ($dryRun, &$updated): void {
                 foreach ($registrations as $reg) {
                     $status = self::computeStatus($reg);

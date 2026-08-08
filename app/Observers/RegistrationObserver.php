@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Registration;
 use App\Models\Section;
 use App\Services\FinancialDueService;
+use App\Services\SessionBillingService;
 use App\Services\TrainerPayoutService;
 use Illuminate\Support\Facades\DB;
 
@@ -27,15 +28,18 @@ class RegistrationObserver
             }
         }
 
+        SessionBillingService::initializeRegistration($registration);
+
         $registration->financial_status = FinancialDueService::computeStatus($registration);
     }
 
     /**
-     * Keep financial_status in sync whenever the money fields change.
+     * Keep financial_status in sync whenever the money fields change — or, on
+     * per-session sections, whenever the session counters move.
      */
     public function updating(Registration $registration): void
     {
-        if ($registration->isDirty(['amount_due', 'amount_paid', 'exemption_amount'])) {
+        if ($registration->isDirty(['amount_due', 'amount_paid', 'exemption_amount', 'sessions_counted', 'paid_through_session', 'paused_at'])) {
             $registration->financial_status = FinancialDueService::computeStatus($registration);
         }
     }

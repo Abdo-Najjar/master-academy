@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Trainers\Tables;
 
+use App\Filament\Admin\Resources\Trainers\Actions\WalletActions;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -50,6 +51,8 @@ class TrainersTable
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make(),
+                    WalletActions::deposit(),
+                    WalletActions::withdraw(),
                     DeleteAction::make(),
                 ]),
             ])

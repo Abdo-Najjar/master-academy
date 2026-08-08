@@ -59,6 +59,15 @@ class PermissionCatalog
                 'registration.update' => __('Update'),
                 'registration.delete' => __('Delete'),
                 'registration.cancel' => __('Cancel & Refund'),
+                'registration.transfer' => __('Transfer Between Sections'),
+                'registration.collect' => __('Collect Session Cycle Payment'),
+            ],
+            'section_session' => [
+                'section_session.index' => __('View'),
+                'section_session.create' => __('Create'),
+                'section_session.update' => __('Update'),
+                'section_session.delete' => __('Delete'),
+                'section_session.charge' => __('Charge Private Session Fee'),
             ],
             'attendance' => [
                 'attendance.index' => __('View'),
@@ -166,6 +175,9 @@ class PermissionCatalog
             'login_activity' => [
                 'login_activity.index' => __('View Login Activities'),
             ],
+            'audit_log' => [
+                'audit_log.index' => __('View Audit Log'),
+            ],
             'reports' => [
                 'reports.view' => __('View Reports'),
             ],
@@ -221,6 +233,7 @@ class PermissionCatalog
             'course_type' => __('Course Types'),
             'section' => __('Sections'),
             'registration' => __('Registrations'),
+            'section_session' => __('Sessions'),
             'attendance' => __('Attendance'),
             'exam' => __('Exams'),
             'assignment' => __('Assignments'),
@@ -242,6 +255,7 @@ class PermissionCatalog
             'backup' => __('System Backup'),
             'settings' => __('App Settings'),
             'login_activity' => __('Login Activities'),
+            'audit_log' => __('Audit Log'),
             'reports' => __('Reports'),
             'role' => __('Roles & Permissions'),
             'program' => __('Programs'),

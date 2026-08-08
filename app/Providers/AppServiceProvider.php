@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Listeners\RecordLoginActivity;
 use App\Models\User;
+use App\Support\AuditReason;
+use Spatie\Activitylog\Models\Activity;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -22,6 +24,20 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Event::listen(Login::class, RecordLoginActivity::class);
+
+        // Stamp the operator's stated reason for a change onto every activity
+        // log entry written during this request. Done centrally (rather than
+        // per-model `tapActivity`) because the models already use Spatie's
+        // LogsActivity trait, which owns that method.
+        Activity::creating(function (Activity $activity): void {
+            $reason = AuditReason::get();
+
+            if ($reason === null) {
+                return;
+            }
+
+            $activity->properties = collect($activity->properties ?? [])->put('reason', $reason);
+        });
 
         // Super admin: the admin User with ID 1 bypasses every permission gate.
         // Scoped to the User model so a Student/Trainer that happens to have id 1

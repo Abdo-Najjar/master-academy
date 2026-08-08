@@ -43,6 +43,12 @@ class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
         'is_active',
         'status',
         'gender',
+        'school',
+        'grade_level',
+        'parent_name',
+        'parent_phone',
+        'parent_whatsapp',
+        'enrolled_at',
         'withdrawal_reason',
         'withdrawal_date',
     ];
@@ -60,8 +66,15 @@ class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
             'password' => 'hashed',
             'dob' => 'date',
             'is_active' => 'boolean',
+            'enrolled_at' => 'date',
             'withdrawal_date' => 'date',
         ];
+    }
+
+    /** Guardian WhatsApp number, falling back to their plain phone number. */
+    public function guardianContact(): ?string
+    {
+        return $this->parent_whatsapp ?: $this->parent_phone ?: null;
     }
 
     public function getAuthIdentifierName(): string
@@ -72,7 +85,7 @@ class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'dob', 'ssn', 'username', 'email', 'phone_number', 'whatsapp_number', 'governorate_id', 'city_id', 'student_number'])
+            ->logOnly(['name', 'dob', 'ssn', 'username', 'email', 'phone_number', 'whatsapp_number', 'governorate_id', 'city_id', 'student_number', 'status', 'school', 'grade_level', 'parent_name', 'parent_phone', 'parent_whatsapp', 'withdrawal_reason', 'withdrawal_date'])
             ->logOnlyDirty();
     }
 

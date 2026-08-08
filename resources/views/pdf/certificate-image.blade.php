@@ -16,6 +16,7 @@
     </style>
 </head>
 <body>
+    @include('partials.bahij-font')
     <div class="spin" id="spin"></div>
     <div id="status">{{ __('Generating image...') }}</div>
     <img id="preview" alt="">

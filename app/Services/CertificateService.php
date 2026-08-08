@@ -146,6 +146,7 @@ class CertificateService
             'amiri' => '"Amiri", serif',
             'almarai' => '"Almarai", sans-serif',
             'ibmplexsansarabic' => '"IBM Plex Sans Arabic", sans-serif',
+            'bahijthesansarabic' => '"Bahij TheSans Arabic", sans-serif',
         ];
 
         $fields = [];
@@ -200,6 +201,7 @@ class CertificateService
             'amiri' => ['R' => 'Amiri-Regular.ttf', 'B' => 'Amiri-Bold.ttf'],
             'almarai' => ['R' => 'Almarai-Regular.ttf', 'B' => 'Almarai-Bold.ttf'],
             'ibmplexsansarabic' => ['R' => 'IBMPlexSansArabic-Regular.ttf', 'B' => 'IBMPlexSansArabic-Bold.ttf'],
+            'bahijthesansarabic' => ['R' => 'BahijTheSansArabic-Regular.ttf', 'B' => 'BahijTheSansArabic-Bold.ttf'],
         ];
     }
 

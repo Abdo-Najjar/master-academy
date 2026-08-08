@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class ExamGrade extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = ['exam_id', 'student_id', 'score', 'note'];
 
@@ -17,6 +19,14 @@ class ExamGrade extends Model
         return [
             'score' => 'decimal:2',
         ];
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['exam_id', 'student_id', 'score', 'note'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 
     public function exam(): BelongsTo

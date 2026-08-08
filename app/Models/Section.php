@@ -17,6 +17,12 @@ class Section extends Model implements HasMedia
 {
     use HasFactory, InteractsWithMedia, LogsActivity, SoftDeletes;
 
+    /** One price for the whole course, paid up front. */
+    public const FEE_TYPE_FIXED_COURSE = 'fixed_course';
+
+    /** `cycle_fee` charged every `sessions_per_cycle` sessions held. */
+    public const FEE_TYPE_PER_SESSIONS = 'per_sessions';
+
     /** @var list<string> */
     protected $fillable = [
         'name',
@@ -26,6 +32,9 @@ class Section extends Model implements HasMedia
         'start_date',
         'end_date',
         'price',
+        'fee_type',
+        'sessions_per_cycle',
+        'cycle_fee',
         'trainer_rate',
         'capacity',
         'training_hours',
@@ -41,6 +50,8 @@ class Section extends Model implements HasMedia
             'start_date' => 'date',
             'end_date' => 'date',
             'price' => 'decimal:2',
+            'cycle_fee' => 'decimal:2',
+            'sessions_per_cycle' => 'integer',
             'trainer_rate' => 'decimal:2',
             'seat_reservation_amount' => 'decimal:2',
             'capacity' => 'integer',
@@ -51,8 +62,23 @@ class Section extends Model implements HasMedia
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'subject_id', 'branch_id', 'trainer_id', 'start_date', 'end_date', 'price', 'trainer_rate', 'capacity', 'training_hours'])
+            ->logOnly(['name', 'subject_id', 'branch_id', 'trainer_id', 'start_date', 'end_date', 'price', 'fee_type', 'sessions_per_cycle', 'cycle_fee', 'trainer_rate', 'capacity', 'training_hours'])
             ->logOnlyDirty();
+    }
+
+    /** @return array<string, string> */
+    public static function feeTypeOptions(): array
+    {
+        return [
+            self::FEE_TYPE_FIXED_COURSE => __('Full course fee'),
+            self::FEE_TYPE_PER_SESSIONS => __('Fee per number of sessions'),
+        ];
+    }
+
+    public function isPerSessionBilled(): bool
+    {
+        return $this->fee_type === self::FEE_TYPE_PER_SESSIONS
+            && (int) $this->sessions_per_cycle > 0;
     }
 
     public function registerMediaCollections(): void
@@ -88,6 +114,11 @@ class Section extends Model implements HasMedia
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class);
+    }
+
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(SectionSession::class);
     }
 
     public function exams(): HasMany

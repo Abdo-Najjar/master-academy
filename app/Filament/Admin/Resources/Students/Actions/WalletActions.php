@@ -25,6 +25,7 @@ class WalletActions
             ->label(__('Deposit'))
             ->icon('heroicon-o-plus-circle')
             ->color('success')
+            ->visible(fn (): bool => auth()->user()?->can('student.wallet') ?? false)
             ->modalHeading(__('Deposit to Student Wallet'))
             ->schema(self::amountSchema())
             ->action(function (Student $record, array $data): void {
@@ -55,6 +56,7 @@ class WalletActions
             ->label(__('Withdraw'))
             ->icon('heroicon-o-minus-circle')
             ->color('danger')
+            ->visible(fn (): bool => auth()->user()?->can('student.wallet') ?? false)
             ->modalHeading(__('Withdraw from Student Wallet'))
             ->schema(self::amountSchema())
             ->action(function (Student $record, array $data): void {

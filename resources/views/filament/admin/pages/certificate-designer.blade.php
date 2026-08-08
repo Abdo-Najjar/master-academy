@@ -1,4 +1,5 @@
 <x-filament-panels::page>
+    @include('partials.bahij-font')
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Tajawal:wght@400;700&family=Amiri:wght@400;700&family=Almarai:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;700&display=swap');
         .cd-wrap{display:flex;flex-direction:column;gap:1rem;}
@@ -138,6 +139,7 @@
                                     <option value="amiri">Amiri</option>
                                     <option value="almarai">Almarai</option>
                                     <option value="ibmplexsansarabic">IBM Plex Sans Arabic</option>
+                                    <option value="bahijthesansarabic">Bahij TheSans Arabic</option>
                                 </select>
                             </div>
                             <div class="cd-f" x-show="selectedField.key !== 'qr_code'">
@@ -287,6 +289,7 @@
                 amiri: '"Amiri", serif',
                 almarai: '"Almarai", sans-serif',
                 ibmplexsansarabic: '"IBM Plex Sans Arabic", sans-serif',
+                bahijthesansarabic: '"Bahij TheSans Arabic", sans-serif',
             },
 
             addField(key, label) {

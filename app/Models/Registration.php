@@ -29,6 +29,10 @@ class Registration extends Model
         'trainer_amount',
         'financial_status',
         'seat_reservation_paid',
+        'session_offset',
+        'sessions_counted',
+        'paid_through_session',
+        'paused_at',
         'note',
     ];
 
@@ -43,7 +47,23 @@ class Registration extends Model
             'trainer_amount' => 'decimal:2',
             'trainer_credited_amount' => 'decimal:2',
             'seat_reservation_paid' => 'decimal:2',
+            'session_offset' => 'integer',
+            'sessions_counted' => 'integer',
+            'paid_through_session' => 'integer',
+            'paused_at' => 'datetime',
         ];
+    }
+
+    /** Is this registration billed per number of sessions held? */
+    public function isPerSessionBilled(): bool
+    {
+        return (bool) $this->section?->isPerSessionBilled();
+    }
+
+    /** Sessions still covered by what the student paid; negative once owed. */
+    public function remainingSessions(): int
+    {
+        return (int) $this->paid_through_session - (int) $this->sessions_counted;
     }
 
     public function getActivitylogOptions(): LogOptions

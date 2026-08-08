@@ -3,17 +3,20 @@
 namespace App\Filament\Admin\Widgets;
 
 use App\Models\Registration;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
-use Illuminate\Database\Eloquent\Builder;
 
 class DuePaymentsWidget extends BaseWidget
 {
     protected static ?int $sort = 5;
 
     protected int|string|array $columnSpan = 'full';
+
+    public static function canView(): bool
+    {
+        return auth()->user()?->can('registration.index') ?? false;
+    }
 
     public function table(Table $table): Table
     {
