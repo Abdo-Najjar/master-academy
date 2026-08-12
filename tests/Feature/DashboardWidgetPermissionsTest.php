@@ -1,6 +1,11 @@
 <?php
 
+use App\Filament\Admin\Widgets\AttendanceBreakdownWidget;
+use App\Filament\Admin\Widgets\DuePaymentsWidget;
+use App\Filament\Admin\Widgets\OverviewStatsWidget;
+use App\Filament\Admin\Widgets\RegistrationsChartWidget;
 use App\Models\User;
+use App\Support\PermissionCatalog;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -37,41 +42,66 @@ function dashboardUser(array $gates): User
     return $user;
 }
 
+/**
+ * The labels the stats widget would actually render.
+ *
+ * Asserted straight off the widget rather than by scraping the dashboard HTML:
+ * Filament v4 widgets load lazily, so the first paint only contains a
+ * placeholder and the stats never appear in that response.
+ *
+ * @return list<string>
+ */
+function statLabels(): array
+{
+    $method = new ReflectionMethod(OverviewStatsWidget::class, 'getStats');
+    $method->setAccessible(true);
+
+    return array_map(
+        fn ($stat): string => (string) $stat->getLabel(),
+        $method->invoke(new OverviewStatsWidget),
+    );
+}
+
 test('a students-only user does not see financial or complaint stats on the dashboard', function () {
-    $user = dashboardUser(['student.index']);
+    $this->actingAs(dashboardUser(['student.index']));
 
-    $response = $this->actingAs($user)->get('/admin');
+    $labels = statLabels();
 
-    $response->assertStatus(200);
-    $response->assertSee(__('Active Students'));
-    $response->assertDontSee(__('Weekly Revenue'));
-    $response->assertDontSee(__('Outstanding from Students'));
-    $response->assertDontSee(__('Due Payments'));
-    $response->assertDontSee(__('Open Complaints'));
-    $response->assertDontSee(__('Sessions Today'));
-    $response->assertDontSee(__('Students with Due Payments'));
-    $response->assertDontSee(__('Registrations — last 30 days'));
-    $response->assertDontSee(__('Attendance breakdown — last 30 days'));
+    expect($labels)->toContain(__('Active Students'))
+        ->and($labels)->toContain(__('Withdrawn'))
+        ->and($labels)->not->toContain(__('Weekly Revenue'))
+        ->and($labels)->not->toContain(__('Outstanding from Students'))
+        ->and($labels)->not->toContain(__('Due Payments'))
+        ->and($labels)->not->toContain(__('Open Complaints'))
+        ->and($labels)->not->toContain(__('Sessions Today'));
+
+    // The other dashboard widgets are hidden outright.
+    expect(DuePaymentsWidget::canView())->toBeFalse()
+        ->and(RegistrationsChartWidget::canView())->toBeFalse()
+        ->and(AttendanceBreakdownWidget::canView())->toBeFalse();
 });
 
 test('a full-permission user still sees every dashboard stat', function () {
-    $user = dashboardUser(App\Support\PermissionCatalog::allGates());
+    $this->actingAs(dashboardUser(PermissionCatalog::allGates()));
 
-    $response = $this->actingAs($user)->get('/admin');
+    $labels = statLabels();
 
-    $response->assertStatus(200);
-    $response->assertSee(__('Active Students'));
-    $response->assertSee(__('Weekly Revenue'));
-    $response->assertSee(__('Open Complaints'));
-    $response->assertSee(__('Sessions Today'));
+    expect($labels)->toContain(__('Active Students'))
+        ->and($labels)->toContain(__('Weekly Revenue'))
+        ->and($labels)->toContain(__('Open Complaints'))
+        ->and($labels)->toContain(__('Sessions Today'));
+
+    expect(OverviewStatsWidget::canView())->toBeTrue()
+        ->and(DuePaymentsWidget::canView())->toBeTrue()
+        ->and(RegistrationsChartWidget::canView())->toBeTrue()
+        ->and(AttendanceBreakdownWidget::canView())->toBeTrue();
 });
 
 test('a user with no dashboard-relevant permission sees no stats but the page still loads', function () {
     $user = dashboardUser(['room.index']);
 
-    $response = $this->actingAs($user)->get('/admin');
+    $this->actingAs($user)->get('/admin')->assertStatus(200);
 
-    $response->assertStatus(200);
-    $response->assertDontSee(__('Active Students'));
-    $response->assertDontSee(__('Weekly Revenue'));
+    expect(OverviewStatsWidget::canView())->toBeFalse()
+        ->and(statLabels())->toBe([]);
 });
