@@ -1789,5 +1789,6 @@
     ":amount will be left as credit on the wallet.": "سيبقى :amount رصيداً دائناً بالمحفظة.",
     "Payment received at enrollment": "دفعة مستلمة عند التسجيل",
     "Month :number": "الشهر :number",
-    "Every :count sessions count as one month.": "كل :count لقاء تُحتسب شهراً واحداً."
+    "Every :count sessions count as one month.": "كل :count لقاء تُحتسب شهراً واحداً.",
+    "This section has :count session(s) so far.": "هذه الشعبة فيها :count لقاء حتى الآن."
 }

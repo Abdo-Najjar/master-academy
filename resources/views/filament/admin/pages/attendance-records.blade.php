@@ -193,19 +193,22 @@
                 </x-filament::button>
             </x-slot>
 
-            @if ($sheet['months'] > 1)
-                <div class="ma-as-months">
-                    @for ($m = 1; $m <= $sheet['months']; $m++)
-                        <button type="button" wire:click="goToMonth({{ $m }})"
-                                class="ma-as-month @if ($sheet['month'] === $m) is-active @endif">
-                            {{ __('Month :number', ['number' => $m]) }}
-                        </button>
-                    @endfor
-                    <span class="ma-as-months__hint">
-                        {{ __('Every :count sessions count as one month.', ['count' => \App\Filament\Admin\Pages\AttendanceRecords::SESSIONS_PER_MONTH]) }}
-                    </span>
-                </div>
-            @endif
+            {{-- Shown even when the section has not filled a month yet, so it is
+                 obvious the sheet is paged by month rather than truncated. --}}
+            <div class="ma-as-months">
+                @for ($m = 1; $m <= $sheet['months']; $m++)
+                    <button type="button" wire:click="goToMonth({{ $m }})"
+                            class="ma-as-month @if ($sheet['month'] === $m) is-active @endif">
+                        {{ __('Month :number', ['number' => $m]) }}
+                    </button>
+                @endfor
+                <span class="ma-as-months__hint">
+                    {{ __('Every :count sessions count as one month.', ['count' => \App\Filament\Admin\Pages\AttendanceRecords::SESSIONS_PER_MONTH]) }}
+                    @if ($sheet['months'] === 1)
+                        — {{ __('This section has :count session(s) so far.', ['count' => $sheet['allDates']]) }}
+                    @endif
+                </span>
+            </div>
 
             <div class="ma-as-scroll">
                 <table class="ma-as-table">
