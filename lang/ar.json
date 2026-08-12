@@ -1777,5 +1777,17 @@
     "Charge for :student — :name": "خصم على :student — :name",
     "Additional charge for :student — :name": "خصم إضافي على :student — :name",
     "Adjustment for :student — :name": "تسوية لـ :student — :name",
-    "Refund for :student — :name": "استرداد لـ :student — :name"
+    "Refund for :student — :name": "استرداد لـ :student — :name",
+    "Money handed over now. It is deposited to the wallet before the sections are charged, so the student does not end up owing what they just paid.": "المبلغ المستلم الآن. يُودَع بالمحفظة قبل خصم رسوم الشعب، فما يطلع الطالب مديوناً بمبلغ دفعه للتو.",
+    "Money handed over now. It is deposited to the wallet before the section is charged, so the student does not end up owing what they just paid.": "المبلغ المستلم الآن. يُودَع بالمحفظة قبل خصم رسوم الشعبة، فما يطلع الطالب مديوناً بمبلغ دفعه للتو.",
+    "Paid :amount, wallet balance is now :balance": "دُفع :amount، ورصيد المحفظة الآن :balance",
+    "Total To Be Paid": "إجمالي المطلوب دفعه",
+    "Amount Received": "المبلغ المستلم",
+    "Pay in full": "دفع كامل المبلغ",
+    "Covers the full amount.": "يغطي المبلغ بالكامل.",
+    "Short by :amount — the rest stays owed on the wallet.": "ناقص :amount — الباقي يضل ديناً على المحفظة.",
+    ":amount will be left as credit on the wallet.": "سيبقى :amount رصيداً دائناً بالمحفظة.",
+    "Payment received at enrollment": "دفعة مستلمة عند التسجيل",
+    "Month :number": "الشهر :number",
+    "Every :count sessions count as one month.": "كل :count لقاء تُحتسب شهراً واحداً."
 }

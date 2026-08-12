@@ -3,6 +3,8 @@
 namespace App\Filament\Admin\Resources\Students\Tables;
 
 use App\Filament\Admin\Resources\Students\Actions\WalletActions;
+use App\Filament\Support\DeletionGuard;
+use App\Models\Student;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -18,6 +20,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Collection;
 
 class StudentsTable
 {
@@ -82,16 +85,39 @@ class StudentsTable
                     EditAction::make(),
                     WalletActions::deposit(),
                     WalletActions::withdraw(),
-                    DeleteAction::make(),
+                    DeleteAction::make()
+                        ->before(fn (Student $record) => self::guardStudentDeletion($record)),
                 ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->before(fn (Collection $records) => self::guardDeletionForMany($records)),
+                    ForceDeleteBulkAction::make()
+                        ->before(fn (Collection $records) => self::guardDeletionForMany($records)),
                     RestoreBulkAction::make(),
                 ]),
             ])
             ->defaultSort('id', 'desc');
+    }
+
+    /**
+     * A student enrolled in a course carries money, attendance and grades with
+     * them — deleting the row would orphan all of it, so withdraw or archive
+     * them via the status field instead.
+     */
+    public static function guardStudentDeletion(Student $record): void
+    {
+        DeletionGuard::ensureUnused($record, [
+            'registrations' => __('Registrations'),
+        ]);
+    }
+
+    /** @param  Collection<int, Student>  $records */
+    protected static function guardDeletionForMany(Collection $records): void
+    {
+        DeletionGuard::ensureUnusedForMany($records, [
+            'registrations' => __('Registrations'),
+        ]);
     }
 }

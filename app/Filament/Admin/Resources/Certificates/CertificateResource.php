@@ -22,13 +22,13 @@ class CertificateResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 
-    protected static ?int $navigationSort = 11;
+    protected static ?int $navigationSort = 7;
 
     protected static ?string $recordTitleAttribute = 'serial_number';
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Administration');
+        return __('Students');
     }
 
     public static function getModelLabel(): string

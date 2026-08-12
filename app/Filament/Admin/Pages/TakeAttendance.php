@@ -26,7 +26,7 @@ class TakeAttendance extends Page implements HasForms
 
     protected string $view = 'filament.admin.pages.take-attendance';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     public ?array $data = [];
 
@@ -48,7 +48,7 @@ class TakeAttendance extends Page implements HasForms
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Operations');
+        return __('Students');
     }
 
     public static function getNavigationLabel(): string
@@ -175,7 +175,7 @@ class TakeAttendance extends Page implements HasForms
             return;
         }
 
-        AuditReason::using($this->editReason, function () use ($section): void {
+        AuditReason::using($this->editReason, function (): void {
             Attendance::recordDay(
                 $this->sectionId,
                 $this->date,

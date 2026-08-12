@@ -2,9 +2,9 @@
 
 namespace App\Filament\Admin\Resources\Students\Schemas;
 
-use App\Filament\Admin\Resources\Students\Pages\CreateStudent;
 use App\Filament\Support\AuditReasonField;
 use App\Filament\Support\TranslatableInput;
+use App\Models\Student;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
@@ -67,7 +67,7 @@ class StudentForm
                             ->label(__('Password'))
                             ->password()
                             ->revealable()
-                            ->required(fn ($livewire) => $livewire instanceof CreateStudent)
+                            ->required(fn (?Student $record): bool => $record === null)
                             ->minLength(6)
                             ->same('password_confirmation')
                             ->dehydrated(fn ($state) => filled($state))
@@ -76,7 +76,7 @@ class StudentForm
                             ->label(__('Confirm Password'))
                             ->password()
                             ->revealable()
-                            ->required(fn ($livewire) => $livewire instanceof CreateStudent)
+                            ->required(fn (?Student $record): bool => $record === null)
                             ->minLength(6)
                             ->dehydrated(false),
                     ])

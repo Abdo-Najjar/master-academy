@@ -7,6 +7,7 @@ use App\Models\Section;
 use App\Models\Student;
 use App\Models\Trainer;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -33,7 +34,7 @@ class GradesRecords extends Page implements HasTable
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Operations');
+        return __('Students');
     }
 
     public static function getNavigationLabel(): string
@@ -48,7 +49,7 @@ class GradesRecords extends Page implements HasTable
 
     public static function canAccess(): bool
     {
-        return (auth()->user()?->can('exam.index') ?? false);
+        return auth()->user()?->can('exam.index') ?? false;
     }
 
     public function table(Table $table): Table
@@ -131,7 +132,7 @@ class GradesRecords extends Page implements HasTable
                     }),
             ])
             ->headerActions([
-                \Filament\Actions\Action::make('exportExcel')
+                Action::make('exportExcel')
                     ->label(__('Export to Excel'))
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
@@ -149,7 +150,7 @@ class GradesRecords extends Page implements HasTable
         $rows = $query->with(['student', 'exam.section.subject', 'exam.section.trainer'])->get();
 
         return response()->streamDownload(function () use ($rows): void {
-            $writer = new Writer();
+            $writer = new Writer;
             $writer->openToFile('php://output');
 
             $writer->addRow(Row::fromValues([

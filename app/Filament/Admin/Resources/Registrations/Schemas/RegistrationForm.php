@@ -2,6 +2,9 @@
 
 namespace App\Filament\Admin\Resources\Registrations\Schemas;
 
+use App\Filament\Support\AuditReasonField;
+use App\Filament\Support\EnrollmentPayment;
+use App\Models\ExemptionType;
 use App\Models\Registration;
 use App\Models\Section;
 use App\Models\SectionTime;
@@ -11,9 +14,9 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section as FormSection;
-use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
 
 class RegistrationForm
 {
@@ -109,6 +112,7 @@ class RegistrationForm
                                                     'day' => __(ucfirst((string) $new->day)),
                                                     'time' => substr((string) $other->start_time, 0, 5).' - '.substr((string) $other->end_time, 0, 5),
                                                 ]));
+
                                                 return;
                                             }
                                         }
@@ -138,10 +142,10 @@ class RegistrationForm
                     ->schema([
                         Select::make('exemption_type_id')
                             ->label(__('Exemption Type'))
-                            ->options(fn () => \App\Models\ExemptionType::query()
+                            ->options(fn () => ExemptionType::query()
                                 ->where('is_active', true)
                                 ->get()
-                                ->mapWithKeys(fn (\App\Models\ExemptionType $t) => [
+                                ->mapWithKeys(fn (ExemptionType $t) => [
                                     $t->id => $t->getTranslation('name', app()->getLocale(), false),
                                 ]))
                             ->searchable()
@@ -154,7 +158,7 @@ class RegistrationForm
                                 if (! $state) {
                                     return;
                                 }
-                                $type = \App\Models\ExemptionType::find($state);
+                                $type = ExemptionType::find($state);
                                 $discount = $type ? $type->computeDiscount($due) : 0.0;
                                 if ($discount > 0) {
                                     $set('exemption_amount', $discount);
@@ -203,8 +207,20 @@ class RegistrationForm
                             ->label(__('Note'))
                             ->rows(2)
                             ->columnSpanFull(),
-                        \App\Filament\Support\AuditReasonField::make(),
+                        AuditReasonField::make(),
                     ]),
+
+                // Only on create: an existing registration's money is adjusted
+                // through the wallet actions, not by re-taking a payment here.
+                FormSection::make(__('Payment'))
+                    ->description(__('Money handed over now. It is deposited to the wallet before the section is charged, so the student does not end up owing what they just paid.'))
+                    ->icon('heroicon-o-banknotes')
+                    ->schema(EnrollmentPayment::schema(
+                        fn (Get $get): float => (float) ($get('amount_paid') ?? 0)
+                    ))
+                    ->visibleOn('create')
+                    ->columns(1)
+                    ->columnSpanFull(),
             ]);
     }
 }

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Admin\Resources\Students;
 
-use App\Filament\Admin\Resources\Students\Pages\CreateStudent;
 use App\Filament\Admin\Resources\Students\Pages\EditStudent;
 use App\Filament\Admin\Resources\Students\Pages\ListStudents;
 use App\Filament\Admin\Resources\Students\Pages\ViewStudent;
@@ -31,13 +30,13 @@ class StudentResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Education');
+        return __('Students');
     }
 
     public static function getModelLabel(): string
@@ -53,6 +52,16 @@ class StudentResource extends Resource
     public static function permissionPrefix(): string
     {
         return 'student';
+    }
+
+    /**
+     * Students are only ever created through Quick Enroll, which registers them
+     * in a section and takes the payment in the same step. There is no plain
+     * create page any more, so no create button should offer one.
+     */
+    public static function canCreate(): bool
+    {
+        return false;
     }
 
     public static function form(Schema $schema): Schema
@@ -83,7 +92,6 @@ class StudentResource extends Resource
     {
         return [
             'index' => ListStudents::route('/'),
-            'create' => CreateStudent::route('/create'),
             'view' => ViewStudent::route('/{record}'),
             'edit' => EditStudent::route('/{record}/edit'),
         ];

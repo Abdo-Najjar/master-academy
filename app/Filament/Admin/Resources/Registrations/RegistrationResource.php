@@ -27,13 +27,13 @@ class RegistrationResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'id';
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Operations');
+        return __('Students');
     }
 
     public static function getModelLabel(): string

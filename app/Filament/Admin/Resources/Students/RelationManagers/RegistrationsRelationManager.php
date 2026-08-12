@@ -4,6 +4,8 @@ namespace App\Filament\Admin\Resources\Students\RelationManagers;
 
 use App\Filament\Admin\Resources\Registrations\Schemas\RegistrationForm;
 use App\Filament\Admin\Resources\Registrations\Tables\RegistrationsTable;
+use App\Filament\Support\EnrollmentPayment;
+use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -33,6 +35,17 @@ class RegistrationsRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
-        return RegistrationsTable::configure($table)->recordTitleAttribute('id')->emptyStateHeading(__('No records found'));
+        return RegistrationsTable::configure($table)
+            ->recordTitleAttribute('id')
+            ->emptyStateHeading(__('No records found'))
+            ->headerActions([
+                CreateAction::make()
+                    // The payment has to reach the wallet before the charge
+                    // does, so it is banked here rather than after creation.
+                    ->mutateDataUsing(fn (array $data): array => EnrollmentPayment::collect(
+                        $data,
+                        $this->getOwnerRecord()->getKey(),
+                    )),
+            ]);
     }
 }

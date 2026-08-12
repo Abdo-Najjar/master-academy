@@ -74,6 +74,7 @@ function sectionWithAttendance(): Section
         'status' => 'active',
         'is_active' => true,
         'student_number' => 'STU-SHEET',
+        'phone_number' => '0599000111',
     ]);
 
     Registration::create([
@@ -111,6 +112,74 @@ test('attendance sheet renders the student x date grid for the chosen section', 
         ->assertSee(now()->subDays(3)->format('d/m'))
         ->assertSee(now()->subDays(1)->format('d/m'))
         ->assertSee('50%'); // one present of two recorded days
+});
+
+test('attendance sheet pages 12 sessions at a time and counts each month on its own', function () {
+    $section = Section::create([
+        'name' => 'Long Section',
+        'subject_id' => Subject::create(['name' => 'Chemistry', 'course_type_id' => null])->id,
+        'start_date' => now()->subMonths(3),
+        'end_date' => now()->addMonth(),
+        'price' => 0,
+    ]);
+
+    $student = Student::create([
+        'name' => 'Monthly Student',
+        'username' => 'monthly_'.uniqid(),
+        'password' => 'password',
+        'student_number' => 'STU-MONTH',
+        'phone_number' => '0599123456',
+    ]);
+
+    Registration::create([
+        'student_id' => $student->id,
+        'section_id' => $section->id,
+        'amount_due' => 100,
+        'amount_paid' => 100,
+    ]);
+
+    // 15 lessons: 12 in the first month, 3 in the second. Every lesson of the
+    // first month is present, every lesson of the second is absent.
+    foreach (range(1, 15) as $i) {
+        Attendance::create([
+            'section_id' => $section->id,
+            'student_id' => $student->id,
+            'date' => now()->subDays(40 - $i)->toDateString(),
+            'status' => $i <= 12 ? 'present' : 'absent',
+        ]);
+    }
+
+    $page = new AttendanceRecords;
+    $page->sheetSectionId = $section->id;
+
+    $first = $page->sheet();
+    expect($first['months'])->toBe(2)
+        ->and($first['month'])->toBe(1)
+        ->and($first['dates'])->toHaveCount(12)
+        ->and($first['allDates'])->toBe(15)
+        ->and($first['rows'][0]['counts']['present'])->toBe(12)
+        ->and($first['rows'][0]['counts']['absent'])->toBe(0)
+        ->and($first['rows'][0]['rate'])->toBe(100.0);
+
+    $page->goToMonth(2);
+    $second = $page->sheet();
+
+    expect($second['month'])->toBe(2)
+        ->and($second['dates'])->toHaveCount(3)
+        // The first month's twelve present days must not leak in here.
+        ->and($second['rows'][0]['counts']['present'])->toBe(0)
+        ->and($second['rows'][0]['counts']['absent'])->toBe(3)
+        ->and($second['rows'][0]['rate'])->toBe(0.0);
+});
+
+test('attendance sheet carries the phone number and the financial status', function () {
+    $section = sectionWithAttendance();
+    $page = new AttendanceRecords;
+    $page->sheetSectionId = $section->id;
+    $row = $page->sheet()['rows'][0];
+
+    expect($row['phone'])->toBe('0599000111')
+        ->and($row['financial_status'])->not->toBeNull();
 });
 
 test('attendance sheet only lists dates that actually have attendance', function () {

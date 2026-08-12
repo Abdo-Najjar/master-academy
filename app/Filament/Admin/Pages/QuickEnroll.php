@@ -3,12 +3,16 @@
 namespace App\Filament\Admin\Pages;
 
 use App\Filament\Admin\Resources\Students\StudentResource;
+use App\Filament\Support\EnrollmentPayment;
+use App\Filament\Support\TranslatableInput;
+use App\Models\City;
+use App\Models\ExemptionType;
+use App\Models\Governorate;
 use App\Models\Registration;
 use App\Models\Section;
 use App\Models\SectionTime;
 use App\Models\Student;
 use BackedEnum;
-use Closure;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -19,13 +23,13 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section as FormSection;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Unique;
-use Filament\Schemas\Components\Utilities\Set;
-use Filament\Schemas\Components\Utilities\Get;
 
 class QuickEnroll extends Page implements HasForms
 {
@@ -35,13 +39,13 @@ class QuickEnroll extends Page implements HasForms
 
     protected string $view = 'filament.admin.pages.quick-enroll';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public ?array $data = [];
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Operations');
+        return __('Students');
     }
 
     public static function getNavigationLabel(): string
@@ -56,7 +60,7 @@ class QuickEnroll extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return (auth()->user()?->can('quick-enroll.access') ?? false);
+        return auth()->user()?->can('quick-enroll.access') ?? false;
     }
 
     public function mount(): void
@@ -64,6 +68,8 @@ class QuickEnroll extends Page implements HasForms
         $this->form->fill([
             'is_active' => true,
             'exemption_amount' => 0,
+            'payment_amount' => 0,
+            'payment_date' => now(),
         ]);
     }
 
@@ -76,7 +82,7 @@ class QuickEnroll extends Page implements HasForms
                     ->description(__('Personal and account details for the new student.'))
                     ->icon('heroicon-o-academic-cap')
                     ->schema([
-                        \App\Filament\Support\TranslatableInput::make('name', __('Full Name')),
+                        TranslatableInput::make('name', __('Full Name')),
                         TextInput::make('username')
                             ->label(__('Username'))
                             ->required()
@@ -119,14 +125,14 @@ class QuickEnroll extends Page implements HasForms
                             ->maxLength(255),
                         Select::make('governorate_id')
                             ->label(__('Governorate'))
-                            ->options(\App\Models\Governorate::pluck('name', 'id'))
+                            ->options(Governorate::pluck('name', 'id'))
                             ->searchable()
                             ->preload()
                             ->live()
                             ->afterStateUpdated(fn ($state, callable $set) => $set('city_id', null)),
                         Select::make('city_id')
                             ->label(__('City'))
-                            ->options(fn (callable $get) => \App\Models\City::query()
+                            ->options(fn (callable $get) => City::query()
                                 ->where('governorate_id', $get('governorate_id'))
                                 ->pluck('name', 'id'))
                             ->searchable()
@@ -186,10 +192,10 @@ class QuickEnroll extends Page implements HasForms
 
                                 Select::make('exemption_type_id')
                                     ->label(__('Exemption Type'))
-                                    ->options(fn () => \App\Models\ExemptionType::query()
+                                    ->options(fn () => ExemptionType::query()
                                         ->where('is_active', true)
                                         ->get()
-                                        ->mapWithKeys(fn (\App\Models\ExemptionType $t) => [
+                                        ->mapWithKeys(fn (ExemptionType $t) => [
                                             $t->id => $t->getTranslation('name', app()->getLocale(), false),
                                         ]))
                                     ->searchable()
@@ -201,7 +207,7 @@ class QuickEnroll extends Page implements HasForms
                                         if (! $state) {
                                             return;
                                         }
-                                        $type = \App\Models\ExemptionType::find($state);
+                                        $type = ExemptionType::find($state);
                                         $discount = $type ? $type->computeDiscount($due) : 0.0;
                                         if ($discount > 0) {
                                             $set('exemption_amount', $discount);
@@ -248,8 +254,22 @@ class QuickEnroll extends Page implements HasForms
                     ])
                     ->columns(1)
                     ->columnSpanFull(),
+
+                FormSection::make(__('Payment'))
+                    ->description(__('Money handed over now. It is deposited to the wallet before the sections are charged, so the student does not end up owing what they just paid.'))
+                    ->icon('heroicon-o-banknotes')
+                    ->schema(EnrollmentPayment::schema(fn (Get $get): float => self::totalToPay($get)))
+                    ->columns(1)
+                    ->columnSpanFull(),
             ])
             ->statePath('data');
+    }
+
+    /** Sum of what the picked sections will charge the wallet. */
+    protected static function totalToPay(Get $get): float
+    {
+        return collect($get('registrations') ?? [])
+            ->sum(fn ($row): float => (float) ($row['amount_paid'] ?? 0));
     }
 
     public function save(): void
@@ -287,6 +307,13 @@ class QuickEnroll extends Page implements HasForms
                     'city_id' => $data['city_id'] ?? null,
                     'is_active' => true,
                 ]);
+
+                // Deposit BEFORE the sections are charged. RegistrationObserver
+                // reads the wallet balance as it stands *before* each charge to
+                // decide how much of it is really funded (and therefore how much
+                // of the trainer's share to credit) — depositing afterwards
+                // would leave every registration looking unpaid.
+                EnrollmentPayment::collect($data, $student->id);
 
                 $sectionIds = array_column($registrationRows, 'section_id');
                 if (count($sectionIds) !== count(array_unique($sectionIds))) {
@@ -378,13 +405,22 @@ class QuickEnroll extends Page implements HasForms
             return;
         }
 
+        $body = __('Student :name has been created and registered in: :sections', [
+            'name' => is_array($student->name) ? ($student->name[app()->getLocale()] ?? reset($student->name)) : $student->name,
+            'sections' => implode(', ', $sectionNames),
+        ]);
+
+        if ((float) ($data['payment_amount'] ?? 0) > 0) {
+            $body .= ' — '.__('Paid :amount, wallet balance is now :balance', [
+                'amount' => number_format((float) $data['payment_amount'], 2).' ₪',
+                'balance' => number_format((float) $student->fresh()->balanceFloat, 2).' ₪',
+            ]);
+        }
+
         Notification::make()
             ->success()
             ->title(__('Student enrolled successfully'))
-            ->body(__('Student :name has been created and registered in: :sections', [
-                'name' => is_array($student->name) ? ($student->name[app()->getLocale()] ?? reset($student->name)) : $student->name,
-                'sections' => implode(', ', $sectionNames),
-            ]))
+            ->body($body)
             ->send();
 
         $this->redirect(StudentResource::getUrl('view', ['record' => $student->id]));

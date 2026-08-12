@@ -95,6 +95,24 @@
         .ma-as-table tfoot td.ma-as-name{z-index:3;background:var(--ma-as-foot);color:var(--ma-as-muted);}
         .ma-as-foot-label{font-weight:600;}
 
+        /* Month pager: the centre counts 12 lessons as a month. */
+        .ma-as-months{display:flex;flex-wrap:wrap;gap:.375rem;align-items:center;margin-bottom:.875rem;}
+        .ma-as-month{padding:.375rem .75rem;border-radius:.5rem;font-size:.75rem;font-weight:600;border:1px solid var(--ma-as-border);background:transparent;color:var(--ma-as-muted);cursor:pointer;transition:background-color .15s,color .15s;}
+        .ma-as-month:hover{background:var(--ma-as-hover);color:var(--ma-as-text);}
+        .ma-as-month.is-active{background:var(--primary-600);border-color:var(--primary-600);color:#fff;}
+        .ma-as-month.is-active:hover{background:var(--primary-600);color:#fff;}
+        .ma-as-months__hint{font-size:.6875rem;color:var(--ma-as-muted);margin-inline-start:.25rem;}
+
+        .ma-as-phone{font-variant-numeric:tabular-nums;direction:ltr;}
+        .ma-as-fin{display:inline-block;padding:.125rem .5rem;border-radius:9999px;font-size:.625rem;font-weight:700;white-space:nowrap;}
+        .ma-as-fin--ok{background:rgba(34,197,94,.16);color:rgb(21,128,61);}
+        .ma-as-fin--warning{background:rgba(245,158,11,.18);color:rgb(180,83,9);}
+        .ma-as-fin--due{background:rgba(245,158,11,.18);color:rgb(180,83,9);}
+        .ma-as-fin--overdue{background:rgba(239,68,68,.16);color:rgb(185,28,28);}
+        .dark .ma-as-fin--ok{color:rgb(134,239,172);}
+        .dark .ma-as-fin--warning,.dark .ma-as-fin--due{color:rgb(253,224,71);}
+        .dark .ma-as-fin--overdue{color:rgb(252,165,165);}
+
         .ma-as-legend{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.875rem;font-size:.75rem;color:var(--ma-as-muted);}
         .ma-as-legend span.ma-as-legend__item{display:inline-flex;align-items:center;gap:.4375rem;padding:.25rem .625rem;border-radius:9999px;border:1px solid var(--ma-as-border);}
         .ma-as-empty{text-align:center;color:var(--ma-as-muted);padding:1rem 0;}
@@ -158,7 +176,7 @@
                         <span>{{ __('Trainer') }}: <strong>{{ $section->trainer->getTranslation('name', app()->getLocale(), false) }}</strong></span>
                     @endif
                     <span>{{ __('Students') }}: <strong>{{ count($sheet['rows']) }}</strong></span>
-                    <span>{{ __('Sessions') }}: <strong>{{ count($sheet['dates']) }}</strong></span>
+                    <span>{{ __('Sessions') }}: <strong>{{ count($sheet['dates']) }}</strong> / {{ $sheet['allDates'] }}</span>
                 </div>
             </x-slot>
 
@@ -169,11 +187,27 @@
                 </x-filament::button>
             </x-slot>
 
+            @if ($sheet['months'] > 1)
+                <div class="ma-as-months">
+                    @for ($m = 1; $m <= $sheet['months']; $m++)
+                        <button type="button" wire:click="goToMonth({{ $m }})"
+                                class="ma-as-month @if ($sheet['month'] === $m) is-active @endif">
+                            {{ __('Month :number', ['number' => $m]) }}
+                        </button>
+                    @endfor
+                    <span class="ma-as-months__hint">
+                        {{ __('Every :count sessions count as one month.', ['count' => \App\Filament\Admin\Pages\AttendanceRecords::SESSIONS_PER_MONTH]) }}
+                    </span>
+                </div>
+            @endif
+
             <div class="ma-as-scroll">
                 <table class="ma-as-table">
                     <thead>
                         <tr>
                             <th class="ma-as-name">{{ __('Student') }}</th>
+                            <th>{{ __('Phone') }}</th>
+                            <th>{{ __('Financial Status') }}</th>
                             @foreach ($sheet['dates'] as $date)
                                 <th>
                                     <div class="ma-as-date">{{ \Carbon\Carbon::parse($date)->format('d/m') }}</div>
@@ -195,6 +229,18 @@
                                     <span class="ma-as-student">{{ $student->getTranslation('name', app()->getLocale(), false) }}</span>
                                     @if ($student->student_number)
                                         <span class="ma-as-sub">({{ $student->student_number }})</span>
+                                    @endif
+                                </td>
+
+                                <td class="ma-as-phone">{{ $row['phone'] ?: '—' }}</td>
+
+                                <td>
+                                    @if ($row['financial_status'])
+                                        <span class="ma-as-fin ma-as-fin--{{ $row['financial_status'] }}">
+                                            {{ \App\Filament\Admin\Pages\AttendanceRecords::financialStatusLabels()[$row['financial_status']] ?? $row['financial_status'] }}
+                                        </span>
+                                    @else
+                                        —
                                     @endif
                                 </td>
 
@@ -228,6 +274,8 @@
                     <tfoot>
                         <tr>
                             <td class="ma-as-name ma-as-foot-label">{{ __('Present') }}</td>
+                            {{-- Keeps the footer aligned with the phone and financial-status columns. --}}
+                            <td colspan="2"></td>
                             @foreach ($sheet['dates'] as $date)
                                 <td class="ma-as-total is-on--present">
                                     {{ $sheet['columnTotals'][$date]['present'] + $sheet['columnTotals'][$date]['late'] }}

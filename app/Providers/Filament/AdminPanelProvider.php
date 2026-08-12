@@ -49,6 +49,10 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')
             ->navigationGroups([
                 NavigationGroup::make()->label(__('Education'))->collapsed(false),
+                // Everything that belongs to a student — their record, their
+                // enrolments, attendance, grades and certificates — sits in one
+                // place instead of being scattered across Education/Operations.
+                NavigationGroup::make()->label(__('Students'))->collapsed(false),
                 NavigationGroup::make()->label(__('Operations'))->collapsed(false),
                 NavigationGroup::make()->label(__('Reports'))->collapsed(false),
                 NavigationGroup::make()->label(__('Finance'))->collapsed(true),
