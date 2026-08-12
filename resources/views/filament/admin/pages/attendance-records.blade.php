@@ -31,7 +31,7 @@
 
         .ma-as-scroll{overflow:auto;max-height:75vh;border:1px solid var(--ma-as-border);border-radius:.75rem;background:var(--ma-as-surface);}
         .ma-as-table{border-collapse:separate;border-spacing:0;font-size:.75rem;width:100%;color:var(--ma-as-text);}
-        .ma-as-table th,.ma-as-table td{padding:.5rem;text-align:center;white-space:nowrap;border-bottom:1px solid var(--ma-as-line);}
+        .ma-as-table th,.ma-as-table td{padding:.5rem;text-align:center;white-space:nowrap;border-bottom:1px solid var(--ma-as-line);vertical-align:middle;}
         .ma-as-table tbody tr:last-child td{border-bottom:0;}
 
         /* Header: quiet surface + a single accent rule, instead of a solid red block. */
@@ -43,7 +43,13 @@
             box-shadow:inset 0 -2px 0 0 var(--primary-500);
         }
         .ma-as-table thead th.ma-as-name{z-index:3;background:var(--ma-as-head);}
-        .ma-as-date{writing-mode:vertical-rl;transform:rotate(180deg);padding:.625rem .125rem;font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+        /* Dates read straight across like every other heading. They used to be
+           rotated 90° to keep a 30-column sheet narrow, but the sheet is paged
+           to 12 sessions now, so there is room — and rotated text sat at a
+           different height from the plain headings next to it. */
+        .ma-as-date{display:block;font-variant-numeric:tabular-nums;letter-spacing:.01em;white-space:nowrap;line-height:1.25;}
+        .ma-as-date__day{font-weight:700;}
+        .ma-as-date__month{font-size:.625rem;font-weight:500;opacity:.75;}
 
         /* Sticky roster column: inherits the row's own background so striping and
            hover stay continuous while scrolling sideways. */
@@ -209,8 +215,12 @@
                             <th>{{ __('Phone') }}</th>
                             <th>{{ __('Financial Status') }}</th>
                             @foreach ($sheet['dates'] as $date)
-                                <th>
-                                    <div class="ma-as-date">{{ \Carbon\Carbon::parse($date)->format('d/m') }}</div>
+                                @php $day = \Carbon\Carbon::parse($date); @endphp
+                                <th title="{{ $day->translatedFormat('l, d M Y') }}">
+                                    <span class="ma-as-date">
+                                        <span class="ma-as-date__day">{{ $day->format('d/m') }}</span>
+                                        <span class="ma-as-date__month">{{ $day->translatedFormat('D') }}</span>
+                                    </span>
                                 </th>
                             @endforeach
                             <th class="ma-as-sep">{{ __('Present') }}</th>
