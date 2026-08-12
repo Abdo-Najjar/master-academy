@@ -1,5 +1,6 @@
 <?php
 
+use App\Filament\Admin\Resources\Registrations\Actions\TransferSectionAction;
 use App\Models\Registration;
 use App\Models\Section;
 use App\Models\SectionSession;
@@ -97,6 +98,40 @@ it('refuses to transfer into a section the student is already in', function () {
 
     expect(fn () => StudentTransferService::transfer($this->registration->fresh(), $this->to->id))
         ->toThrow(ValidationException::class);
+});
+
+it('offers only same-course sections in the transfer picker', function () {
+    $otherSubject = Subject::create(['name' => ['ar' => 'مادة أخرى', 'en' => 'Other Subject']]);
+
+    $otherCourseSection = Section::create([
+        'name' => 'شعبة دورة أخرى',
+        'subject_id' => $otherSubject->id,
+        'trainer_id' => $this->trainer->id,
+        'price' => 0,
+    ]);
+
+    $sameCourseSection = Section::create([
+        'name' => 'شعبة ثالثة',
+        'subject_id' => $this->subject->id,
+        'trainer_id' => $this->trainer->id,
+        'price' => 0,
+    ]);
+
+    $options = TransferSectionAction::targetSectionOptions($this->registration->fresh());
+
+    expect(array_keys($options))
+        ->toContain($this->to->id)
+        ->toContain($sameCourseSection->id)
+        // The section the student is already in, and anything from another
+        // course, must never be offered.
+        ->not->toContain($this->from->id)
+        ->not->toContain($otherCourseSection->id);
+});
+
+it('offers nothing when the current section has been deleted', function () {
+    $this->from->delete();
+
+    expect(TransferSectionAction::targetSectionOptions($this->registration->fresh()))->toBe([]);
 });
 
 it('refuses to transfer into a section of a different course', function () {

@@ -44,21 +44,9 @@ class TransferSectionAction
                             'paid' => $record->paid_through_session,
                         ])
                         : __('Full course fee')),
-                // A transfer moves a student between groups of the SAME course —
-                // offering sections of other courses would silently change what
-                // they are enrolled in while carrying their paid sessions over.
                 Select::make('to_section_id')
                     ->label(__('New Section'))
-                    ->options(fn (): array => Section::query()
-                        ->where('id', '!=', $record->section_id)
-                        ->where('subject_id', $record->section?->subject_id)
-                        ->with('branch')
-                        ->orderByDesc('id')
-                        ->get()
-                        ->mapWithKeys(fn (Section $s) => [
-                            $s->id => $s->name.($s->branch ? ' — '.$s->branch->name : ''),
-                        ])
-                        ->all())
+                    ->options(fn (): array => self::targetSectionOptions($record))
                     ->helperText(__('Only sections of the same course are listed.'))
                     ->searchable()
                     ->required(),
@@ -90,5 +78,43 @@ class TransferSectionAction
                     ->title(__('Student transferred successfully'))
                     ->send();
             });
+    }
+
+    /**
+     * Sections the student may be moved into.
+     *
+     * A transfer moves a student between groups of the SAME course — offering
+     * sections of another course would silently change what they are enrolled
+     * in while carrying their paid sessions over. Sections they are already
+     * registered in are dropped too, so the picker cannot offer a choice the
+     * service is going to reject.
+     *
+     * Fails closed: if the current section is gone, nothing is offered.
+     *
+     * @return array<int, string> section id => "name — branch"
+     */
+    public static function targetSectionOptions(Registration $registration): array
+    {
+        $subjectId = $registration->section?->subject_id;
+
+        if (! $subjectId) {
+            return [];
+        }
+
+        $alreadyEnrolled = Registration::query()
+            ->where('student_id', $registration->student_id)
+            ->pluck('section_id')
+            ->all();
+
+        return Section::query()
+            ->where('subject_id', $subjectId)
+            ->whereNotIn('id', $alreadyEnrolled)
+            ->with('branch')
+            ->orderByDesc('id')
+            ->get()
+            ->mapWithKeys(fn (Section $s): array => [
+                $s->id => $s->name.($s->branch ? ' — '.$s->branch->name : ''),
+            ])
+            ->all();
     }
 }
