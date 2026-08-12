@@ -48,7 +48,7 @@ class Reports extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return (auth()->user()?->can('reports.view') ?? false);
+        return auth()->user()?->can('reports.view') ?? false;
     }
 
     public function mount(): void
@@ -103,6 +103,7 @@ class Reports extends Page implements HasForms
         $trainerId = $this->filters['trainer_id'] ?? null;
 
         $registrations = Registration::query()
+            ->reportable()
             ->whereBetween('created_at', [$from, $to])
             ->when($trainerId, fn ($q) => $q->whereHas('section', fn ($s) => $s->where('trainer_id', $trainerId)));
 
@@ -117,6 +118,7 @@ class Reports extends Page implements HasForms
             ->count();
 
         $attendance = Attendance::query()
+            ->reportable()
             ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
             ->when($trainerId, fn ($q) => $q->whereHas('section', fn ($s) => $s->where('trainer_id', $trainerId)))
             ->selectRaw('status, COUNT(*) as total')
@@ -151,15 +153,17 @@ class Reports extends Page implements HasForms
     {
         [$from, $to] = $this->range();
 
+        // These are hand-written joins, so Eloquent's soft-delete scope does not
+        // reach the joined `registrations` table — deleted registrations have to
+        // be excluded explicitly or they keep counting toward trainer revenue.
+        $liveRegistrations = fn ($q) => $q
+            ->join('registrations', 'sections.id', '=', 'registrations.section_id')
+            ->whereNull('registrations.deleted_at')
+            ->whereBetween('registrations.created_at', [$from, $to]);
+
         return Trainer::query()
-            ->withCount(['sections as registrations_count' => function ($q) use ($from, $to) {
-                $q->join('registrations', 'sections.id', '=', 'registrations.section_id')
-                    ->whereBetween('registrations.created_at', [$from, $to]);
-            }])
-            ->withSum(['sections as revenue' => function ($q) use ($from, $to) {
-                $q->join('registrations', 'sections.id', '=', 'registrations.section_id')
-                    ->whereBetween('registrations.created_at', [$from, $to]);
-            }], 'registrations.funded_amount')
+            ->withCount(['sections as registrations_count' => $liveRegistrations])
+            ->withSum(['sections as revenue' => $liveRegistrations], 'registrations.funded_amount')
             ->orderByDesc('revenue')
             ->limit(5)
             ->get();
@@ -172,9 +176,16 @@ class Reports extends Page implements HasForms
     {
         [$from, $to] = $this->range();
 
+        // Raw query builder: no model, therefore no soft-delete scope at all.
+        // Every joined table needs its own `deleted_at` guard.
         return \DB::table('registrations')
             ->join('sections', 'registrations.section_id', '=', 'sections.id')
-            ->leftJoin('subjects', 'sections.subject_id', '=', 'subjects.id')
+            ->leftJoin('subjects', function ($join): void {
+                $join->on('sections.subject_id', '=', 'subjects.id')
+                    ->whereNull('subjects.deleted_at');
+            })
+            ->whereNull('registrations.deleted_at')
+            ->whereNull('sections.deleted_at')
             ->whereBetween('registrations.created_at', [$from, $to])
             ->selectRaw('COALESCE(subjects.name, ?) as subject_name, COUNT(*) as total, SUM(registrations.funded_amount) as revenue', [__('Not set')])
             ->groupBy('subject_name')
@@ -187,7 +198,7 @@ class Reports extends Page implements HasForms
     public function getDueStudentsProperty()
     {
         return Registration::query()
-            ->whereNull('registrations.deleted_at')
+            ->reportable()
             ->whereIn('financial_status', ['overdue', 'due'])
             ->with(['student', 'section.subject'])
             ->orderByRaw("CASE financial_status WHEN 'overdue' THEN 0 WHEN 'due' THEN 1 ELSE 2 END")

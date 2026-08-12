@@ -49,12 +49,12 @@ class TrainerPayoutService
         if ($trainer && $trainerDelta > 0) {
             $trainer->depositFloat($trainerDelta, [
                 'description' => __('Trainer share from :student — :name', ['student' => $studentName, 'name' => $target]),
-                'note' => __('Registration #:id — :student', ['id' => $registration->id, 'student' => $studentName]),
+                'note' => $registration->contextLabel(),
             ]);
         } elseif ($trainer && $trainerDelta < 0) {
             $trainer->forceWithdrawFloat(abs($trainerDelta), [
                 'description' => __('Trainer share adjustment from :student — :name', ['student' => $studentName, 'name' => $target]),
-                'note' => __('Registration #:id — :student', ['id' => $registration->id, 'student' => $studentName]),
+                'note' => $registration->contextLabel(),
             ]);
         }
 

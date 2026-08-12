@@ -9,6 +9,7 @@ use App\Filament\Admin\Resources\Registrations\Pages\ViewRegistration;
 use App\Filament\Admin\Resources\Registrations\Schemas\RegistrationForm;
 use App\Filament\Admin\Resources\Registrations\Schemas\RegistrationInfolist;
 use App\Filament\Admin\Resources\Registrations\Tables\RegistrationsTable;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\Registration;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -20,6 +21,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class RegistrationResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = Registration::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
@@ -43,9 +46,9 @@ class RegistrationResource extends Resource
         return __('Registrations');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('registration.index') ?? false);
+        return 'registration';
     }
 
     public static function form(Schema $schema): Schema

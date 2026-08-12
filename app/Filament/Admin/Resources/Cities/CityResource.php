@@ -3,7 +3,9 @@
 namespace App\Filament\Admin\Resources\Cities;
 
 use App\Filament\Admin\Resources\Cities\Pages\ManageCities;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Filament\Support\DeletionGuard;
+use App\Filament\Support\TranslatableInput;
 use App\Models\City;
 use BackedEnum;
 use Filament\Actions\ActionGroup;
@@ -15,9 +17,7 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
-use Illuminate\Support\Collection;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -28,9 +28,12 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Collection;
 
 class CityResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = City::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
@@ -54,9 +57,9 @@ class CityResource extends Resource
         return __('Cities');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('city.index') ?? false);
+        return 'city';
     }
 
     public static function form(Schema $schema): Schema
@@ -65,7 +68,7 @@ class CityResource extends Resource
             ->components([
                 Section::make('')
                     ->schema([
-                        \App\Filament\Support\TranslatableInput::make('name', __('Name')),
+                        TranslatableInput::make('name', __('Name')),
                         Select::make('governorate_id')
                             ->label(__('Governorate'))
                             ->relationship('governorate', 'name')

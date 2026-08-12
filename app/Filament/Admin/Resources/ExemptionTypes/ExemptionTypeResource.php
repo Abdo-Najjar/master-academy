@@ -3,7 +3,9 @@
 namespace App\Filament\Admin\Resources\ExemptionTypes;
 
 use App\Filament\Admin\Resources\ExemptionTypes\Pages\ManageExemptionTypes;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Filament\Support\DeletionGuard;
+use App\Filament\Support\TranslatableInput;
 use App\Models\ExemptionType;
 use BackedEnum;
 use Filament\Actions\ActionGroup;
@@ -15,7 +17,6 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
-use Illuminate\Support\Collection;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -30,9 +31,12 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Collection;
 
 class ExemptionTypeResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = ExemptionType::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptPercent;
@@ -56,9 +60,9 @@ class ExemptionTypeResource extends Resource
         return __('Exemption Types');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('exemption_type.index') ?? false);
+        return 'exemption_type';
     }
 
     public static function form(Schema $schema): Schema
@@ -67,7 +71,7 @@ class ExemptionTypeResource extends Resource
             ->components([
                 Section::make('')
                     ->schema([
-                        \App\Filament\Support\TranslatableInput::make('name', __('Name')),
+                        TranslatableInput::make('name', __('Name')),
                         Toggle::make('is_active')
                             ->label(__('Active'))
                             ->default(true),

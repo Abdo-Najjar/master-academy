@@ -59,15 +59,15 @@ class RegistrationObserver
             $student = $registration->student;
 
             $amountPaid = (float) $registration->amount_paid;
-            $studentName = $student?->getTranslation('name', app()->getLocale(), false) ?? '#'.$registration->student_id;
             $balanceBefore = $student ? $student->balanceFloat : 0.0;
 
             if ($student && $amountPaid > 0) {
                 $student->forceWithdrawFloat($amountPaid, [
-                    'description' => __('Charge for registration: :name', [
-                        'name' => $registration->section?->name ?? '#'.$registration->section_id,
+                    'description' => __('Charge for :student — :name', [
+                        'student' => $registration->studentLabel(),
+                        'name' => $registration->sectionLabel(),
                     ]),
-                    'note' => __('Registration #:id — :student', ['id' => $registration->id, 'student' => $studentName]),
+                    'note' => $registration->contextLabel(),
                     'payment_type_id' => $registration->payment_type_id,
                 ]);
             }
@@ -108,19 +108,21 @@ class RegistrationObserver
                 if ($diff > 0) {
                     $balanceBefore = $student->balanceFloat;
                     $student->forceWithdrawFloat($diff, [
-                        'description' => __('Additional charge for registration: :name', [
-                            'name' => $registration->section?->name ?? '#'.$registration->section_id,
+                        'description' => __('Additional charge for :student — :name', [
+                            'student' => $registration->studentLabel(),
+                            'name' => $registration->sectionLabel(),
                         ]),
-                        'note' => __('Registration #:id', ['id' => $registration->id]),
+                        'note' => $registration->contextLabel(),
                         'payment_type_id' => $registration->payment_type_id,
                     ]);
                     $targetFunded += max(0.0, min($diff, $balanceBefore));
                 } elseif ($diff < 0) {
                     $student->depositFloat(abs($diff), [
-                        'description' => __('Adjustment for registration: :name', [
-                            'name' => $registration->section?->name ?? '#'.$registration->section_id,
+                        'description' => __('Adjustment for :student — :name', [
+                            'student' => $registration->studentLabel(),
+                            'name' => $registration->sectionLabel(),
                         ]),
-                        'note' => __('Registration #:id', ['id' => $registration->id]),
+                        'note' => $registration->contextLabel(),
                     ]);
                 }
             }

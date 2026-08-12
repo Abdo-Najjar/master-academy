@@ -6,6 +6,7 @@ use App\Models\Registration;
 use App\Models\Section;
 use App\Models\SectionSession;
 use App\Models\Student;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -91,7 +92,7 @@ class SessionBillingService
      * per-session pricing, not paused, and belonging to a student who is not
      * suspended.
      *
-     * @return \Illuminate\Support\Collection<int, Registration>
+     * @return Collection<int, Registration>
      */
     public static function countableRegistrations(int $sectionId)
     {
@@ -203,7 +204,7 @@ class SessionBillingService
      * their own and never touch the regular counter.
      *
      * @param  array<int, int>  $studentIds
-     * @return int  number of students charged
+     * @return int number of students charged
      */
     public static function chargePrivateSession(SectionSession $session, array $studentIds): int
     {
@@ -211,25 +212,37 @@ class SessionBillingService
             return 0;
         }
 
-        $session->loadMissing('section.trainer');
+        $session->loadMissing(['section.trainer', 'section.subject', 'section.branch']);
         $trainer = $session->section?->trainer;
         $fee = (float) $session->fee;
         $rate = $session->effectiveTrainerRate();
         $trainerShare = round($fee * $rate / 100, 2);
         $charged = 0;
 
-        DB::transaction(function () use ($session, $studentIds, $fee, $trainerShare, $trainer, &$charged): void {
+        // Spell out date, course, section and branch, so the wallet statement
+        // says exactly which lesson the money was for.
+        $locale = app()->getLocale();
+        $sessionLabel = collect([
+            __('Private Session').' — '.$session->date?->toDateString(),
+            $session->section?->subject?->getTranslation('name', $locale, false)
+                ? __('Course').': '.$session->section->subject->getTranslation('name', $locale, false)
+                : null,
+            $session->section?->name ? __('Section').': '.$session->section->name : null,
+            $session->section?->branch?->name ? __('Branch').': '.$session->section->branch->name : null,
+        ])->filter()->implode(' · ');
+
+        DB::transaction(function () use ($session, $studentIds, $fee, $trainerShare, $trainer, $sessionLabel, &$charged): void {
             foreach (Student::query()->whereIn('id', $studentIds)->get() as $student) {
                 $student->forceWithdrawFloat($fee, [
                     'description' => __('Private session fee: :name', ['name' => $session->section?->name ?? '#'.$session->section_id]),
-                    'note' => __('Private session on :date', ['date' => $session->date?->toDateString()]),
+                    'note' => $sessionLabel,
                     'section_session_id' => $session->id,
                 ]);
 
                 if ($trainer && $trainerShare > 0) {
                     $trainer->depositFloat($trainerShare, [
                         'description' => __('Trainer share from private session: :name', ['name' => $session->section?->name ?? '#'.$session->section_id]),
-                        'note' => __('Private session on :date', ['date' => $session->date?->toDateString()]),
+                        'note' => $sessionLabel,
                         'section_session_id' => $session->id,
                     ]);
                 }

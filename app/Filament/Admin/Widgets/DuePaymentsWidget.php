@@ -24,7 +24,7 @@ class DuePaymentsWidget extends BaseWidget
             ->heading(__('Students with Due Payments'))
             ->query(
                 Registration::query()
-                    ->whereNull('deleted_at')
+                    ->reportable()
                     ->whereIn('financial_status', ['due', 'overdue', 'warning'])
                     ->with(['student', 'section.subject', 'section.branch'])
                     ->orderByRaw("CASE financial_status WHEN 'overdue' THEN 0 WHEN 'due' THEN 1 WHEN 'warning' THEN 2 ELSE 3 END")

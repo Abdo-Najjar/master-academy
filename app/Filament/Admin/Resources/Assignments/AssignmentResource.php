@@ -10,6 +10,7 @@ use App\Filament\Admin\Resources\Assignments\RelationManagers\SubmissionsRelatio
 use App\Filament\Admin\Resources\Assignments\Schemas\AssignmentForm;
 use App\Filament\Admin\Resources\Assignments\Schemas\AssignmentInfolist;
 use App\Filament\Admin\Resources\Assignments\Tables\AssignmentsTable;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\Assignment;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use Filament\Tables\Table;
 
 class AssignmentResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = Assignment::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCheck;
@@ -42,9 +45,9 @@ class AssignmentResource extends Resource
         return __('Assignments');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('assignment.index') ?? false);
+        return 'assignment';
     }
 
     public static function form(Schema $schema): Schema

@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Rooms;
 
 use App\Filament\Admin\Resources\Rooms\Pages\ManageRooms;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Filament\Support\DeletionGuard;
 use App\Models\Room;
 use BackedEnum;
@@ -15,7 +16,6 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
-use Illuminate\Support\Collection;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -27,9 +27,12 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Collection;
 
 class RoomResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = Room::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHomeModern;
@@ -53,9 +56,9 @@ class RoomResource extends Resource
         return __('Rooms');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('room.index') ?? false);
+        return 'room';
     }
 
     public static function form(Schema $schema): Schema

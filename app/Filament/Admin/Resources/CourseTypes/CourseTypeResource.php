@@ -6,7 +6,9 @@ use App\Filament\Admin\Resources\CourseTypes\Pages\ManageCourseTypes;
 use App\Filament\Admin\Resources\CourseTypes\Pages\ViewCourseType;
 use App\Filament\Admin\Resources\CourseTypes\RelationManagers\SubjectsRelationManager;
 use App\Filament\Admin\Resources\CourseTypes\Schemas\CourseTypeInfolist;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Filament\Support\DeletionGuard;
+use App\Filament\Support\TranslatableInput;
 use App\Models\CourseType;
 use BackedEnum;
 use Filament\Actions\ActionGroup;
@@ -32,6 +34,8 @@ use Illuminate\Support\Collection;
 
 class CourseTypeResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = CourseType::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
@@ -55,9 +59,9 @@ class CourseTypeResource extends Resource
         return __('Course Types');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('course_type.index') ?? false);
+        return 'course_type';
     }
 
     public static function form(Schema $schema): Schema
@@ -66,7 +70,7 @@ class CourseTypeResource extends Resource
             ->components([
                 Section::make('')
                     ->schema([
-                        \App\Filament\Support\TranslatableInput::make('name', __('Name')),
+                        TranslatableInput::make('name', __('Name')),
                     ])
                     ->columns(1)
                     ->columnSpanFull(),

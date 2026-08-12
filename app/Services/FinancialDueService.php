@@ -18,7 +18,9 @@ class FinancialDueService
      */
     public static function outstandingAmount(?Builder $query = null): float
     {
-        $query ??= Registration::query()->whereNull('deleted_at');
+        // `reportable()` also drops registrations whose student or section was
+        // soft-deleted — money owed on a removed record is not owed at all.
+        $query ??= Registration::query()->reportable();
 
         return (float) $query->get(['amount_paid', 'funded_amount'])->sum(
             fn (Registration $registration) => max(0.0, (float) $registration->amount_paid - (float) $registration->funded_amount)

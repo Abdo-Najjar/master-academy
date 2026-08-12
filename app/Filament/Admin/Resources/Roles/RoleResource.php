@@ -8,6 +8,7 @@ use App\Filament\Admin\Resources\Roles\Pages\ListRoles;
 use App\Filament\Admin\Resources\Roles\RelationManagers\UsersRelationManager;
 use App\Filament\Admin\Resources\Roles\Schemas\RoleForm;
 use App\Filament\Admin\Resources\Roles\Tables\RolesTable;
+use App\Filament\Support\AuthorizesResourceActions;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -17,6 +18,8 @@ use Spatie\Permission\Models\Role;
 
 class RoleResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = Role::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLockClosed;
@@ -45,9 +48,9 @@ class RoleResource extends Resource
         return __('Roles & Permissions');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return auth()->user()?->can('role.index') ?? false;
+        return 'role';
     }
 
     public static function form(Schema $schema): Schema

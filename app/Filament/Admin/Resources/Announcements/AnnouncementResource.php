@@ -7,6 +7,7 @@ use App\Filament\Admin\Resources\Announcements\Pages\EditAnnouncement;
 use App\Filament\Admin\Resources\Announcements\Pages\ListAnnouncements;
 use App\Filament\Admin\Resources\Announcements\Schemas\AnnouncementForm;
 use App\Filament\Admin\Resources\Announcements\Tables\AnnouncementsTable;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\Announcement;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -16,6 +17,8 @@ use Filament\Tables\Table;
 
 class AnnouncementResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = Announcement::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMegaphone;
@@ -39,9 +42,9 @@ class AnnouncementResource extends Resource
         return __('Announcements');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('announcement.index') ?? false);
+        return 'announcement';
     }
 
     public static function form(Schema $schema): Schema

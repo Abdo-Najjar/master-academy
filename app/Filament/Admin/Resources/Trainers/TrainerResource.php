@@ -6,11 +6,15 @@ use App\Filament\Admin\Resources\Trainers\Pages\CreateTrainer;
 use App\Filament\Admin\Resources\Trainers\Pages\EditTrainer;
 use App\Filament\Admin\Resources\Trainers\Pages\ListTrainers;
 use App\Filament\Admin\Resources\Trainers\Pages\ViewTrainer;
+use App\Filament\Admin\Resources\Trainers\RelationManagers\AssignmentsRelationManager;
+use App\Filament\Admin\Resources\Trainers\RelationManagers\ExamsRelationManager;
 use App\Filament\Admin\Resources\Trainers\RelationManagers\SectionsRelationManager;
 use App\Filament\Admin\Resources\Trainers\RelationManagers\TransactionsRelationManager;
 use App\Filament\Admin\Resources\Trainers\Schemas\TrainerForm;
 use App\Filament\Admin\Resources\Trainers\Schemas\TrainerInfolist;
 use App\Filament\Admin\Resources\Trainers\Tables\TrainersTable;
+use App\Filament\Admin\Resources\Users\RelationManagers\LoginActivitiesRelationManager;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\Trainer;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -18,10 +22,13 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TrainerResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = Trainer::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
@@ -45,9 +52,9 @@ class TrainerResource extends Resource
         return __('Trainers');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('trainer.index') ?? false);
+        return 'trainer';
     }
 
     public static function form(Schema $schema): Schema
@@ -69,10 +76,10 @@ class TrainerResource extends Resource
     {
         return [
             SectionsRelationManager::class,
-            \App\Filament\Admin\Resources\Trainers\RelationManagers\ExamsRelationManager::class,
-            \App\Filament\Admin\Resources\Trainers\RelationManagers\AssignmentsRelationManager::class,
+            ExamsRelationManager::class,
+            AssignmentsRelationManager::class,
             TransactionsRelationManager::class,
-            \App\Filament\Admin\Resources\Users\RelationManagers\LoginActivitiesRelationManager::class,
+            LoginActivitiesRelationManager::class,
         ];
     }
 
@@ -97,7 +104,7 @@ class TrainerResource extends Resource
         return ['trainer_number', 'username', 'ssn', 'email', 'phone_number', 'whatsapp_number', 'name'];
     }
 
-    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    public static function getGlobalSearchResultDetails(Model $record): array
     {
         return array_filter([
             __('Trainer Number') => $record->trainer_number,

@@ -11,6 +11,8 @@ use App\Filament\Admin\Resources\Students\RelationManagers\TransactionsRelationM
 use App\Filament\Admin\Resources\Students\Schemas\StudentForm;
 use App\Filament\Admin\Resources\Students\Schemas\StudentInfolist;
 use App\Filament\Admin\Resources\Students\Tables\StudentsTable;
+use App\Filament\Admin\Resources\Users\RelationManagers\LoginActivitiesRelationManager;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\Student;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -18,10 +20,13 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class StudentResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = Student::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
@@ -45,9 +50,9 @@ class StudentResource extends Resource
         return __('Students');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('student.index') ?? false);
+        return 'student';
     }
 
     public static function form(Schema $schema): Schema
@@ -70,7 +75,7 @@ class StudentResource extends Resource
         return [
             RegistrationsRelationManager::class,
             TransactionsRelationManager::class,
-            \App\Filament\Admin\Resources\Users\RelationManagers\LoginActivitiesRelationManager::class,
+            LoginActivitiesRelationManager::class,
         ];
     }
 
@@ -95,7 +100,7 @@ class StudentResource extends Resource
         return ['student_number', 'username', 'ssn', 'email', 'phone_number', 'whatsapp_number', 'name'];
     }
 
-    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    public static function getGlobalSearchResultDetails(Model $record): array
     {
         return array_filter([
             __('Student Number') => $record->student_number,

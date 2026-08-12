@@ -4,9 +4,11 @@ namespace App\Filament\Admin\Resources\Subjects;
 
 use App\Filament\Admin\Resources\Subjects\Pages\ListSubjects;
 use App\Filament\Admin\Resources\Subjects\Pages\ViewSubject;
+use App\Filament\Admin\Resources\Subjects\RelationManagers\SectionsRelationManager;
 use App\Filament\Admin\Resources\Subjects\Schemas\SubjectForm;
 use App\Filament\Admin\Resources\Subjects\Schemas\SubjectInfolist;
 use App\Filament\Admin\Resources\Subjects\Tables\SubjectsTable;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\Subject;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -18,6 +20,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SubjectResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = Subject::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
@@ -41,9 +45,9 @@ class SubjectResource extends Resource
         return __('Courses');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('subject.index') ?? false);
+        return 'subject';
     }
 
     public static function form(Schema $schema): Schema
@@ -64,7 +68,7 @@ class SubjectResource extends Resource
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Admin\Resources\Subjects\RelationManagers\SectionsRelationManager::class,
+            SectionsRelationManager::class,
         ];
     }
 

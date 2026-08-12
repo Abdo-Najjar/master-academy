@@ -11,6 +11,7 @@ use App\Filament\Admin\Resources\Sections\RelationManagers\TimesRelationManager;
 use App\Filament\Admin\Resources\Sections\Schemas\SectionForm;
 use App\Filament\Admin\Resources\Sections\Schemas\SectionInfolist;
 use App\Filament\Admin\Resources\Sections\Tables\SectionsTable;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\Section;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -22,6 +23,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SectionResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = Section::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleGroup;
@@ -45,9 +48,9 @@ class SectionResource extends Resource
         return __('Sections');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('section.index') ?? false);
+        return 'section';
     }
 
     public static function form(Schema $schema): Schema

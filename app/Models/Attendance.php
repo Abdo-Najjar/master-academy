@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Observers\AttendanceObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -68,7 +69,7 @@ class Attendance extends Model
      *
      * @param  array<int, string>  $statuses  student_id => status
      * @param  array<int, string|null>  $notes  student_id => note
-     * @param  \Illuminate\Database\Eloquent\Model|null  $actor  who is taking/editing the attendance
+     * @param  Model|null  $actor  who is taking/editing the attendance
      */
     public static function recordDay(
         int $sectionId,
@@ -117,6 +118,15 @@ class Attendance extends Model
                 'recorded_at' => now(),
             ]);
         }
+    }
+
+    /**
+     * Attendance is never soft-deleted itself, but its section and student are.
+     * Reports must skip rows whose section or student has since been removed.
+     */
+    public function scopeReportable(Builder $query): Builder
+    {
+        return $query->whereHas('section')->whereHas('student');
     }
 
     public function section(): BelongsTo

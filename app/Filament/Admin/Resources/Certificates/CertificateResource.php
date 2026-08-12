@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\Certificates;
 
 use App\Filament\Admin\Resources\Certificates\Pages\ListCertificates;
 use App\Filament\Admin\Resources\Certificates\Tables\CertificatesTable;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\Certificate;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -15,6 +16,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CertificateResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = Certificate::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
@@ -38,9 +41,9 @@ class CertificateResource extends Resource
         return __('Certificates');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('certificate.index') ?? false);
+        return 'certificate';
     }
 
     public static function form(Schema $schema): Schema

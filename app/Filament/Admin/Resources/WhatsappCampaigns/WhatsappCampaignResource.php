@@ -9,6 +9,7 @@ use App\Filament\Admin\Resources\WhatsappCampaigns\RelationManagers\RecipientsRe
 use App\Filament\Admin\Resources\WhatsappCampaigns\Schemas\WhatsappCampaignForm;
 use App\Filament\Admin\Resources\WhatsappCampaigns\Schemas\WhatsappCampaignInfolist;
 use App\Filament\Admin\Resources\WhatsappCampaigns\Tables\WhatsappCampaignsTable;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\WhatsappCampaign;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -18,6 +19,8 @@ use Filament\Tables\Table;
 
 class WhatsappCampaignResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = WhatsappCampaign::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMegaphone;
@@ -41,9 +44,9 @@ class WhatsappCampaignResource extends Resource
         return __('WhatsApp Campaigns');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('whatsapp_campaign.index') ?? false);
+        return 'whatsapp_campaign';
     }
 
     public static function form(Schema $schema): Schema

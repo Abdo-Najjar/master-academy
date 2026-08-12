@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Observers\RegistrationObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -50,6 +51,81 @@ class Registration extends Model
             'paid_through_session' => 'integer',
             'paused_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Rows that belong in a report: the registration itself is not trashed
+     * (the SoftDeletes scope covers that) *and* neither is the student or the
+     * section it points at. Soft-deleting a section or a student leaves their
+     * registrations behind, so without this they keep showing up as revenue
+     * and as outstanding dues long after the record was removed.
+     */
+    public function scopeReportable(Builder $query): Builder
+    {
+        return $query->whereHas('student')->whereHas('section');
+    }
+
+    /**
+     * "Where did this money come from" line, used as the note on every wallet
+     * movement tied to this registration. The old note was just
+     * "Registration #12 — Name", which left the operator guessing which course,
+     * which section and which branch the charge actually belonged to.
+     */
+    /** "Full Name (STU-123456)" — the student as they should read on a statement. */
+    public function studentLabel(): string
+    {
+        $this->loadMissing('student');
+
+        $name = $this->student?->getTranslation('name', app()->getLocale(), false);
+
+        if (! $name) {
+            return '#'.$this->student_id;
+        }
+
+        return $name.($this->student?->student_number ? ' ('.$this->student->student_number.')' : '');
+    }
+
+    /** "Section name — Branch", or just the section when it has no branch. */
+    public function sectionLabel(): string
+    {
+        $this->loadMissing('section.branch');
+
+        $section = $this->section?->name;
+
+        if (! $section) {
+            return '#'.$this->section_id;
+        }
+
+        return $section.($this->section?->branch?->name ? ' — '.$this->section->branch->name : '');
+    }
+
+    public function contextLabel(): string
+    {
+        $this->loadMissing(['student', 'section.subject', 'section.branch']);
+        $locale = app()->getLocale();
+
+        $parts = [
+            __('Registration').' #'.$this->id,
+            __('Student').': '.$this->studentLabel(),
+        ];
+
+        if ($course = $this->section?->subject?->getTranslation('name', $locale, false)) {
+            $parts[] = __('Course').': '.$course;
+        }
+
+        if ($section = $this->section?->name) {
+            $parts[] = __('Section').': '.$section;
+        }
+
+        if ($branch = $this->section?->branch?->name) {
+            $parts[] = __('Branch').': '.$branch;
+        }
+
+        if ($trainer = $this->section?->trainer?->getTranslation('name', $locale, false)) {
+            $parts[] = __('Trainer').': '.$trainer;
+        }
+
+        return implode(' · ', $parts);
     }
 
     /** Is this registration billed per number of sessions held? */
@@ -103,15 +179,21 @@ class Registration extends Model
 
             if ($student && (float) $this->amount_paid > 0) {
                 $student->depositFloat((float) $this->amount_paid, [
-                    'description' => __('Refund for cancelled registration: :name', ['name' => $this->section?->name ?? '#'.$this->section_id]),
-                    'note' => __('Registration #:id cancelled', ['id' => $this->id]),
+                    'description' => __('Refund for :student — :name', [
+                        'student' => $this->studentLabel(),
+                        'name' => $this->sectionLabel(),
+                    ]),
+                    'note' => __('Cancelled').' — '.$this->contextLabel(),
                 ]);
             }
 
             if ($trainer && (float) $this->trainer_credited_amount > 0) {
                 $trainer->forceWithdrawFloat((float) $this->trainer_credited_amount, [
-                    'description' => __('Refund for cancelled registration: :name', ['name' => $this->section?->name ?? '#'.$this->section_id]),
-                    'note' => __('Registration #:id cancelled', ['id' => $this->id]),
+                    'description' => __('Refund for :student — :name', [
+                        'student' => $this->studentLabel(),
+                        'name' => $this->sectionLabel(),
+                    ]),
+                    'note' => __('Cancelled').' — '.$this->contextLabel(),
                 ]);
             }
 

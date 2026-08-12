@@ -7,15 +7,19 @@ use App\Filament\Admin\Resources\Complaints\Pages\ViewComplaint;
 use App\Filament\Admin\Resources\Complaints\Schemas\ComplaintForm;
 use App\Filament\Admin\Resources\Complaints\Schemas\ComplaintInfolist;
 use App\Filament\Admin\Resources\Complaints\Tables\ComplaintsTable;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\Complaint;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ComplaintResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = Complaint::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedExclamationTriangle;
@@ -39,7 +43,7 @@ class ComplaintResource extends Resource
         return __('Complaints');
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         // Hide archived (older than a month) complaints from the table, view and badge.
         return parent::getEloquentQuery()->notArchived();
@@ -57,9 +61,9 @@ class ComplaintResource extends Resource
         return 'warning';
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('complaint.index') ?? false);
+        return 'complaint';
     }
 
     public static function canCreate(): bool

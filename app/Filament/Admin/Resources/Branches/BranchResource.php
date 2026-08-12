@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Branches;
 
 use App\Filament\Admin\Resources\Branches\Pages\ManageBranches;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Filament\Support\DeletionGuard;
 use App\Filament\Support\TranslatableInput;
 use App\Models\Branch;
@@ -34,6 +35,8 @@ use Illuminate\Support\Collection;
 
 class BranchResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = Branch::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingStorefront;
@@ -57,9 +60,9 @@ class BranchResource extends Resource
         return __('Branches');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return auth()->user()?->can('branch.index') ?? false;
+        return 'branch';
     }
 
     public static function form(Schema $schema): Schema

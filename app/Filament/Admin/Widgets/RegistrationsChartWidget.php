@@ -31,6 +31,7 @@ class RegistrationsChartWidget extends ChartWidget
         $end = now()->endOfDay();
 
         $rows = Registration::query()
+            ->reportable()
             ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
             ->whereBetween('created_at', [$start, $end])
             ->groupBy('day')

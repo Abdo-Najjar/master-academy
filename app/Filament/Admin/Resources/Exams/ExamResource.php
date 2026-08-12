@@ -6,9 +6,11 @@ use App\Filament\Admin\Resources\Exams\Pages\CreateExam;
 use App\Filament\Admin\Resources\Exams\Pages\EditExam;
 use App\Filament\Admin\Resources\Exams\Pages\ListExams;
 use App\Filament\Admin\Resources\Exams\Pages\ViewExam;
+use App\Filament\Admin\Resources\Exams\RelationManagers\GradesRelationManager;
 use App\Filament\Admin\Resources\Exams\Schemas\ExamForm;
 use App\Filament\Admin\Resources\Exams\Schemas\ExamInfolist;
 use App\Filament\Admin\Resources\Exams\Tables\ExamsTable;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\Exam;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -18,6 +20,8 @@ use Filament\Tables\Table;
 
 class ExamResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = Exam::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
@@ -41,9 +45,9 @@ class ExamResource extends Resource
         return __('Exams');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('exam.index') ?? false);
+        return 'exam';
     }
 
     public static function form(Schema $schema): Schema
@@ -64,7 +68,7 @@ class ExamResource extends Resource
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Admin\Resources\Exams\RelationManagers\GradesRelationManager::class,
+            GradesRelationManager::class,
         ];
     }
 

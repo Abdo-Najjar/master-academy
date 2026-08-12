@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\SectionSessions;
 
 use App\Filament\Admin\Resources\SectionSessions\Pages\ManageSectionSessions;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\Registration;
 use App\Models\Section;
 use App\Models\SectionSession;
@@ -38,6 +39,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SectionSessionResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = SectionSession::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
@@ -61,9 +64,9 @@ class SectionSessionResource extends Resource
         return __('Class Sessions');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return auth()->user()?->can('section_session.index') ?? false;
+        return 'section_session';
     }
 
     public static function form(Schema $schema): Schema

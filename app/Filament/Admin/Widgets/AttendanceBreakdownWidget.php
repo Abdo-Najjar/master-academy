@@ -27,6 +27,7 @@ class AttendanceBreakdownWidget extends ChartWidget
     protected function getData(): array
     {
         $counts = Attendance::query()
+            ->reportable()
             ->selectRaw('status, COUNT(*) as total')
             ->where('date', '>=', now()->subDays(29)->toDateString())
             ->groupBy('status')

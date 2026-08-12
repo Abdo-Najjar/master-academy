@@ -89,23 +89,25 @@ class OverviewStatsWidget extends BaseWidget
     protected function financialStats(): array
     {
         $weekRevenue = Registration::query()
+            ->reportable()
             ->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
             ->sum('funded_amount');
 
         $monthRevenue = Registration::query()
+            ->reportable()
             ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
             ->sum('funded_amount');
 
         $outstanding = FinancialDueService::outstandingAmount();
 
         $dueStudents = Registration::query()
-            ->whereNull('deleted_at')
+            ->reportable()
             ->whereIn('financial_status', ['due', 'overdue'])
             ->distinct('student_id')
             ->count('student_id');
 
         $overdueStudents = Registration::query()
-            ->whereNull('deleted_at')
+            ->reportable()
             ->where('financial_status', 'overdue')
             ->distinct('student_id')
             ->count('student_id');
@@ -131,7 +133,9 @@ class OverviewStatsWidget extends BaseWidget
     /** @return list<Stat> */
     protected function attendanceStats(): array
     {
-        $todaySessions = Attendance::whereDate('date', today())
+        $todaySessions = Attendance::query()
+            ->reportable()
+            ->whereDate('date', today())
             ->distinct('section_id')
             ->count('section_id');
 

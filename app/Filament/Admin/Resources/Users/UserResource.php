@@ -6,9 +6,11 @@ use App\Filament\Admin\Resources\Users\Pages\CreateUser;
 use App\Filament\Admin\Resources\Users\Pages\EditUser;
 use App\Filament\Admin\Resources\Users\Pages\ListUsers;
 use App\Filament\Admin\Resources\Users\Pages\ViewUser;
+use App\Filament\Admin\Resources\Users\RelationManagers\LoginActivitiesRelationManager;
 use App\Filament\Admin\Resources\Users\Schemas\UserForm;
 use App\Filament\Admin\Resources\Users\Schemas\UserInfolist;
 use App\Filament\Admin\Resources\Users\Tables\UsersTable;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -20,6 +22,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class UserResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = User::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
@@ -43,9 +47,9 @@ class UserResource extends Resource
         return __('Administrators');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('user.index') ?? false);
+        return 'user';
     }
 
     public static function form(Schema $schema): Schema
@@ -66,7 +70,7 @@ class UserResource extends Resource
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Admin\Resources\Users\RelationManagers\LoginActivitiesRelationManager::class,
+            LoginActivitiesRelationManager::class,
         ];
     }
 

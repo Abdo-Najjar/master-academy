@@ -3,7 +3,9 @@
 namespace App\Filament\Admin\Resources\PaymentTypes;
 
 use App\Filament\Admin\Resources\PaymentTypes\Pages\ManagePaymentTypes;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Filament\Support\DeletionGuard;
+use App\Filament\Support\TranslatableInput;
 use App\Models\PaymentType;
 use BackedEnum;
 use Filament\Actions\ActionGroup;
@@ -15,8 +17,6 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
-use Illuminate\Support\Collection;
-use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -26,9 +26,12 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Collection;
 
 class PaymentTypeResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = PaymentType::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
@@ -52,9 +55,9 @@ class PaymentTypeResource extends Resource
         return __('Payment Types');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('payment_type.index') ?? false);
+        return 'payment_type';
     }
 
     public static function form(Schema $schema): Schema
@@ -63,7 +66,7 @@ class PaymentTypeResource extends Resource
             ->components([
                 Section::make('')
                     ->schema([
-                        \App\Filament\Support\TranslatableInput::make('name', __('Name')),
+                        TranslatableInput::make('name', __('Name')),
                     ])
                     ->columnSpanFull(),
             ]);

@@ -6,6 +6,7 @@ use App\Filament\Admin\Resources\StudentGroups\Pages\ManageStudentGroups;
 use App\Filament\Admin\Resources\StudentGroups\Schemas\StudentGroupForm;
 use App\Filament\Admin\Resources\StudentGroups\Schemas\StudentGroupInfolist;
 use App\Filament\Admin\Resources\StudentGroups\Tables\StudentGroupsTable;
+use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\StudentGroup;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -15,6 +16,8 @@ use Filament\Tables\Table;
 
 class StudentGroupResource extends Resource
 {
+    use AuthorizesResourceActions;
+
     protected static ?string $model = StudentGroup::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
@@ -38,9 +41,9 @@ class StudentGroupResource extends Resource
         return __('Student Groups');
     }
 
-    public static function canAccess(): bool
+    public static function permissionPrefix(): string
     {
-        return (auth()->user()?->can('student_group.index') ?? false);
+        return 'student_group';
     }
 
     public static function form(Schema $schema): Schema
