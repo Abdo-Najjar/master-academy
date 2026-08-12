@@ -7,28 +7,16 @@ use App\Models\Registration;
 use App\Models\Section;
 use App\Models\Student;
 use BackedEnum;
-use Filament\Actions\Action;
-use Filament\Forms\Components\DatePicker;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Concerns\InteractsWithTable;
-use Filament\Tables\Contracts\HasTable;
-use Filament\Tables\Filters\Filter;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Computed;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Writer;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class AttendanceRecords extends Page implements HasTable
+class AttendanceRecords extends Page
 {
-    use InteractsWithTable;
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
     protected string $view = 'filament.admin.pages.attendance-records';
@@ -55,10 +43,7 @@ class AttendanceRecords extends Page implements HasTable
         return auth()->user()?->can('attendance.index') ?? false;
     }
 
-    /** Either the flat record list, or the per-section sheet. */
-    public string $viewMode = 'records';
-
-    /** Section shown in the sheet view. */
+    /** Section shown in the sheet. */
     public ?int $sheetSectionId = null;
 
     /** @return array<int, string> section id => label */
@@ -186,139 +171,6 @@ class AttendanceRecords extends Page implements HasTable
             'late' => __('Late'),
             'excused' => __('Excused'),
         ];
-    }
-
-    public function table(Table $table): Table
-    {
-        return $table
-            ->query(
-                Attendance::query()->with(['student', 'section.subject', 'session', 'recordedBy', 'updatedBy'])
-            )
-            ->columns([
-                TextColumn::make('date')
-                    ->label(__('Date'))
-                    ->date('Y-m-d')
-                    ->sortable(),
-                TextColumn::make('student.name')
-                    ->label(__('Student'))
-                    ->state(fn (Attendance $record): string => self::translated($record->student?->name))
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('section.name')
-                    ->label(__('Section'))
-                    ->state(fn (Attendance $record): string => self::translated($record->section?->name)),
-                TextColumn::make('status')
-                    ->label(__('Status'))
-                    ->badge()
-                    ->formatStateUsing(fn (string $state): string => self::statusLabels()[$state] ?? $state)
-                    ->color(fn (string $state): string => match ($state) {
-                        'present' => 'success',
-                        'late' => 'warning',
-                        'excused' => 'info',
-                        'absent' => 'danger',
-                        default => 'gray',
-                    }),
-                IconColumn::make('is_makeup')
-                    ->label(__('Makeup'))
-                    ->boolean(),
-                TextColumn::make('session.type')
-                    ->label(__('Session Type'))
-                    ->badge()
-                    ->formatStateUsing(fn (?string $state): string => $state
-                        ? (\App\Models\SectionSession::typeOptions()[$state] ?? $state)
-                        : '—')
-                    ->toggleable(),
-                TextColumn::make('recorded_by')
-                    ->label(__('Recorded By'))
-                    ->state(fn (Attendance $record): ?string => $record->actorName())
-                    ->toggleable(),
-                TextColumn::make('recorded_at')
-                    ->label(__('Recorded At'))
-                    ->dateTime()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->label(__('Last Modified'))
-                    ->dateTime()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('note')
-                    ->label(__('Note'))
-                    ->limit(30)
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-                SelectFilter::make('section_id')
-                    ->label(__('Section'))
-                    ->options(fn () => Section::all()->mapWithKeys(fn (Section $s) => [
-                        $s->id => self::translated($s->name),
-                    ])->toArray())
-                    ->searchable(),
-                SelectFilter::make('student_id')
-                    ->label(__('Student'))
-                    ->options(fn () => Student::all()->mapWithKeys(fn (Student $s) => [
-                        $s->id => self::translated($s->name),
-                    ])->toArray())
-                    ->searchable(),
-                SelectFilter::make('status')
-                    ->label(__('Status'))
-                    ->options(self::statusLabels()),
-                Filter::make('date')
-                    ->schema([
-                        DatePicker::make('from')->label(__('From'))->native(false),
-                        DatePicker::make('until')->label(__('To'))->native(false),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when($data['from'] ?? null, fn (Builder $q, $date) => $q->whereDate('date', '>=', $date))
-                            ->when($data['until'] ?? null, fn (Builder $q, $date) => $q->whereDate('date', '<=', $date));
-                    }),
-            ])
-            ->headerActions([
-                Action::make('exportExcel')
-                    ->label(__('Export to Excel'))
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('success')
-                    ->action(fn (): StreamedResponse => $this->exportExcel()),
-            ])
-            ->paginated([25, 50, 100])
-            ->emptyStateHeading(__('No records found'))
-            ->defaultSort('date', 'desc');
-    }
-
-    /** Stream an XLSX of the currently filtered attendance rows. */
-    public function exportExcel(): StreamedResponse
-    {
-        $query = $this->getFilteredSortedTableQuery() ?? $this->getFilteredTableQuery();
-        $rows = $query->with(['student', 'section'])->get();
-        $labels = self::statusLabels();
-
-        return response()->streamDownload(function () use ($rows, $labels): void {
-            $writer = new Writer;
-            $writer->openToFile('php://output');
-
-            $writer->addRow(Row::fromValues([
-                __('Date'),
-                __('Student'),
-                __('Section'),
-                __('Status'),
-                __('Makeup'),
-                __('Note'),
-            ]));
-
-            foreach ($rows as $a) {
-                $writer->addRow(Row::fromValues([
-                    $a->date?->format('Y-m-d'),
-                    self::translated($a->student?->name),
-                    self::translated($a->section?->name),
-                    $labels[$a->status] ?? $a->status,
-                    $a->is_makeup ? __('Yes') : __('No'),
-                    (string) ($a->note ?? ''),
-                ]));
-            }
-
-            $writer->close();
-        }, 'attendance-'.now()->format('Y-m-d-Hi').'.xlsx', [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ]);
     }
 
     /** Stream the sheet view — students down, dates across — as XLSX. */

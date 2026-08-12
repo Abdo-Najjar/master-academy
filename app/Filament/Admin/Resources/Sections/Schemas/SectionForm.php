@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Sections\Schemas;
 
+use App\Filament\Support\AuditReasonField;
 use App\Models\Room;
 use App\Models\Section as SectionModel;
 use App\Models\SectionTime;
@@ -13,9 +14,9 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
 
 class SectionForm
 {
@@ -50,6 +51,7 @@ class SectionForm
                                 if (! $subjectId) {
                                     return Trainer::query()->orderBy('name')->pluck('name', 'id')->all();
                                 }
+
                                 return Trainer::query()
                                     ->whereHas('subjects', fn ($q) => $q->where('subjects.id', $subjectId))
                                     ->orderBy('name')
@@ -146,21 +148,7 @@ class SectionForm
                             ->default(40)
                             ->suffix('%')
                             ->helperText(__('Leave empty to use trainer default rate')),
-                        \App\Filament\Support\AuditReasonField::make(),
-                        Select::make('seat_reservation_type')
-                            ->label(__('Seat Reservation Type'))
-                            ->options([
-                                'fixed' => __('Fixed Amount'),
-                                'percentage' => __('Percentage of Price'),
-                            ])
-                            ->live(),
-                        TextInput::make('seat_reservation_amount')
-                            ->label(__('Seat Reservation Amount'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->step(0.01)
-                            ->visible(fn (callable $get) => filled($get('seat_reservation_type')))
-                            ->prefix(fn (callable $get) => $get('seat_reservation_type') === 'percentage' ? '%' : '₪'),
+                        AuditReasonField::make(),
                     ])
                     ->columns(1),
 

@@ -42,6 +42,15 @@ class StudentTransferService
             ]);
         }
 
+        // Enforced here as well as in the picker: a transfer keeps the student's
+        // session counter and paid-through horizon, which only means anything
+        // within the same course.
+        if ($registration->section && $target->subject_id !== $registration->section->subject_id) {
+            throw ValidationException::withMessages([
+                'to_section_id' => __('The new section must belong to the same course.'),
+            ]);
+        }
+
         $alreadyThere = Registration::query()
             ->where('student_id', $registration->student_id)
             ->where('section_id', $toSectionId)

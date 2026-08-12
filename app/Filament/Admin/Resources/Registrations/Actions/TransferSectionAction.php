@@ -33,6 +33,9 @@ class TransferSectionAction
                 Placeholder::make('current')
                     ->label(__('Current Section'))
                     ->content($record->section?->name ?? '#'.$record->section_id),
+                Placeholder::make('course')
+                    ->label(__('Course'))
+                    ->content($record->section?->subject?->getTranslation('name', app()->getLocale(), false) ?? '—'),
                 Placeholder::make('counter')
                     ->label(__('Sessions Counted'))
                     ->content(fn (): string => $record->isPerSessionBilled()
@@ -41,19 +44,22 @@ class TransferSectionAction
                             'paid' => $record->paid_through_session,
                         ])
                         : __('Full course fee')),
+                // A transfer moves a student between groups of the SAME course —
+                // offering sections of other courses would silently change what
+                // they are enrolled in while carrying their paid sessions over.
                 Select::make('to_section_id')
                     ->label(__('New Section'))
                     ->options(fn (): array => Section::query()
                         ->where('id', '!=', $record->section_id)
-                        ->with('subject')
+                        ->where('subject_id', $record->section?->subject_id)
+                        ->with('branch')
                         ->orderByDesc('id')
                         ->get()
                         ->mapWithKeys(fn (Section $s) => [
-                            $s->id => $s->name.($s->subject
-                                ? ' — '.$s->subject->getTranslation('name', app()->getLocale(), false)
-                                : ''),
+                            $s->id => $s->name.($s->branch ? ' — '.$s->branch->name : ''),
                         ])
                         ->all())
+                    ->helperText(__('Only sections of the same course are listed.'))
                     ->searchable()
                     ->required(),
                 Textarea::make('reason')

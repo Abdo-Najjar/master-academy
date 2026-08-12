@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Models\Branch;
 use App\Models\Section;
 use App\Models\SectionTime;
 use App\Models\Subject;
@@ -43,7 +44,7 @@ class SectionsCalendar extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return (auth()->user()?->can('section.index') ?? false);
+        return auth()->user()?->can('section.index') ?? false;
     }
 
     public function mount(): void
@@ -51,6 +52,7 @@ class SectionsCalendar extends Page implements HasForms
         $this->cursor = now()->startOfMonth()->toDateString();
 
         $this->form->fill([
+            'branch_id' => null,
             'subject_id' => null,
             'section_id' => null,
         ]);
@@ -62,6 +64,13 @@ class SectionsCalendar extends Page implements HasForms
             ->components([
                 FormSection::make('')
                     ->schema([
+                        Select::make('branch_id')
+                            ->label(__('Branch'))
+                            ->options(fn () => Branch::query()->orderBy('name')->pluck('name', 'id'))
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(fn ($set) => $set('section_id', null)),
                         Select::make('subject_id')
                             ->label(__('Course'))
                             ->options(fn () => Subject::query()->get()
@@ -75,6 +84,7 @@ class SectionsCalendar extends Page implements HasForms
                             ->options(function (Get $get): array {
                                 return Section::query()
                                     ->when($get('subject_id'), fn ($q, $subjectId) => $q->where('subject_id', $subjectId))
+                                    ->when($get('branch_id'), fn ($q, $branchId) => $q->where('branch_id', $branchId))
                                     ->get()
                                     ->mapWithKeys(fn (Section $s) => [$s->id => $s->name])
                                     ->toArray();
@@ -83,7 +93,7 @@ class SectionsCalendar extends Page implements HasForms
                             ->preload()
                             ->live(),
                     ])
-                    ->columns(2)
+                    ->columns(3)
                     ->columnSpanFull(),
             ])
             ->statePath('filters');
@@ -119,12 +129,15 @@ class SectionsCalendar extends Page implements HasForms
      */
     public function getTimesByWeekdayProperty(): array
     {
+        $branchId = $this->filters['branch_id'] ?? null;
         $subjectId = $this->filters['subject_id'] ?? null;
         $sectionId = $this->filters['section_id'] ?? null;
 
         return SectionTime::query()
-            ->with(['room', 'section.subject'])
-            ->whereHas('section', fn ($q) => $q->when($subjectId, fn ($q2) => $q2->where('subject_id', $subjectId)))
+            ->with(['room', 'section.subject', 'section.branch'])
+            ->whereHas('section', fn ($q) => $q
+                ->when($subjectId, fn ($q2) => $q2->where('subject_id', $subjectId))
+                ->when($branchId, fn ($q2) => $q2->where('branch_id', $branchId)))
             ->when($sectionId, fn ($q) => $q->where('section_id', $sectionId))
             ->get()
             ->groupBy('day')

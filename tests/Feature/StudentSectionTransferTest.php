@@ -99,6 +99,25 @@ it('refuses to transfer into a section the student is already in', function () {
         ->toThrow(ValidationException::class);
 });
 
+it('refuses to transfer into a section of a different course', function () {
+    $otherSubject = Subject::create(['name' => ['ar' => 'مادة أخرى', 'en' => 'Other Subject']]);
+
+    $otherCourseSection = Section::create([
+        'name' => 'شعبة دورة أخرى',
+        'subject_id' => $otherSubject->id,
+        'trainer_id' => $this->trainer->id,
+        'price' => 0,
+        'fee_type' => Section::FEE_TYPE_PER_SESSIONS,
+        'sessions_per_cycle' => 6,
+        'cycle_fee' => 100,
+    ]);
+
+    expect(fn () => StudentTransferService::transfer($this->registration->fresh(), $otherCourseSection->id))
+        ->toThrow(ValidationException::class);
+
+    expect($this->registration->fresh()->section_id)->toBe($this->from->id);
+});
+
 it('refuses to transfer into a full section', function () {
     $this->to->update(['capacity' => 1]);
 

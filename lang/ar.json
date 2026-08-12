@@ -1768,5 +1768,10 @@
     "Wallet Transactions": "حركات المحفظة",
     "Delete profile picture?": "حذف الصورة الشخصية؟",
     "Class Session": "حصة",
-    "Class Sessions": "الحصص"
+    "Class Sessions": "الحصص",
+    "Only sections of the same course are listed.": "تُعرض فقط شعب نفس الدورة.",
+    "The new section must belong to the same course.": "يجب أن تكون الشعبة الجديدة من نفس الدورة.",
+    "No branch set": "بدون فرع",
+    "No room set": "بدون غرفة",
+    "Each entry shows the section, its time, its branch and its room.": "كل موعد يعرض الشعبة ووقتها وفرعها وغرفتها."
 }

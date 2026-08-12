@@ -35,9 +35,12 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName(fn (): string => AppBranding::appName())
-            ->brandLogo(fn (): string => AppBranding::logoUrl('light'))
-            ->darkModeBrandLogo(fn (): string => AppBranding::logoUrl('dark'))
-            ->brandLogoHeight('4rem')
+            // Horizontal wordmark rather than the bare mark, so the sidebar
+            // header actually reads as the academy. 2.6rem keeps its ~3.7:1
+            // ratio inside the collapsed-sidebar width.
+            ->brandLogo(fn (): string => AppBranding::brandLogoUrl('light'))
+            ->darkModeBrandLogo(fn (): string => AppBranding::brandLogoUrl('dark'))
+            ->brandLogoHeight('2.6rem')
             ->favicon(fn (): string => AppBranding::faviconUrl('light'))
             ->colors(fn (): array => AppBranding::panelColors())
             ->defaultThemeMode(ThemeMode::Dark)

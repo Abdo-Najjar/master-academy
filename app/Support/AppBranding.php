@@ -61,6 +61,26 @@ class AppBranding
         return asset("site/assets/logo-horizontal-{$variant}.png");
     }
 
+    /**
+     * Horizontal wordmark for the admin panel's brand slot. Same asset as the
+     * marketing site — `color` on light, `white` on dark.
+     */
+    public static function brandLogoUrl(string $theme = 'light'): string
+    {
+        return self::siteLogoUrl($theme === 'dark' ? 'white' : 'color');
+    }
+
+    /**
+     * Stacked logo (mark above the wordmark) for the portal hero. Lives under
+     * images/{theme}/ so the `data-theme-asset` swapper flips it with the theme.
+     */
+    public static function stackedLogoUrl(string $theme = 'light'): string
+    {
+        $theme = $theme === 'dark' ? 'dark' : 'light';
+
+        return asset("images/{$theme}/logo-stacked.png");
+    }
+
     public static function appName(): string
     {
         return self::settings()['app_name'] ?? config('app.name', 'ماستر أكاديمي');

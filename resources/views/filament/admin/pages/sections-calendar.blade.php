@@ -9,16 +9,28 @@
 
         .ma-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid rgba(148,163,184,.25);border-radius:.75rem;overflow:hidden;}
         .ma-cal-head{background:rgba(148,163,184,.10);padding:.6rem 0;text-align:center;font-size:.75rem;font-weight:600;color:rgb(100,116,139);border-bottom:1px solid rgba(148,163,184,.25);}
-        .ma-cal-cell{min-height:7.5rem;padding:.4rem;border-inline-end:1px solid rgba(148,163,184,.15);border-top:1px solid rgba(148,163,184,.15);display:flex;flex-direction:column;gap:.3rem;}
+        .ma-cal-cell{min-height:9rem;padding:.4rem;border-inline-end:1px solid rgba(148,163,184,.15);border-top:1px solid rgba(148,163,184,.15);display:flex;flex-direction:column;gap:.3rem;}
         .ma-cal-cell:nth-child(7n){border-inline-end:none;}
         .ma-cal-cell--out{opacity:.4;}
         .ma-cal-cell--today{background:rgba(250,204,21,.10);}
         .ma-cal-daynum{font-size:.8125rem;font-weight:600;}
 
-        .ma-cal-event{display:block;padding:.2rem .4rem;border-radius:.35rem;font-size:.6875rem;line-height:1.3;background:rgba(148,163,184,.12);border-inline-start:3px solid rgb(100,116,139);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .ma-cal-event{display:block;padding:.25rem .4rem;border-radius:.35rem;font-size:.6875rem;line-height:1.35;background:rgba(148,163,184,.12);border-inline-start:3px solid rgb(100,116,139);overflow:hidden;}
         .ma-cal-event__name{font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
         .ma-cal-event__meta{color:rgb(100,116,139);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        /* Room and branch used to be bare numbers glued after the time, which
+           read as noise. They are labelled chips now so the cell says *where*. */
+        .ma-cal-tags{display:flex;flex-wrap:wrap;gap:.2rem;margin-top:.15rem;}
+        .ma-cal-tag{display:inline-flex;align-items:center;gap:.15rem;padding:0 .3rem;border-radius:.25rem;font-size:.625rem;font-weight:600;line-height:1.5;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
+        .ma-cal-tag--room{background:rgba(59,130,246,.16);color:rgb(29,78,216);}
+        .ma-cal-tag--branch{background:rgba(168,85,247,.16);color:rgb(126,34,206);}
+        .ma-cal-tag--none{background:rgba(148,163,184,.16);color:rgb(100,116,139);font-weight:500;}
+        .dark .ma-cal-tag--room{color:rgb(147,197,253);}
+        .dark .ma-cal-tag--branch{color:rgb(216,180,254);}
+        .dark .ma-cal-tag--none{color:rgb(161,161,170);}
         .ma-cal-more{font-size:.6875rem;color:rgb(100,116,139);padding:0 .2rem;}
+
+        .ma-cal-legend{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:.75rem;font-size:.75rem;color:rgb(100,116,139);align-items:center;}
 
         .ma-cal-empty{padding:3rem 1rem;text-align:center;color:rgb(100,116,139);font-size:.875rem;}
     </style>
@@ -70,11 +82,29 @@
                             $subjectColor = $section?->subject?->color;
                             $sectionName = $section ? $section->name : '—';
                             $roomName = $event->room?->number;
+                            $branchName = $section?->branch?->name;
                             $time = \Illuminate\Support\Carbon::parse($event->start_time)->format('H:i').'–'.\Illuminate\Support\Carbon::parse($event->end_time)->format('H:i');
+
+                            $tooltip = collect([
+                                $sectionName,
+                                $time,
+                                $branchName ? __('Branch').': '.$branchName : __('No branch set'),
+                                $roomName ? __('Room').': '.$roomName : __('No room set'),
+                            ])->implode(' · ');
                         @endphp
-                        <span class="ma-cal-event" style="{{ $subjectColor ? 'border-inline-start-color:'.$subjectColor : '' }}" title="{{ $sectionName }} · {{ $time }}{{ $roomName ? ' · '.$roomName : '' }}">
+                        <span class="ma-cal-event" style="{{ $subjectColor ? 'border-inline-start-color:'.$subjectColor : '' }}" title="{{ $tooltip }}">
                             <span class="ma-cal-event__name">{{ $sectionName }}</span>
-                            <span class="ma-cal-event__meta">{{ $time }}{{ $roomName ? ' · '.$roomName : '' }}</span>
+                            <span class="ma-cal-event__meta">{{ $time }}</span>
+                            <span class="ma-cal-tags">
+                                @if ($branchName)
+                                    <span class="ma-cal-tag ma-cal-tag--branch">{{ $branchName }}</span>
+                                @endif
+                                @if ($roomName)
+                                    <span class="ma-cal-tag ma-cal-tag--room">{{ __('Room') }} {{ $roomName }}</span>
+                                @else
+                                    <span class="ma-cal-tag ma-cal-tag--none">{{ __('No room set') }}</span>
+                                @endif
+                            </span>
                         </span>
                     @endforeach
 
@@ -83,6 +113,12 @@
                     @endif
                 </div>
             @endforeach
+        </div>
+
+        <div class="ma-cal-legend">
+            <span class="ma-cal-tag ma-cal-tag--branch">{{ __('Branch') }}</span>
+            <span class="ma-cal-tag ma-cal-tag--room">{{ __('Room') }}</span>
+            <span>{{ __('Each entry shows the section, its time, its branch and its room.') }}</span>
         </div>
     </x-filament::section>
 </x-filament-panels::page>

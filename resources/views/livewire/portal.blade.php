@@ -30,7 +30,11 @@
 
         /* Hero */
         .mp-hero { text-align: center; margin-bottom: 48px; }
-        .mp-logo { height: 132px; width: auto; margin: 0 auto 18px; display: block; filter: drop-shadow(0 8px 28px rgba(220, 38, 38, .35)); }
+        /* Taller than the old icon-only mark because this asset carries the
+           wordmark underneath it. The glow is softened for the same reason —
+           at this size the old shadow smeared the Arabic sub-line. */
+        .mp-logo { height: 190px; width: auto; margin: 0 auto 6px; display: block; filter: drop-shadow(0 10px 26px rgba(220, 38, 38, .22)); }
+        html.dark .mp-logo { filter: drop-shadow(0 10px 30px rgba(0, 0, 0, .55)); }
         .mp-title { font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 900; margin: 0 0 10px; background: linear-gradient(92deg, var(--mp-title-c1) 20%, var(--mp-title-c2) 60%, var(--mp-title-c3) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -.5px; }
         .mp-sub { font-size: clamp(1rem, 2vw, 1.25rem); color: var(--mp-muted); margin: 0; font-weight: 500; }
         .mp-sub-line { width: 90px; height: 4px; border-radius: 999px; margin: 22px auto 0; background: linear-gradient(90deg, #dc2626, #f59e0b); }
@@ -67,7 +71,7 @@
         @media (max-width: 640px) {
             .mp-wrap { padding-top: 36px; }
             .mp-hero { margin-bottom: 34px; }
-            .mp-logo { height: 96px; }
+            .mp-logo { height: 132px; }
         }
     </style>
 
@@ -77,8 +81,12 @@
 
     <div class="mp-wrap">
         <div class="mp-hero">
-            <img src="{{ \App\Support\AppBranding::logoUrl('light') }}" alt="{{ __('Logo') }}" class="mp-logo" data-theme-asset onerror="this.style.display='none'">
-            <h1 class="mp-title">ماستر أكاديمي</h1>
+            {{-- The stacked logo already carries the wordmark, so the old <h1>
+                 repeated the name straight underneath it. The name now lives in
+                 the alt text, which keeps it for screen readers and search. --}}
+            <img src="{{ \App\Support\AppBranding::stackedLogoUrl('light') }}"
+                 alt="{{ \App\Support\AppBranding::appName() }}"
+                 class="mp-logo" data-theme-asset onerror="this.style.display='none'">
             <div class="mp-sub-line"></div>
         </div>
 

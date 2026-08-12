@@ -39,8 +39,6 @@ class Section extends Model implements HasMedia
         'capacity',
         'training_hours',
         'section_type',
-        'seat_reservation_type',
-        'seat_reservation_amount',
     ];
 
     /** @return array<string, string> */
@@ -53,7 +51,6 @@ class Section extends Model implements HasMedia
             'cycle_fee' => 'decimal:2',
             'sessions_per_cycle' => 'integer',
             'trainer_rate' => 'decimal:2',
-            'seat_reservation_amount' => 'decimal:2',
             'capacity' => 'integer',
             'training_hours' => 'integer',
         ];
@@ -148,6 +145,7 @@ class Section extends Model implements HasMedia
                 if ($this->start_date->lte($today) && $this->end_date->gte($today)) {
                     return 'active';
                 }
+
                 return 'scheduled';
             }
         );
@@ -161,6 +159,7 @@ class Section extends Model implements HasMedia
         if ($this->trainer_rate !== null) {
             return (float) $this->trainer_rate;
         }
+
         return (float) ($this->trainer?->default_rate ?? 0);
     }
 }

@@ -105,7 +105,6 @@ test('attendance sheet renders the student x date grid for the chosen section', 
     $this->actingAs(admin());
 
     Livewire::test(AttendanceRecords::class)
-        ->set('viewMode', 'sheet')
         ->set('sheetSectionId', $section->id)
         ->assertSee('Sheet Student')
         ->assertSee('STU-SHEET')
@@ -141,7 +140,6 @@ test('attendance sheet shows an empty state for a section with no records', func
     $this->actingAs(admin());
 
     Livewire::test(AttendanceRecords::class)
-        ->set('viewMode', 'sheet')
         ->set('sheetSectionId', $section->id)
         ->assertSee(__('No attendance has been recorded for this section yet.'));
 });

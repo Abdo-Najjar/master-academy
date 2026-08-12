@@ -25,12 +25,6 @@
             --ma-as-muted:rgb(161,161,170);
         }
 
-        .ma-as-modes{display:flex;gap:.5rem;flex-wrap:wrap;}
-        .ma-as-mode{padding:.5rem 1rem;border-radius:.625rem;font-size:.8125rem;font-weight:600;border:1px solid var(--ma-as-border);background:transparent;color:var(--ma-as-muted);cursor:pointer;transition:background-color .15s,color .15s,border-color .15s;}
-        .ma-as-mode:hover{background:var(--ma-as-hover);color:var(--ma-as-text);}
-        .ma-as-mode.is-active{background:var(--primary-600);border-color:var(--primary-600);color:#fff;}
-        .ma-as-mode.is-active:hover{background:var(--primary-600);color:#fff;}
-
         .ma-as-meta{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem;font-size:.75rem;}
         .ma-as-meta span{display:inline-flex;align-items:center;gap:.375rem;padding:.25rem .625rem;border-radius:9999px;background:var(--ma-as-stripe);border:1px solid var(--ma-as-border);color:var(--ma-as-muted);}
         .ma-as-meta strong{color:var(--ma-as-text);font-weight:600;}
@@ -111,176 +105,158 @@
         }
     </style>
 
-    {{-- View switcher: flat record list, or the per-section sheet --}}
     <x-filament::section>
-        <div class="ma-as-modes">
-            <button type="button" wire:click="$set('viewMode', 'records')"
-                    class="ma-as-mode @if ($viewMode === 'records') is-active @endif">
-                {{ __('Attendance Records') }}
-            </button>
-            <button type="button" wire:click="$set('viewMode', 'sheet')"
-                    class="ma-as-mode @if ($viewMode === 'sheet') is-active @endif">
-                {{ __('Section Sheet') }}
-            </button>
+        <div style="max-width:28rem;">
+            <x-filament::input.wrapper>
+                <x-filament::input.select wire:model.live="sheetSectionId">
+                    <option value="">{{ __('Select a section to begin.') }}</option>
+                    @foreach ($this->sectionOptions() as $id => $label)
+                        <option value="{{ $id }}">{{ $label }}</option>
+                    @endforeach
+                </x-filament::input.select>
+            </x-filament::input.wrapper>
         </div>
-
-        @if ($viewMode === 'sheet')
-            <div style="margin-top:1rem;max-width:28rem;">
-                <x-filament::input.wrapper>
-                    <x-filament::input.select wire:model.live="sheetSectionId">
-                        <option value="">{{ __('Select a section to begin.') }}</option>
-                        @foreach ($this->sectionOptions() as $id => $label)
-                            <option value="{{ $id }}">{{ $label }}</option>
-                        @endforeach
-                    </x-filament::input.select>
-                </x-filament::input.wrapper>
-            </div>
-        @endif
     </x-filament::section>
 
-    @if ($viewMode === 'records')
-        {{ $this->table }}
-    @else
-        @php
-            $section = $this->selectedSection();
-            $sheet = $this->sheet;
-            $statusColors = ['present' => 'present', 'absent' => 'absent', 'late' => 'late', 'excused' => 'excused'];
+    @php
+        $section = $this->selectedSection();
+        $sheet = $this->sheet;
+        $statusColors = ['present' => 'present', 'absent' => 'absent', 'late' => 'late', 'excused' => 'excused'];
 
-            $grandTotals = ['present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0];
-            foreach ($sheet['rows'] as $sheetRow) {
-                foreach ($grandTotals as $bucket => $_) {
-                    $grandTotals[$bucket] += $sheetRow['counts'][$bucket];
-                }
+        $grandTotals = ['present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0];
+        foreach ($sheet['rows'] as $sheetRow) {
+            foreach ($grandTotals as $bucket => $_) {
+                $grandTotals[$bucket] += $sheetRow['counts'][$bucket];
             }
-            $grandRecorded = array_sum($grandTotals);
-            $overallRate = $grandRecorded > 0
-                ? round((($grandTotals['present'] + $grandTotals['late']) / $grandRecorded) * 100, 1)
-                : 0.0;
-        @endphp
+        }
+        $grandRecorded = array_sum($grandTotals);
+        $overallRate = $grandRecorded > 0
+            ? round((($grandTotals['present'] + $grandTotals['late']) / $grandRecorded) * 100, 1)
+            : 0.0;
+    @endphp
 
-        @if (! $section)
-            <x-filament::section>
-                <p class="ma-as-empty">{{ __('Select a section to begin.') }}</p>
-            </x-filament::section>
-        @elseif ($sheet['dates'] === [])
-            <x-filament::section>
-                <p class="ma-as-empty">{{ __('No attendance has been recorded for this section yet.') }}</p>
-            </x-filament::section>
-        @else
-            <x-filament::section>
-                <x-slot name="heading">
-                    {{ $section->name }}
-                </x-slot>
+    @if (! $section)
+        <x-filament::section>
+            <p class="ma-as-empty">{{ __('Select a section to begin.') }}</p>
+        </x-filament::section>
+    @elseif ($sheet['dates'] === [])
+        <x-filament::section>
+            <p class="ma-as-empty">{{ __('No attendance has been recorded for this section yet.') }}</p>
+        </x-filament::section>
+    @else
+        <x-filament::section>
+            <x-slot name="heading">
+                {{ $section->name }}
+            </x-slot>
 
-                <x-slot name="description">
-                    <div class="ma-as-meta">
-                        @if ($section->subject)
-                            <span>{{ __('Course') }}: <strong>{{ $section->subject->getTranslation('name', app()->getLocale(), false) }}</strong></span>
-                        @endif
-                        @if ($section->trainer)
-                            <span>{{ __('Trainer') }}: <strong>{{ $section->trainer->getTranslation('name', app()->getLocale(), false) }}</strong></span>
-                        @endif
-                        <span>{{ __('Students') }}: <strong>{{ count($sheet['rows']) }}</strong></span>
-                        <span>{{ __('Sessions') }}: <strong>{{ count($sheet['dates']) }}</strong></span>
-                    </div>
-                </x-slot>
+            <x-slot name="description">
+                <div class="ma-as-meta">
+                    @if ($section->subject)
+                        <span>{{ __('Course') }}: <strong>{{ $section->subject->getTranslation('name', app()->getLocale(), false) }}</strong></span>
+                    @endif
+                    @if ($section->trainer)
+                        <span>{{ __('Trainer') }}: <strong>{{ $section->trainer->getTranslation('name', app()->getLocale(), false) }}</strong></span>
+                    @endif
+                    <span>{{ __('Students') }}: <strong>{{ count($sheet['rows']) }}</strong></span>
+                    <span>{{ __('Sessions') }}: <strong>{{ count($sheet['dates']) }}</strong></span>
+                </div>
+            </x-slot>
 
-                <x-slot name="afterHeader">
-                    <x-filament::button wire:click="exportSheet" color="success" size="sm"
-                                        icon="heroicon-o-arrow-down-tray">
-                        {{ __('Export to Excel') }}
-                    </x-filament::button>
-                </x-slot>
+            <x-slot name="afterHeader">
+                <x-filament::button wire:click="exportSheet" color="success" size="sm"
+                                    icon="heroicon-o-arrow-down-tray">
+                    {{ __('Export to Excel') }}
+                </x-filament::button>
+            </x-slot>
 
-                <div class="ma-as-scroll">
-                    <table class="ma-as-table">
-                        <thead>
+            <div class="ma-as-scroll">
+                <table class="ma-as-table">
+                    <thead>
+                        <tr>
+                            <th class="ma-as-name">{{ __('Student') }}</th>
+                            @foreach ($sheet['dates'] as $date)
+                                <th>
+                                    <div class="ma-as-date">{{ \Carbon\Carbon::parse($date)->format('d/m') }}</div>
+                                </th>
+                            @endforeach
+                            <th class="ma-as-sep">{{ __('Present') }}</th>
+                            <th>{{ __('Absent') }}</th>
+                            <th>{{ __('Late') }}</th>
+                            <th>{{ __('Excused') }}</th>
+                            <th>%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($sheet['rows'] as $index => $row)
+                            @php $student = $row['student']; @endphp
                             <tr>
-                                <th class="ma-as-name">{{ __('Student') }}</th>
+                                <td class="ma-as-name">
+                                    <span class="ma-as-idx">{{ $index + 1 }}.</span>
+                                    <span class="ma-as-student">{{ $student->getTranslation('name', app()->getLocale(), false) }}</span>
+                                    @if ($student->student_number)
+                                        <span class="ma-as-sub">({{ $student->student_number }})</span>
+                                    @endif
+                                </td>
+
                                 @foreach ($sheet['dates'] as $date)
-                                    <th>
-                                        <div class="ma-as-date">{{ \Carbon\Carbon::parse($date)->format('d/m') }}</div>
-                                    </th>
-                                @endforeach
-                                <th class="ma-as-sep">{{ __('Present') }}</th>
-                                <th>{{ __('Absent') }}</th>
-                                <th>{{ __('Late') }}</th>
-                                <th>{{ __('Excused') }}</th>
-                                <th>%</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($sheet['rows'] as $index => $row)
-                                @php $student = $row['student']; @endphp
-                                <tr>
-                                    <td class="ma-as-name">
-                                        <span class="ma-as-idx">{{ $index + 1 }}.</span>
-                                        <span class="ma-as-student">{{ $student->getTranslation('name', app()->getLocale(), false) }}</span>
-                                        @if ($student->student_number)
-                                            <span class="ma-as-sub">({{ $student->student_number }})</span>
+                                    @php $status = $row['cells'][$date] ?? null; @endphp
+                                    <td>
+                                        @if ($status)
+                                            <span class="ma-as-cell ma-as-cell--{{ $statusColors[$status] ?? 'none' }}"
+                                                  title="{{ \Carbon\Carbon::parse($date)->translatedFormat('d M Y') }} — {{ \App\Filament\Admin\Pages\AttendanceRecords::statusLabels()[$status] ?? $status }}">
+                                                {{ \App\Filament\Admin\Pages\AttendanceRecords::statusInitial($status) }}
+                                            </span>
+                                        @else
+                                            <span class="ma-as-cell ma-as-cell--none">—</span>
                                         @endif
                                     </td>
-
-                                    @foreach ($sheet['dates'] as $date)
-                                        @php $status = $row['cells'][$date] ?? null; @endphp
-                                        <td>
-                                            @if ($status)
-                                                <span class="ma-as-cell ma-as-cell--{{ $statusColors[$status] ?? 'none' }}"
-                                                      title="{{ \Carbon\Carbon::parse($date)->translatedFormat('d M Y') }} — {{ \App\Filament\Admin\Pages\AttendanceRecords::statusLabels()[$status] ?? $status }}">
-                                                    {{ \App\Filament\Admin\Pages\AttendanceRecords::statusInitial($status) }}
-                                                </span>
-                                            @else
-                                                <span class="ma-as-cell ma-as-cell--none">—</span>
-                                            @endif
-                                        </td>
-                                    @endforeach
-
-                                    @foreach (['present', 'absent', 'late', 'excused'] as $bucket)
-                                        <td class="ma-as-total @if ($row['counts'][$bucket] > 0) is-on--{{ $bucket }} @endif @if ($bucket === 'present') ma-as-sep @endif">
-                                            {{ $row['counts'][$bucket] }}
-                                        </td>
-                                    @endforeach
-                                    <td>
-                                        <span class="ma-as-rate ma-as-rate--{{ $row['rate'] >= 75 ? 'good' : ($row['rate'] >= 50 ? 'mid' : 'low') }}">
-                                            {{ $row['rate'] }}%
-                                        </span>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td class="ma-as-name ma-as-foot-label">{{ __('Present') }}</td>
-                                @foreach ($sheet['dates'] as $date)
-                                    <td class="ma-as-total is-on--present">
-                                        {{ $sheet['columnTotals'][$date]['present'] + $sheet['columnTotals'][$date]['late'] }}
-                                    </td>
                                 @endforeach
-                                {{-- Column grand totals, instead of leaving the tail of the footer blank. --}}
+
                                 @foreach (['present', 'absent', 'late', 'excused'] as $bucket)
-                                    <td class="ma-as-total @if ($grandTotals[$bucket] > 0) is-on--{{ $bucket }} @endif @if ($bucket === 'present') ma-as-sep @endif">
-                                        {{ $grandTotals[$bucket] }}
+                                    <td class="ma-as-total @if ($row['counts'][$bucket] > 0) is-on--{{ $bucket }} @endif @if ($bucket === 'present') ma-as-sep @endif">
+                                        {{ $row['counts'][$bucket] }}
                                     </td>
                                 @endforeach
                                 <td>
-                                    <span class="ma-as-rate ma-as-rate--{{ $overallRate >= 75 ? 'good' : ($overallRate >= 50 ? 'mid' : 'low') }}">
-                                        {{ $overallRate }}%
+                                    <span class="ma-as-rate ma-as-rate--{{ $row['rate'] >= 75 ? 'good' : ($row['rate'] >= 50 ? 'mid' : 'low') }}">
+                                        {{ $row['rate'] }}%
                                     </span>
                                 </td>
                             </tr>
-                        </tfoot>
-                    </table>
-                </div>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td class="ma-as-name ma-as-foot-label">{{ __('Present') }}</td>
+                            @foreach ($sheet['dates'] as $date)
+                                <td class="ma-as-total is-on--present">
+                                    {{ $sheet['columnTotals'][$date]['present'] + $sheet['columnTotals'][$date]['late'] }}
+                                </td>
+                            @endforeach
+                            {{-- Column grand totals, instead of leaving the tail of the footer blank. --}}
+                            @foreach (['present', 'absent', 'late', 'excused'] as $bucket)
+                                <td class="ma-as-total @if ($grandTotals[$bucket] > 0) is-on--{{ $bucket }} @endif @if ($bucket === 'present') ma-as-sep @endif">
+                                    {{ $grandTotals[$bucket] }}
+                                </td>
+                            @endforeach
+                            <td>
+                                <span class="ma-as-rate ma-as-rate--{{ $overallRate >= 75 ? 'good' : ($overallRate >= 50 ? 'mid' : 'low') }}">
+                                    {{ $overallRate }}%
+                                </span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
 
-                <div class="ma-as-legend">
-                    @foreach (\App\Filament\Admin\Pages\AttendanceRecords::statusLabels() as $key => $label)
-                        <span class="ma-as-legend__item">
-                            <span class="ma-as-cell ma-as-cell--{{ $key }}">{{ \App\Filament\Admin\Pages\AttendanceRecords::statusInitial($key) }}</span>
-                            {{ $label }}
-                        </span>
-                    @endforeach
-                </div>
-            </x-filament::section>
-        @endif
+            <div class="ma-as-legend">
+                @foreach (\App\Filament\Admin\Pages\AttendanceRecords::statusLabels() as $key => $label)
+                    <span class="ma-as-legend__item">
+                        <span class="ma-as-cell ma-as-cell--{{ $key }}">{{ \App\Filament\Admin\Pages\AttendanceRecords::statusInitial($key) }}</span>
+                        {{ $label }}
+                    </span>
+                @endforeach
+            </div>
+        </x-filament::section>
     @endif
 </x-filament-panels::page>
