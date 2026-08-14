@@ -3,8 +3,17 @@
 namespace App\Filament\Admin\Pages;
 
 use App\Filament\Support\ExportsTableRecords;
+use App\Models\Attendance;
+use App\Models\ExamGrade;
+use App\Models\Registration;
+use App\Models\Section;
+use App\Models\SectionSession;
+use App\Models\Student;
+use App\Models\Trainer;
+use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\DatePicker;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -13,7 +22,6 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Filament\Forms\Components\DatePicker;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\HtmlString;
 use Spatie\Activitylog\Models\Activity;
@@ -43,14 +51,14 @@ class AuditLog extends Page implements HasTable
     public static function subjectTypes(): array
     {
         return [
-            \App\Models\Registration::class => __('Registration'),
-            \App\Models\Attendance::class => __('Attendance'),
-            \App\Models\ExamGrade::class => __('Grade'),
-            \App\Models\Student::class => __('Student'),
-            \App\Models\Trainer::class => __('Trainer'),
-            \App\Models\Section::class => __('Section'),
-            \App\Models\SectionSession::class => __('Session'),
-            \App\Models\User::class => __('Administrator'),
+            Registration::class => __('Registration'),
+            Attendance::class => __('Attendance'),
+            ExamGrade::class => __('Grade'),
+            Student::class => __('Student'),
+            Trainer::class => __('Trainer'),
+            Section::class => __('Section'),
+            SectionSession::class => __('Session'),
+            User::class => __('Administrator'),
         ];
     }
 

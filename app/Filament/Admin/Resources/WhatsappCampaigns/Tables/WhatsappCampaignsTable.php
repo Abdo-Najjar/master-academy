@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\WhatsappCampaigns\Tables;
 
 use App\Models\WhatsappCampaign;
+use App\Services\WhatsappCampaignService;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
@@ -64,12 +65,13 @@ class WhatsappCampaignsTable
                     ->color('success')
                     ->visible(fn (WhatsappCampaign $record): bool => $record->status === WhatsappCampaign::STATUS_DRAFT)
                     ->requiresConfirmation()
-                    ->modalDescription(fn (WhatsappCampaign $record): string => __('This will send the message to :count recipient(s), 40-60 seconds apart. It cannot be undone.', ['count' => $record->recipients()->count() ?: \App\Services\WhatsappCampaignService::resolveStudents($record)->count()]))
+                    ->modalDescription(fn (WhatsappCampaign $record): string => __('This will send the message to :count recipient(s), 40-60 seconds apart. It cannot be undone.', ['count' => $record->recipients()->count() ?: WhatsappCampaignService::resolveStudents($record)->count()]))
                     ->action(function (WhatsappCampaign $record): void {
-                        $count = \App\Services\WhatsappCampaignService::buildRecipients($record);
+                        $count = WhatsappCampaignService::buildRecipients($record);
 
                         if ($count === 0) {
                             Notification::make()->warning()->title(__('No recipients with a valid WhatsApp number in this group'))->send();
+
                             return;
                         }
 
@@ -79,7 +81,7 @@ class WhatsappCampaignsTable
                         // "Launch" button as if nothing happened.
                         $record->update(['status' => WhatsappCampaign::STATUS_RUNNING, 'started_at' => now()]);
 
-                        \App\Services\WhatsappCampaignService::launch($record);
+                        WhatsappCampaignService::launch($record);
 
                         Notification::make()->success()->title(__('Campaign launched'))->body(__(':count message(s) queued for sending.', ['count' => $count]))->send();
                     }),

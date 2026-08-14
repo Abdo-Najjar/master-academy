@@ -11,8 +11,6 @@ use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Unique;
@@ -139,24 +137,6 @@ class StudentForm
                             ->label(__('WhatsApp Number'))
                             ->tel()
                             ->maxLength(255),
-                        TextInput::make('parent_name')
-                            ->label(__('Guardian Name'))
-                            ->maxLength(255),
-                        TextInput::make('parent_phone')
-                            ->label(__('Guardian Phone'))
-                            ->tel()
-                            ->maxLength(255)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($state, Get $get, Set $set) {
-                                if (filled($state) && blank($get('parent_whatsapp'))) {
-                                    $set('parent_whatsapp', $state);
-                                }
-                            }),
-                        TextInput::make('parent_whatsapp')
-                            ->label(__('Guardian WhatsApp'))
-                            ->tel()
-                            ->maxLength(255)
-                            ->helperText(__('Absence and payment alerts are sent to this number.')),
                         Select::make('governorate_id')
                             ->label(__('Governorate'))
                             ->relationship('governorate', 'name')

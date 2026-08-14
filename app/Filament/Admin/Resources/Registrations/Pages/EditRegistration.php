@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Registrations\Pages;
 
 use App\Filament\Admin\Resources\Registrations\RegistrationResource;
+use App\Filament\Support\CapturesAuditReason;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
@@ -11,7 +12,7 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditRegistration extends EditRecord
 {
-    use \App\Filament\Support\CapturesAuditReason;
+    use CapturesAuditReason;
 
     protected static string $resource = RegistrationResource::class;
 

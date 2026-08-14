@@ -6,6 +6,7 @@ use App\Models\Certificate;
 use App\Models\CertificateTemplate;
 use App\Models\Section;
 use App\Models\Student;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Mccarlosen\LaravelMpdf\Facades\LaravelMpdf;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
@@ -26,7 +27,7 @@ class CertificateService
      * Issue one certificate per student enrolled in the section, skipping
      * students who already have a certificate for this section + template.
      *
-     * @return array{issued: \Illuminate\Support\Collection<int, Certificate>, skipped: int}
+     * @return array{issued: Collection<int, Certificate>, skipped: int}
      */
     public static function issueForSection(Section $section, CertificateTemplate $template): array
     {
@@ -234,9 +235,9 @@ class CertificateService
 
         return [
             // Locale-default keys (backward compatible with old templates)
-            'student_name'  => $studentNameAr ?: $studentNameEn,
-            'section_name'  => $sectionNameAr ?: $sectionNameEn,
-            'subject_name'  => $subjectNameAr ?: $subjectNameEn,
+            'student_name' => $studentNameAr ?: $studentNameEn,
+            'section_name' => $sectionNameAr ?: $sectionNameEn,
+            'subject_name' => $subjectNameAr ?: $subjectNameEn,
             // Explicit per-language keys
             'student_name_ar' => $studentNameAr,
             'student_name_en' => $studentNameEn,

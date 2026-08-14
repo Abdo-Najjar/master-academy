@@ -1,5 +1,8 @@
 <?php
 
+use App\Filament\Admin\Resources\Rooms\RoomResource;
+use App\Filament\Admin\Resources\Students\StudentResource;
+use App\Filament\Admin\Resources\Trainers\TrainerResource;
 use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\Room;
 use App\Models\Student;
@@ -77,7 +80,7 @@ it('lets a view-only operator read but not create, edit or delete', function () 
     $user = grantOnly(['student.index']);
     $this->actingAs($user);
 
-    $resource = App\Filament\Admin\Resources\Students\StudentResource::class;
+    $resource = StudentResource::class;
     $student = Student::create([
         'name' => ['ar' => 'طالب', 'en' => 'Student'],
         'username' => 'perm_'.uniqid(),
@@ -95,7 +98,7 @@ it('lets a view-only operator read but not create, edit or delete', function () 
 
 it('opens each action up only with its own gate', function () {
     $room = Room::create(['number' => 'P-1']);
-    $resource = App\Filament\Admin\Resources\Rooms\RoomResource::class;
+    $resource = RoomResource::class;
 
     $this->actingAs(grantOnly(['room.index', 'room.create']));
     expect($resource::canCreate())->toBeTrue()
@@ -116,7 +119,7 @@ it('opens each action up only with its own gate', function () {
 it('hides a resource entirely from an operator without its view gate', function () {
     $this->actingAs(grantOnly(['student.index']));
 
-    expect(App\Filament\Admin\Resources\Rooms\RoomResource::canAccess())->toBeFalse()
-        ->and(App\Filament\Admin\Resources\Trainers\TrainerResource::canAccess())->toBeFalse()
-        ->and(App\Filament\Admin\Resources\Students\StudentResource::canAccess())->toBeTrue();
+    expect(RoomResource::canAccess())->toBeFalse()
+        ->and(TrainerResource::canAccess())->toBeFalse()
+        ->and(StudentResource::canAccess())->toBeTrue();
 });

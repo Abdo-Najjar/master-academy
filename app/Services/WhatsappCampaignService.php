@@ -79,7 +79,7 @@ class WhatsappCampaignService
      * The students a campaign is aimed at: a saved group, everyone enrolled in
      * a section / course / with a trainer, or every active student.
      *
-     * @return \Illuminate\Support\Collection<int, Student>
+     * @return Collection<int, Student>
      */
     public static function resolveStudents(WhatsappCampaign $campaign): Collection
     {

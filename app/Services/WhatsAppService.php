@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Section;
 use App\Models\Student;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Log;
 
 class WhatsAppService
@@ -16,28 +17,29 @@ class WhatsAppService
      * Send a WhatsApp message by invoking the Node.js Baileys CLI.
      *
      * @param  string|null  $media  Absolute path to an attachment (image/video/PDF).
-     * @return bool  True on success (exit 0), false on failure.
+     * @return bool True on success (exit 0), false on failure.
      */
     public static function send(string $phone, string $message, ?string $media = null): bool
     {
-        if (app() instanceof \Illuminate\Foundation\Application && app()->runningUnitTests()) {
+        if (app() instanceof Application && app()->runningUnitTests()) {
             return true;
         }
 
         $phone = self::normalizePhone($phone);
         if ($phone === '') {
             Log::warning('WhatsApp: empty phone after normalization — skipping');
+
             return false;
         }
 
-        $cliPath    = escapeshellarg(base_path('whatsapp/cli.js'));
-        $phoneArg   = escapeshellarg($phone);
+        $cliPath = escapeshellarg(base_path('whatsapp/cli.js'));
+        $phoneArg = escapeshellarg($phone);
         $messageArg = escapeshellarg($message);
 
-        $command = 'node ' . $cliPath . ' send --phone ' . $phoneArg . ' --message ' . $messageArg;
+        $command = 'node '.$cliPath.' send --phone '.$phoneArg.' --message '.$messageArg;
 
         if ($media !== null && $media !== '') {
-            $command .= ' --media ' . escapeshellarg($media);
+            $command .= ' --media '.escapeshellarg($media);
         }
 
         $command .= ' 2>&1';
@@ -45,9 +47,9 @@ class WhatsAppService
         exec($command, $output, $exitCode);
 
         Log::info('WhatsApp send', [
-            'phone'    => substr($phone, 0, 6) . '…',
+            'phone' => substr($phone, 0, 6).'…',
             'exitCode' => $exitCode,
-            'output'   => $output,
+            'output' => $output,
         ]);
 
         return $exitCode === 0;
@@ -72,7 +74,7 @@ class WhatsAppService
             return $digits;
         }
 
-        return $defaultCountry . ltrim($digits, '0');
+        return $defaultCountry.ltrim($digits, '0');
     }
 
     // -------------------------------------------------------------------------
@@ -87,7 +89,7 @@ class WhatsAppService
             $clean = ltrim($clean, '+');
         }
 
-        return 'https://wa.me/' . $clean . '?text=' . urlencode($message);
+        return 'https://wa.me/'.$clean.'?text='.urlencode($message);
     }
 
     /**
@@ -112,19 +114,10 @@ class WhatsAppService
             if (filled($student->whatsapp_number) || filled($student->phone_number)) {
                 $phone = $student->whatsapp_number ?: $student->phone_number;
                 $contacts[] = [
-                    'name'  => $name,
+                    'name' => $name,
                     'phone' => $phone,
-                    'url'   => self::buildUrl($phone, $message),
-                    'type'  => 'student',
-                ];
-            }
-
-            if ($guardianPhone = $student->guardianContact()) {
-                $contacts[] = [
-                    'name'  => $student->parent_name ?: __('Guardian of :name', ['name' => $name]),
-                    'phone' => $guardianPhone,
-                    'url'   => self::buildUrl($guardianPhone, $message),
-                    'type'  => 'guardian',
+                    'url' => self::buildUrl($phone, $message),
+                    'type' => 'student',
                 ];
             }
         }

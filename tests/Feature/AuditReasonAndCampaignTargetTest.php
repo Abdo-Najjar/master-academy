@@ -53,8 +53,6 @@ beforeEach(function () {
         'password' => 'password',
         'status' => 'active',
         'phone_number' => '0599111222',
-        'parent_name' => 'أبو الطالب',
-        'parent_phone' => '0599333444',
     ]);
 
     $this->otherStudent = Student::create([
@@ -175,11 +173,11 @@ it('shows the student their own attendance history', function () {
         });
 });
 
-it('includes the guardian number in a section contact list', function () {
+it('lists only the student own number in a section contact list', function () {
     $contacts = WhatsAppService::sectionContacts($this->section, 'مرحبا');
 
-    expect(collect($contacts)->pluck('type')->all())->toBe(['student', 'guardian'])
-        ->and(collect($contacts)->firstWhere('type', 'guardian')['name'])->toBe('أبو الطالب');
+    expect(collect($contacts)->pluck('type')->all())->toBe(['student'])
+        ->and(collect($contacts)->first()['phone'])->toContain('599111222');
 });
 
 it('renders the student attendance tab without errors', function () {

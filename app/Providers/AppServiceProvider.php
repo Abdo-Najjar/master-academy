@@ -5,7 +5,6 @@ namespace App\Providers;
 use App\Listeners\RecordLoginActivity;
 use App\Models\User;
 use App\Support\AuditReason;
-use Spatie\Activitylog\Models\Activity;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -13,6 +12,7 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Activitylog\Models\Activity;
 
 class AppServiceProvider extends ServiceProvider
 {

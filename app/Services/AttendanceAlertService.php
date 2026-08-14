@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Filament\Admin\Resources\Students\StudentResource;
 use App\Models\Attendance;
 use App\Models\Section;
 use App\Models\Student;
@@ -18,7 +19,7 @@ class AttendanceAlertService
     /**
      * Run alert checks for every student-status pair just saved in a section.
      *
-     * @param  array<int,string> $statuses  student_id => status
+     * @param  array<int,string>  $statuses  student_id => status
      */
     public function checkForSection(Section $section, array $statuses): int
     {
@@ -107,12 +108,6 @@ class AttendanceAlertService
             return false;
         }
 
-        // The guardian is told directly (there is no guardian portal — the
-        // contact numbers live on the student record).
-        if ($guardianPhone = $student->guardianContact()) {
-            WhatsAppService::send($guardianPhone, $body);
-        }
-
         $admins = User::query()->get();
         if ($admins->isEmpty()) {
             return true;
@@ -126,7 +121,7 @@ class AttendanceAlertService
             ->actions([
                 Action::make('view')
                     ->label(__('Open Student'))
-                    ->url(\App\Filament\Admin\Resources\Students\StudentResource::getUrl('view', ['record' => $student->id])),
+                    ->url(StudentResource::getUrl('view', ['record' => $student->id])),
             ])
             ->sendToDatabase($admins);
 

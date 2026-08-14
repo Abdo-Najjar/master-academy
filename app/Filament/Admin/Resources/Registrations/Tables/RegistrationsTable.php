@@ -15,6 +15,7 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
+use Filament\Support\Colors\Color;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
@@ -32,7 +33,7 @@ class RegistrationsTable
                 TextColumn::make('section.subject.name')
                     ->label(__('Course'))
                     ->badge()
-                    ->color(fn ($record) => $record->section?->subject?->color ? \Filament\Support\Colors\Color::hex($record->section->subject->color) : 'gray')
+                    ->color(fn ($record) => $record->section?->subject?->color ? Color::hex($record->section->subject->color) : 'gray')
                     ->toggleable(),
                 TextColumn::make('paymentType.name')->label(__('Payment'))->toggleable(),
                 TextColumn::make('amount_due')->label(__('Due'))->money('ILS', decimalPlaces: 0)->sortable(),
