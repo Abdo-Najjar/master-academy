@@ -18,6 +18,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Storage;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Writer;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -49,7 +50,7 @@ class WalletTransactions extends Page implements HasTable
 
     public static function canAccess(): bool
     {
-        return (auth()->user()?->can('wallet_transactions.index') ?? false);
+        return auth()->user()?->can('wallet_transactions.index') ?? false;
     }
 
     public function table(Table $table): Table
@@ -88,11 +89,12 @@ class WalletTransactions extends Page implements HasTable
                     ->state(fn (Transaction $record): string => (string) ($record->payable?->name ?? '—')),
                 TextColumn::make('amount')
                     ->label(__('Amount'))
-                    ->state(fn (Transaction $record): string => '₪' . number_format(abs((float) $record->amountFloat), 2))
+                    ->state(fn (Transaction $record): string => '₪'.number_format(abs((float) $record->amountFloat), 2))
                     ->sortable(),
                 TextColumn::make('meta.description')
                     ->label(__('Description'))
                     ->limit(40)
+                    ->tooltip(fn (Transaction $record): ?string => $record->meta['description'] ?? null)
                     ->wrap(),
                 TextColumn::make('meta.payment_type_id')
                     ->label(__('Payment Type'))
@@ -100,6 +102,7 @@ class WalletTransactions extends Page implements HasTable
                 TextColumn::make('meta.note')
                     ->label(__('Note'))
                     ->limit(30)
+                    ->tooltip(fn (Transaction $record): ?string => $record->meta['note'] ?? null)
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('receipt')
                     ->label(__('Receipt'))
@@ -108,7 +111,7 @@ class WalletTransactions extends Page implements HasTable
                     ->color('info')
                     ->icon('heroicon-o-paper-clip')
                     ->url(fn (Transaction $record): ?string => ($p = $record->meta['receipt_path'] ?? null)
-                        ? \Illuminate\Support\Facades\Storage::disk('public')->url($p)
+                        ? Storage::disk('public')->url($p)
                         : null, shouldOpenInNewTab: true)
                     ->placeholder(__('N/A')),
                 TextColumn::make('created_at')
@@ -166,10 +169,10 @@ class WalletTransactions extends Page implements HasTable
         $query = $this->getFilteredSortedTableQuery() ?? $this->getFilteredTableQuery();
         $rows = $query->with('payable')->get();
 
-        $fileName = 'payment-operations-' . now()->format('Y-m-d-Hi') . '.xlsx';
+        $fileName = 'payment-operations-'.now()->format('Y-m-d-Hi').'.xlsx';
 
         return response()->streamDownload(function () use ($rows): void {
-            $writer = new Writer();
+            $writer = new Writer;
             $writer->openToFile('php://output');
 
             $writer->addRow(Row::fromValues([

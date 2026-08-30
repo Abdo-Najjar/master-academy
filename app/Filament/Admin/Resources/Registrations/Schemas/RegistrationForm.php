@@ -4,12 +4,12 @@ namespace App\Filament\Admin\Resources\Registrations\Schemas;
 
 use App\Filament\Support\AuditReasonField;
 use App\Filament\Support\EnrollmentPayment;
+use App\Filament\Support\SectionEnrolmentRules;
 use App\Models\ExemptionType;
 use App\Models\Registration;
 use App\Models\Section;
-use App\Models\SectionTime;
 use App\Models\Student;
-use Closure;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -61,80 +61,38 @@ class RegistrationForm
                                         // Per-session sections are billed one
                                         // cycle at a time, so the first charge
                                         // is the cycle fee, not a course price.
-                                        $amount = $section->isPerSessionBilled()
-                                            ? (float) $section->cycle_fee
-                                            : (float) $section->price;
+                                        $amount = $section->displayFee();
                                         $set('amount_due', $amount);
                                         $set('amount_paid', $amount);
                                     }
                                 }
                             })
                             ->rules([
-                                fn () => function (string $attribute, $value, Closure $fail) {
-                                    if (! $value) {
-                                        return;
-                                    }
-                                    $section = Section::find($value);
-                                    if ($section && ! $section->trainer_id) {
-                                        $fail(__('Section :name has no trainer assigned. Assign a trainer to the section before registering students.', [
-                                            'name' => $section->name,
-                                        ]));
-                                    }
-                                },
-                                fn (callable $get, ?Registration $record) => function (string $attribute, $value, Closure $fail) use ($get, $record) {
-                                    $studentId = $get('student_id');
-                                    if (! $studentId || ! $value) {
-                                        return;
-                                    }
-
-                                    $otherSectionIds = Registration::query()
-                                        ->where('student_id', $studentId)
-                                        ->where('section_id', '!=', $value)
-                                        ->when($record?->id, fn ($q) => $q->where('id', '!=', $record->id))
-                                        ->pluck('section_id');
-
-                                    if ($otherSectionIds->isEmpty()) {
-                                        return;
-                                    }
-
-                                    $newTimes = SectionTime::query()->where('section_id', $value)->get();
-                                    $otherTimes = SectionTime::query()->whereIn('section_id', $otherSectionIds)->with('section')->get();
-
-                                    foreach ($newTimes as $new) {
-                                        foreach ($otherTimes as $other) {
-                                            if (strtolower((string) $new->day) !== strtolower((string) $other->day)) {
-                                                continue;
-                                            }
-                                            if ($new->start_time < $other->end_time && $new->end_time > $other->start_time) {
-                                                $sectionName = $other->section?->name ?? '#'.$other->section_id;
-                                                $fail(__('Schedule conflict with the student\'s other section :name on :day at :time', [
-                                                    'name' => $sectionName,
-                                                    'day' => __(ucfirst((string) $new->day)),
-                                                    'time' => substr((string) $other->start_time, 0, 5).' - '.substr((string) $other->end_time, 0, 5),
-                                                ]));
-
-                                                return;
-                                            }
-                                        }
-                                    }
-                                },
-                                fn (?Registration $record) => function (string $attribute, $value, Closure $fail) use ($record) {
-                                    if (! $value) {
-                                        return;
-                                    }
-                                    $section = Section::find($value);
-                                    if (! $section || ! $section->capacity) {
-                                        return;
-                                    }
-                                    $enrolled = Registration::query()
-                                        ->where('section_id', $value)
-                                        ->when($record?->id, fn ($q) => $q->where('id', '!=', $record->id))
-                                        ->count();
-                                    if ($enrolled >= $section->capacity) {
-                                        $fail(__('This section is full (capacity :capacity).', ['capacity' => $section->capacity]));
-                                    }
-                                },
+                                fn () => SectionEnrolmentRules::hasTrainer(),
+                                fn (callable $get, ?Registration $record) => SectionEnrolmentRules::noScheduleClash(
+                                    $get('student_id') ? (int) $get('student_id') : null,
+                                    $record?->id,
+                                ),
+                                fn (?Registration $record) => SectionEnrolmentRules::hasRoom($record?->id),
                             ]),
+                        DatePicker::make('enrolled_at')
+                            ->label(__('Section Enrollment Date'))
+                            ->native(false)
+                            ->default(now())
+                            ->required()
+                            ->helperText(__('The day the student actually joined this section. Lessons held before it are not counted or charged — set it back when entering older registrations.')),
+                        DatePicker::make('left_at')
+                            ->label(__('Withdrawal Date'))
+                            ->native(false)
+                            ->visibleOn('edit')
+                            ->afterOrEqual('enrolled_at')
+                            ->live()
+                            ->helperText(__('The first day the student is no longer in the section. Lessons held from this day on are not counted, not charged, and the student is off the attendance sheet. Set it back to record someone who stopped coming a while ago.')),
+                        TextInput::make('leave_reason')
+                            ->label(__('Withdrawal Reason'))
+                            ->maxLength(255)
+                            ->hiddenOn('create')
+                            ->visible(fn (Get $get): bool => filled($get('left_at'))),
                     ])
                     ->columns(1),
 

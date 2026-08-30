@@ -1,11 +1,16 @@
 <?php
 
+use App\Filament\Admin\Resources\Registrations\Actions\WithdrawFromSectionAction;
 use App\Filament\Admin\Resources\Rooms\RoomResource;
 use App\Filament\Admin\Resources\Students\StudentResource;
 use App\Filament\Admin\Resources\Trainers\TrainerResource;
 use App\Filament\Support\AuthorizesResourceActions;
+use App\Models\Registration;
 use App\Models\Room;
+use App\Models\Section;
 use App\Models\Student;
+use App\Models\Subject;
+use App\Models\Trainer;
 use App\Models\User;
 use App\Support\PermissionCatalog;
 use Illuminate\Support\Facades\File;
@@ -122,4 +127,52 @@ it('hides a resource entirely from an operator without its view gate', function 
     expect(RoomResource::canAccess())->toBeFalse()
         ->and(TrainerResource::canAccess())->toBeFalse()
         ->and(StudentResource::canAccess())->toBeTrue();
+});
+
+it('gates each heavyweight registration action behind its own permission', function () {
+    $trainer = Trainer::create([
+        'name' => ['ar' => 'أستاذ', 'en' => 'Trainer'],
+        'username' => 'perm_trainer_'.uniqid(),
+        'password' => 'password',
+        'default_rate' => 50,
+    ]);
+    $subject = Subject::create(['name' => ['ar' => 'مادة', 'en' => 'Subject']]);
+    $section = Section::create([
+        'name' => 'شعبة الصلاحيات',
+        'subject_id' => $subject->id,
+        'trainer_id' => $trainer->id,
+        'price' => 100,
+    ]);
+    $student = Student::create([
+        'name' => ['ar' => 'طالب', 'en' => 'Student'],
+        'username' => 'perm_student_'.uniqid(),
+        'password' => 'password',
+    ]);
+    $registration = Registration::create([
+        'student_id' => $student->id,
+        'section_id' => $section->id,
+    ]);
+
+    $withdraw = fn () => WithdrawFromSectionAction::make()
+        ->record($registration)
+        ->isVisible();
+
+    // Being able to edit a registration is not the same as being able to end it.
+    $this->actingAs(grantOnly(['registration.index', 'registration.update']));
+    expect($withdraw())->toBeFalse();
+
+    $this->actingAs(grantOnly(['registration.index', 'registration.withdraw']));
+    expect($withdraw())->toBeTrue();
+});
+
+it('lists every gate the catalog declares, including the newest ones', function () {
+    $gates = PermissionCatalog::allGates();
+
+    expect($gates)
+        ->toContain('registration.withdraw')
+        ->toContain('registration.cancel')
+        ->toContain('registration.transfer')
+        ->toContain('registration.collect')
+        // No duplicates: the roles screen renders one checkbox per gate.
+        ->and(array_unique($gates))->toHaveCount(count($gates));
 });

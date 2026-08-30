@@ -23,8 +23,13 @@ class CollectCycleAction
             ->label(__('Collect Session Cycle Payment'))
             ->icon('heroicon-o-banknotes')
             ->color('success')
+            // Hidden on sections that charge the cycle themselves: there the
+            // wallet is already debited when the cycle closes, and collecting
+            // again would bill the student twice. Money actually received is
+            // recorded as a wallet payment instead.
             ->visible(fn (?Registration $record): bool => $record !== null
                 && $record->isPerSessionBilled()
+                && ! ($record->section?->autoChargesCycles() ?? false)
                 && (auth()->user()?->can('registration.collect') ?? false))
             ->modalHeading(__('Collect Session Cycle Payment'))
             ->schema(fn (Registration $record): array => [

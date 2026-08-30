@@ -182,9 +182,7 @@ class PdfController extends Controller
             ->get()
             ->keyBy('student_id');
 
-        $students = $section->registrations()
-            ->with('student')
-            ->get()
+        $students = $section->rosterOn($date)
             ->pluck('student')
             ->filter()
             ->unique('id')

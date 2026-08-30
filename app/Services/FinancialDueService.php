@@ -46,8 +46,9 @@ class FinancialDueService
      * Compute financial status for a single registration.
      *
      * Sections priced per number of sessions are judged on their session
-     * counter instead (warning two sessions before the cycle ends, due when it
-     * ends, overdue two sessions later) — see SessionBillingService.
+     * counter as well as their money — warning two sessions before the cycle
+     * ends, due when it ends, overdue two sessions later, and never calmer than
+     * the unpaid part of the bill allows. See SessionBillingService.
      *
      * Fixed-course registrations:
      * ok       -> fully funded by real money

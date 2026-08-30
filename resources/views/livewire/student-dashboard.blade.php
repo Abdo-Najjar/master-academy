@@ -79,6 +79,13 @@
             @endif
 
             @if ($activeTab === 'schedule')
+                {{-- The weekly table says which days the student has lessons;
+                     the calendar says which *dates*, which is the question they
+                     actually ask ("do I have a lesson on the 14th?"). --}}
+                <div class="mb-5">
+                    <livewire:schedule-calendar :section-ids="$scheduleSectionIds" />
+                </div>
+
                 <div class="overflow-x-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
                     <table class="min-w-[640px] w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-gray-700">

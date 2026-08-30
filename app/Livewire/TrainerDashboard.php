@@ -210,12 +210,12 @@ class TrainerDashboard extends Component
             ->get()
             ->keyBy('student_id');
 
-        $section = Section::query()->with('registrations.student')->find($this->attendanceSectionId);
+        $section = Section::query()->find($this->attendanceSectionId);
         $this->attendanceStatuses = [];
         $this->attendanceNotes = [];
         $this->attendanceEditReason = '';
         $this->attendanceDayHasRecords = $existing->isNotEmpty();
-        foreach ($section?->registrations ?? [] as $reg) {
+        foreach ($section?->rosterOn($this->attendanceDate) ?? [] as $reg) {
             $row = $existing->get($reg->student_id);
             $this->attendanceStatuses[$reg->student_id] = $row?->status ?? 'present';
             $this->attendanceNotes[$reg->student_id] = $row?->note ?? '';
@@ -591,7 +591,7 @@ class TrainerDashboard extends Component
             'due_date' => $this->newAssignmentDueDate ?: null,
         ]);
 
-        $students = $section->registrations()->with('student')->get()->pluck('student')->filter();
+        $students = $section->registrations()->stillEnrolled()->with('student')->get()->pluck('student')->filter();
         if ($students->isNotEmpty()) {
             Notification::send($students, new AssignmentCreated($assignment));
         }
@@ -627,9 +627,14 @@ class TrainerDashboard extends Component
 
         $attendanceSection = null;
         if ($this->attendanceSectionId) {
-            $attendanceSection = Section::query()
-                ->with('registrations.student')
-                ->find($this->attendanceSectionId);
+            $attendanceSection = Section::query()->find($this->attendanceSectionId);
+
+            // Roster as of the day being recorded — students who joined later
+            // must not appear on a backdated sheet.
+            $attendanceSection?->setRelation(
+                'registrations',
+                $attendanceSection->rosterOn($this->attendanceDate ?: now()->toDateString()),
+            );
         }
 
         $materialsSection = null;
@@ -673,6 +678,9 @@ class TrainerDashboard extends Component
             'unreadNotificationsCount' => $trainer->unreadNotifications()->count(),
             'sections' => $sections,
             'scheduleSummaries' => $scheduleSummaries,
+            // Dates, not just weekdays: the calendar tab answers "what am I
+            // teaching on the 14th", which the per-section summaries cannot.
+            'scheduleSectionIds' => $sections->pluck('id')->all(),
             'transactions' => $transactions,
             'attendanceSection' => $attendanceSection,
             'materialsSection' => $materialsSection,

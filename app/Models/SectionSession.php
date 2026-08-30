@@ -75,7 +75,7 @@ class SectionSession extends Model
         return [
             'date' => 'date',
             'fee' => 'decimal:2',
-            'trainer_rate' => 'decimal:2',
+            'trainer_rate' => 'decimal:4',
             'counts_toward_billing' => 'boolean',
             'counted_at_billing' => 'boolean',
         ];
@@ -98,6 +98,19 @@ class SectionSession extends Model
         ];
     }
 
+    /**
+     * How a lesson that exists only as a row — no timetable slot behind it — is
+     * labelled on a calendar. A regular lesson off the timetable is exactly
+     * what the desk calls an extra lesson; the other kinds already say what
+     * they are.
+     */
+    public static function extraLabelFor(string $type): string
+    {
+        return $type === self::TYPE_REGULAR
+            ? __('Extra Session')
+            : (self::typeOptions()[$type] ?? $type);
+    }
+
     /** @return array<string, string> */
     public static function statusOptions(): array
     {
@@ -109,9 +122,15 @@ class SectionSession extends Model
     }
 
     /**
-     * The regular session of a section on a given day, creating it as "held"
-     * if it does not exist yet. Taking attendance for a day is what normally
-     * calls this: the lesson evidently happened.
+     * The lesson of a section on a given day, creating it as "held" if it does
+     * not exist yet. Taking attendance for a day is what normally calls this:
+     * the lesson evidently happened.
+     *
+     * A make-up lesson counts as that day's lesson too. It has to: it is the
+     * whole reason the day is open at all, and creating a second, regular
+     * lesson beside it would charge the roster twice for one afternoon. Private
+     * lessons are left out — they are billed on their own and stand apart from
+     * the day's regular teaching.
      *
      * A session that was explicitly cancelled is returned untouched — recording
      * attendance must not silently un-cancel a lesson.
@@ -120,8 +139,11 @@ class SectionSession extends Model
     {
         $session = static::query()
             ->where('section_id', $sectionId)
-            ->where('type', self::TYPE_REGULAR)
+            ->where('type', '!=', self::TYPE_PRIVATE)
             ->whereDate('date', $date)
+            // A day holding both kinds is the regular lesson's day; the make-up
+            // is somebody's replacement for another one.
+            ->orderByRaw('case when type = ? then 0 else 1 end', [self::TYPE_REGULAR])
             ->first();
 
         if (! $session) {

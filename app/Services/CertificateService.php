@@ -6,6 +6,7 @@ use App\Models\Certificate;
 use App\Models\CertificateTemplate;
 use App\Models\Section;
 use App\Models\Student;
+use App\Support\PdfFonts;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Mccarlosen\LaravelMpdf\Facades\LaravelMpdf;
@@ -31,7 +32,9 @@ class CertificateService
      */
     public static function issueForSection(Section $section, CertificateTemplate $template): array
     {
-        $studentIds = $section->registrations()->pluck('student_id')->unique();
+        // A student who withdrew did not finish the course, so a bulk issue
+        // skips them. Issuing one to them individually is still possible.
+        $studentIds = $section->registrations()->stillEnrolled()->pluck('student_id')->unique();
 
         $alreadyIssuedStudentIds = Certificate::query()
             ->where('section_id', $section->id)
@@ -196,14 +199,7 @@ class CertificateService
      */
     protected static function customFontData(): array
     {
-        return [
-            'cairo' => ['R' => 'Cairo-Regular.ttf', 'B' => 'Cairo-Bold.ttf'],
-            'tajawal' => ['R' => 'Tajawal-Regular.ttf', 'B' => 'Tajawal-Bold.ttf'],
-            'amiri' => ['R' => 'Amiri-Regular.ttf', 'B' => 'Amiri-Bold.ttf'],
-            'almarai' => ['R' => 'Almarai-Regular.ttf', 'B' => 'Almarai-Bold.ttf'],
-            'ibmplexsansarabic' => ['R' => 'IBMPlexSansArabic-Regular.ttf', 'B' => 'IBMPlexSansArabic-Bold.ttf'],
-            'bahijthesansarabic' => ['R' => 'BahijTheSansArabic-Regular.ttf', 'B' => 'BahijTheSansArabic-Bold.ttf'],
-        ];
+        return PdfFonts::data();
     }
 
     /**

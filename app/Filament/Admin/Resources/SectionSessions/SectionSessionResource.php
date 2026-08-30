@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\SectionSessions;
 
 use App\Filament\Admin\Resources\SectionSessions\Pages\ManageSectionSessions;
 use App\Filament\Support\AuthorizesResourceActions;
+use App\Filament\Support\TrainerRateField;
 use App\Models\Registration;
 use App\Models\Section;
 use App\Models\SectionSession;
@@ -133,15 +134,11 @@ class SectionSessionResource extends Resource
                             ->step(0.01)
                             ->prefix('₪')
                             ->visible(fn (Get $get): bool => $get('type') === SectionSession::TYPE_PRIVATE),
-                        TextInput::make('trainer_rate')
-                            ->label(__('Trainer Rate (%)'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(100)
-                            ->step(0.01)
-                            ->suffix('%')
-                            ->helperText(__('Leave empty to use the section rate'))
-                            ->visible(fn (Get $get): bool => $get('type') === SectionSession::TYPE_PRIVATE),
+                        ...TrainerRateField::make(
+                            'trainer_rate',
+                            helperText: __('Leave empty to use the section rate'),
+                            visible: fn (Get $get): bool => $get('type') === SectionSession::TYPE_PRIVATE,
+                        ),
                         Textarea::make('note')
                             ->label(__('Note'))
                             ->rows(2)

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Students\Pages;
 
+use App\Filament\Admin\Resources\Students\Actions\EnrollInSectionAction;
 use App\Filament\Admin\Resources\Students\Actions\WalletActions;
 use App\Filament\Admin\Resources\Students\StudentResource;
 use App\Models\CertificateTemplate;
@@ -69,6 +70,7 @@ class ViewStudent extends ViewRecord
                             ->persistent()
                             ->send();
                     }),
+                EnrollInSectionAction::make(),
                 WalletActions::deposit(),
                 WalletActions::withdraw(),
                 EditAction::make(),

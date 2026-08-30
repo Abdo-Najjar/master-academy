@@ -4,6 +4,7 @@ use App\Filament\Admin\Pages\QuickEnroll;
 use App\Filament\Admin\Resources\Registrations\Pages\CreateRegistration;
 use App\Filament\Admin\Resources\Students\StudentResource;
 use App\Filament\Admin\Resources\Students\Tables\StudentsTable;
+use App\Models\Guardian;
 use App\Models\PaymentType;
 use App\Models\Registration;
 use App\Models\Section;
@@ -53,7 +54,7 @@ it('leaves the wallet square when the full amount is paid at enrollment', functi
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
             'registrations' => [
-                ['section_id' => $this->section->id, 'amount_due' => 500, 'amount_paid' => 500, 'exemption_amount' => 0],
+                ['section_id' => $this->section->id, 'enrolled_at' => '2026-08-01', 'amount_due' => 500, 'amount_paid' => 500, 'exemption_amount' => 0],
             ],
             'payment_amount' => 500,
             'payment_type_id' => $this->paymentType->id,
@@ -79,7 +80,7 @@ it('still enrolls when nothing is paid, leaving the balance owed', function () {
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
             'registrations' => [
-                ['section_id' => $this->section->id, 'amount_due' => 500, 'amount_paid' => 500, 'exemption_amount' => 0],
+                ['section_id' => $this->section->id, 'enrolled_at' => '2026-08-01', 'amount_due' => 500, 'amount_paid' => 500, 'exemption_amount' => 0],
             ],
             'payment_amount' => 0,
         ])
@@ -103,7 +104,7 @@ it('records a part payment as partially funded', function () {
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
             'registrations' => [
-                ['section_id' => $this->section->id, 'amount_due' => 500, 'amount_paid' => 500, 'exemption_amount' => 0],
+                ['section_id' => $this->section->id, 'enrolled_at' => '2026-08-01', 'amount_due' => 500, 'amount_paid' => 500, 'exemption_amount' => 0],
             ],
             'payment_amount' => 200,
             'payment_type_id' => $this->paymentType->id,
@@ -128,7 +129,7 @@ it('keeps the payment on the wallet statement with its type and note', function 
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
             'registrations' => [
-                ['section_id' => $this->section->id, 'amount_due' => 500, 'amount_paid' => 500, 'exemption_amount' => 0],
+                ['section_id' => $this->section->id, 'enrolled_at' => '2026-08-01', 'amount_due' => 500, 'amount_paid' => 500, 'exemption_amount' => 0],
             ],
             'payment_amount' => 500,
             'payment_type_id' => $this->paymentType->id,

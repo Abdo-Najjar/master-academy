@@ -3,8 +3,10 @@
 namespace App\Filament\Admin\Resources\Registrations\Tables;
 
 use App\Filament\Admin\Resources\Registrations\Actions\CollectCycleAction;
+use App\Filament\Admin\Resources\Registrations\Actions\CollectPaymentAction;
 use App\Filament\Admin\Resources\Registrations\Actions\PauseCountingAction;
 use App\Filament\Admin\Resources\Registrations\Actions\TransferSectionAction;
+use App\Filament\Admin\Resources\Registrations\Actions\WithdrawFromSectionAction;
 use App\Models\Registration;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -14,20 +16,32 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Support\Colors\Color;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class RegistrationsTable
 {
-    public static function configure(Table $table): Table
+    /**
+     * @param  bool  $numbered  count the rows 1, 2, 3… instead of showing the
+     *                          registration id. Inside one section that is what
+     *                          "#" is read as — a roster position, not a
+     *                          database key that starts at 40 because forty
+     *                          students were enrolled elsewhere first.
+     */
+    public static function configure(Table $table, bool $numbered = false): Table
     {
         return $table
             ->columns([
-                TextColumn::make('id')->label('#')->sortable(),
+                $numbered
+                    ? TextColumn::make('index')->label('#')->rowIndex()
+                    : TextColumn::make('id')->label('#')->sortable(),
                 TextColumn::make('student.name')->label(__('Student'))->searchable()->sortable(),
                 TextColumn::make('section.name')->label(__('Section'))->searchable()->sortable(),
                 TextColumn::make('section.subject.name')
@@ -65,7 +79,7 @@ class RegistrationsTable
                     ->label(__('Financial Status'))
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'ok' => __('Paid'),
+                        'ok' => __('Settled'),
                         'warning' => __('Payment due soon'),
                         'due' => __('Payment Due'),
                         'overdue' => __('Overdue'),
@@ -79,6 +93,19 @@ class RegistrationsTable
                         default => 'gray',
                     })
                     ->toggleable(),
+                TextColumn::make('enrolled_at')
+                    ->label(__('Section Enrollment Date'))
+                    ->date()
+                    ->placeholder('—')
+                    ->sortable(),
+                TextColumn::make('left_at')
+                    ->label(__('Withdrawal Date'))
+                    ->date()
+                    ->placeholder('—')
+                    ->badge()
+                    ->color('danger')
+                    ->tooltip(fn (Registration $record): ?string => $record->leave_reason)
+                    ->sortable(),
                 TextColumn::make('created_at')->label(__('Date'))->dateTime()->sortable(),
             ])
             ->filters([
@@ -95,10 +122,31 @@ class RegistrationsTable
                     ->label(__('Exemption Type'))
                     ->relationship('exemptionType', 'name')
                     ->preload(),
+                Filter::make('withdrawn')
+                    ->label(__('Withdrawal'))
+                    ->schema([
+                        Select::make('state')
+                            ->label(__('Withdrawal'))
+                            ->placeholder(__('All'))
+                            ->options([
+                                'active' => __('Still Enrolled'),
+                                'withdrawn' => __('Withdrawn'),
+                            ]),
+                    ])
+                    ->query(fn (Builder $query, array $data): Builder => match ($data['state'] ?? null) {
+                        'active' => $query->whereNull('left_at'),
+                        'withdrawn' => $query->whereNotNull('left_at'),
+                        default => $query,
+                    })
+                    ->indicateUsing(fn (array $data): ?string => match ($data['state'] ?? null) {
+                        'active' => __('Still Enrolled'),
+                        'withdrawn' => __('Withdrawn'),
+                        default => null,
+                    }),
                 SelectFilter::make('financial_status')
                     ->label(__('Financial Status'))
                     ->options([
-                        'ok' => __('Paid'),
+                        'ok' => __('Settled'),
                         'warning' => __('Payment due soon'),
                         'due' => __('Payment Due'),
                         'overdue' => __('Overdue'),
@@ -109,14 +157,13 @@ class RegistrationsTable
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make(),
-                    Action::make('receipt')
-                        ->label(__('Print Receipt'))
-                        ->icon('heroicon-o-printer')
-                        ->color('info')
-                        ->url(fn (Registration $record): string => route('admin.pdf.receipt', $record), shouldOpenInNewTab: true),
+                    // Per-course, so a student sitting in three subjects can be
+                    // paid off one subject at a time.
+                    CollectPaymentAction::make(),
                     CollectCycleAction::make(),
                     TransferSectionAction::make(),
                     PauseCountingAction::make(),
+                    WithdrawFromSectionAction::make(),
                     Action::make('cancel')
                         ->label(__('Cancel & Refund'))
                         ->icon('heroicon-o-x-circle')

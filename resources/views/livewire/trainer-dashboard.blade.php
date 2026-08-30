@@ -24,7 +24,7 @@
                 </div>
             </div>
             <nav class="p-4 space-y-1">
-                @foreach (['sections' => __('My Sections'), 'attendance' => __('Attendance'), 'exams' => __('Exams & Grades'), 'assignments' => __('Assignments'), 'transactions' => __('Transactions'), 'complaints' => __('Complaints'), 'profile' => __('Edit Profile')] as $tab => $label)
+                @foreach (['sections' => __('My Sections'), 'schedule' => __('Schedule'), 'attendance' => __('Attendance'), 'exams' => __('Exams & Grades'), 'assignments' => __('Assignments'), 'transactions' => __('Transactions'), 'complaints' => __('Complaints'), 'profile' => __('Edit Profile')] as $tab => $label)
                     <button wire:click="setActiveTab('{{ $tab }}')" @click="sidebarOpen = false"
                             class="w-full text-start px-4 py-2.5 rounded-lg transition {{ $activeTab === $tab ? 'bg-emerald-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700' }}">
                         {{ $label }}
@@ -154,6 +154,11 @@
                         <p class="text-gray-500">{{ __('No sections') }}</p>
                     @endforelse
                 </div>
+            @endif
+
+            @if ($activeTab === 'schedule')
+                {{-- Every lesson the trainer holds, on the dates it falls. --}}
+                <livewire:schedule-calendar :section-ids="$scheduleSectionIds" />
             @endif
 
             @if ($activeTab === 'attendance')

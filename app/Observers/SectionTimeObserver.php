@@ -10,6 +10,9 @@ class SectionTimeObserver
     /**
      * Block saving a section time that would put a trainer in two places at once,
      * or two sections in the same room at the same time.
+     *
+     * Only courses that are actually still running can hold a slot: once a
+     * course is over, its trainer and its room are free again at that hour.
      */
     public function saving(SectionTime $time): void
     {
@@ -24,7 +27,8 @@ class SectionTimeObserver
             ->where('section_id', '!=', $section->id)
             ->where('start_time', '<', $time->end_time)
             ->where('end_time', '>', $time->start_time)
-            ->when($time->id, fn ($q) => $q->where('id', '!=', $time->id));
+            ->when($time->id, fn ($q) => $q->where('id', '!=', $time->id))
+            ->whereHas('section', fn ($q) => $q->runningBetween($section->start_date, $section->end_date));
 
         // Trainer double-booking
         if ($section->trainer_id) {

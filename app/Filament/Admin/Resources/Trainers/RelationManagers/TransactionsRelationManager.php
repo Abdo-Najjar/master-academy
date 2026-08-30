@@ -4,24 +4,27 @@ namespace App\Filament\Admin\Resources\Trainers\RelationManagers;
 
 use App\Models\Trainer;
 use Bavix\Wallet\Models\Transaction;
+use Filament\Resources\Pages\ViewRecord;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class TransactionsRelationManager extends RelationManager
 {
-    public static function getTitle(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): string
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
         return __('Transactions');
     }
 
     protected static string $relationship = 'transactions';
 
-    public static function canViewForRecord(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): bool
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
     {
-        return is_subclass_of($pageClass, \Filament\Resources\Pages\ViewRecord::class);
+        return is_subclass_of($pageClass, ViewRecord::class);
     }
 
     public function form(Schema $schema): Schema
@@ -52,12 +55,19 @@ class TransactionsRelationManager extends RelationManager
                     ->label(__('Amount'))
                     ->formatStateUsing(fn ($record): string => number_format($record->amount / 100, 2).' ₪')
                     ->sortable(),
+                // Both carry the whole "whose share, from which section" line,
+                // which is wider than the column: truncate, full text on hover.
                 Tables\Columns\TextColumn::make('meta.description')
                     ->label(__('Description'))
+                    ->limit(50)
+                    ->tooltip(fn (Transaction $record): ?string => $record->meta['description'] ?? null)
+                    ->wrap()
                     ->placeholder(__('N/A')),
                 Tables\Columns\TextColumn::make('meta.note')
                     ->label(__('Note'))
                     ->limit(50)
+                    ->tooltip(fn (Transaction $record): ?string => $record->meta['note'] ?? null)
+                    ->wrap()
                     ->placeholder(__('N/A')),
                 Tables\Columns\TextColumn::make('receipt')
                     ->label(__('Receipt'))
@@ -66,7 +76,7 @@ class TransactionsRelationManager extends RelationManager
                     ->color('info')
                     ->icon('heroicon-o-paper-clip')
                     ->url(fn (Transaction $record): ?string => ($p = $record->meta['receipt_path'] ?? null)
-                        ? \Illuminate\Support\Facades\Storage::disk('public')->url($p)
+                        ? Storage::disk('public')->url($p)
                         : null, shouldOpenInNewTab: true)
                     ->placeholder(__('N/A')),
                 Tables\Columns\TextColumn::make('created_at')

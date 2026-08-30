@@ -2,8 +2,11 @@
 
 namespace App\Filament\Admin\Resources\Trainers\Schemas;
 
+use App\Livewire\ScheduleCalendar;
 use App\Models\Trainer;
+use App\Support\TrainerRate;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Livewire;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -27,7 +30,7 @@ class TrainerInfolist
                         TextEntry::make('city.name')->label(__('City'))->placeholder('—'),
                         TextEntry::make('default_rate')
                             ->label(__('Default Rate (%)'))
-                            ->formatStateUsing(fn ($state) => $state !== null ? number_format((float) $state, 2).' %' : '—'),
+                            ->formatStateUsing(fn ($state) => TrainerRate::label($state) ?? '—'),
                         TextEntry::make('balanceFloat')
                             ->label(__('Wallet Balance'))
                             ->formatStateUsing(fn ($state) => number_format((float) $state, 2).' ₪')
@@ -60,6 +63,15 @@ class TrainerInfolist
                             ->visible(fn (Trainer $record): bool => $record->trashed()),
                     ])
                     ->columns(1)
+                    ->columnSpanFull(),
+
+                Section::make(__('Schedule'))
+                    ->description(__('Lessons of the sections this trainer teaches.'))
+                    ->schema([
+                        Livewire::make(ScheduleCalendar::class, fn (Trainer $record): array => [
+                            'sectionIds' => $record->sections()->pluck('id')->all(),
+                        ])->columnSpanFull(),
+                    ])
                     ->columnSpanFull(),
             ]);
     }

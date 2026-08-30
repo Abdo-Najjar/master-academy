@@ -51,6 +51,15 @@ class StudentTransferService
             ]);
         }
 
+        // Someone who left is not moved, they are registered again. Carrying a
+        // withdrawn registration across would land it in the new section still
+        // marked as ended.
+        if ($registration->hasLeft()) {
+            throw ValidationException::withMessages([
+                'to_section_id' => __('This student has withdrawn from the section. Undo the withdrawal first, or register them in the new section instead.'),
+            ]);
+        }
+
         $alreadyThere = Registration::query()
             ->where('student_id', $registration->student_id)
             ->where('section_id', $toSectionId)
@@ -62,7 +71,8 @@ class StudentTransferService
             ]);
         }
 
-        if ($target->capacity && $target->registrations()->count() >= $target->capacity) {
+        // Students who withdrew freed their seats.
+        if ($target->capacity && $target->registrations()->stillEnrolled()->count() >= $target->capacity) {
             throw ValidationException::withMessages([
                 'to_section_id' => __('This section is full (capacity :capacity).', ['capacity' => $target->capacity]),
             ]);
@@ -78,13 +88,25 @@ class StudentTransferService
                 'transferred_at' => now(),
             ]);
 
-            // The counter carries over as-is; only the offset is re-based onto
-            // the new section so a future recount stays meaningful there.
+            // The student keeps their place in the current cycle: the sessions
+            // counted in the old section become the new registration's starting
+            // point, and it only starts collecting the new section's lessons
+            // from the day of the move — the ones it held before the student
+            // arrived are its own history, not their bill.
+            $movedOn = now()->startOfDay();
+
             $registration->section_id = $toSectionId;
+            $registration->sessions_carried_over = $target->isPerSessionBilled()
+                ? (int) $registration->sessions_counted
+                : 0;
+            $registration->enrolled_at = $movedOn;
             $registration->session_offset = $target->isPerSessionBilled()
-                ? SessionBillingService::heldSessionCount($toSectionId)
+                ? SessionBillingService::heldSessionCountBefore($toSectionId, $movedOn)
                 : 0;
             $registration->save();
+
+            $registration->setRelation('section', $target);
+            SessionBillingService::recount($registration);
 
             return $transfer;
         });

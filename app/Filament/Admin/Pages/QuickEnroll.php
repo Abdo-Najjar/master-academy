@@ -160,7 +160,9 @@ class QuickEnroll extends Page implements HasForms
                                         ->mapWithKeys(fn ($s) => [
                                             $s->id => $s->name
                                                 .($s->subject ? ' — '.$s->subject->getTranslation('name', app()->getLocale(), false) : '')
-                                                .' ('.number_format((float) $s->price, 2).' ₪)',
+                                                // A per-session section's money is its cycle fee;
+                                                // `price` is zero there and read as "free".
+                                                .' ('.$s->feeSummary().')',
                                         ]))
                                     ->searchable()
                                     ->required()
@@ -170,25 +172,38 @@ class QuickEnroll extends Page implements HasForms
                                         if ($state) {
                                             $section = Section::find($state);
                                             if ($section) {
-                                                $set('amount_due', $section->price);
-                                                $set('amount_paid', $section->price);
+                                                // The first charge on a per-session section is one
+                                                // cycle, not a course price — same rule the
+                                                // registration form already followed.
+                                                $set('amount_due', $section->displayFee());
+                                                $set('amount_paid', $section->displayFee());
                                             }
                                         }
                                     })
                                     ->columnSpanFull(),
+
+                                DatePicker::make('enrolled_at')
+                                    ->label(__('Section Enrollment Date'))
+                                    ->native(false)
+                                    ->default(now())
+                                    ->required()
+                                    ->columnSpanFull()
+                                    ->helperText(__('The day the student actually joined this section. Lessons held before it are not counted or charged — set it back when entering older registrations.')),
 
                                 TextInput::make('amount_due')
                                     ->label(__('Amount Due'))
                                     ->numeric()
                                     ->prefix('₪')
                                     ->required()
+                                    ->default(0)
                                     ->minValue(0)
-                                    ->live(debounce: 500)
-                                    ->afterStateUpdated(function (Get $get, Set $set) {
-                                        $due = (float) ($get('amount_due') ?? 0);
-                                        $exempt = (float) ($get('exemption_amount') ?? 0);
-                                        $set('amount_paid', max(0, $due - $exempt));
-                                    }),
+                                    // Read-only: the amount due is the section's own fee, filled
+                                    // in when the section is picked (zero on per-session sections,
+                                    // which bill by cycle instead). `dehydrated` keeps it in the
+                                    // payload — Filament drops disabled fields otherwise.
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->helperText(__('Comes from the section fee. Use the exemption field to reduce it.')),
 
                                 Select::make('exemption_type_id')
                                     ->label(__('Exemption Type'))
@@ -233,6 +248,7 @@ class QuickEnroll extends Page implements HasForms
                                     ->numeric()
                                     ->prefix('₪')
                                     ->required()
+                                    ->default(0)
                                     ->minValue(0)
                                     ->helperText(__('Will be auto-deducted from the student wallet on save. Negative balance is allowed.')),
 
@@ -305,6 +321,13 @@ class QuickEnroll extends Page implements HasForms
                     'whatsapp_number' => $data['whatsapp_number'] ?? null,
                     'governorate_id' => $data['governorate_id'] ?? null,
                     'city_id' => $data['city_id'] ?? null,
+                    // The student joined the centre on the day of their
+                    // earliest section, which is not today when history is
+                    // being entered after the fact.
+                    'enrolled_at' => collect($registrationRows)
+                        ->pluck('enrolled_at')
+                        ->filter()
+                        ->min() ?? now()->toDateString(),
                     'is_active' => true,
                 ]);
 
@@ -340,7 +363,11 @@ class QuickEnroll extends Page implements HasForms
 
                     // Capacity check
                     if ($section->capacity) {
-                        $enrolled = Registration::query()->where('section_id', $section->id)->count();
+                        // Students who withdrew freed their seats.
+                        $enrolled = Registration::query()
+                            ->where('section_id', $section->id)
+                            ->stillEnrolled()
+                            ->count();
                         if ($enrolled >= $section->capacity) {
                             throw new \RuntimeException(
                                 __('Section :name is full (capacity :capacity).', [
@@ -361,7 +388,13 @@ class QuickEnroll extends Page implements HasForms
 
                     if ($otherSectionIds->isNotEmpty()) {
                         $newTimes = $allTimes->get($section->id, collect());
-                        $otherTimes = SectionTime::query()->whereIn('section_id', $otherSectionIds)->with('section')->get();
+                        // Courses the student has already finished do not block
+                        // their evenings any more.
+                        $otherTimes = SectionTime::query()
+                            ->whereIn('section_id', $otherSectionIds)
+                            ->whereHas('section', fn ($q) => $q->runningBetween($section->start_date, $section->end_date))
+                            ->with('section')
+                            ->get();
 
                         foreach ($newTimes as $new) {
                             foreach ($otherTimes as $other) {
@@ -385,6 +418,7 @@ class QuickEnroll extends Page implements HasForms
                     Registration::create([
                         'student_id' => $student->id,
                         'section_id' => $row['section_id'],
+                        'enrolled_at' => $row['enrolled_at'] ?? now()->toDateString(),
                         'amount_due' => $row['amount_due'],
                         'amount_paid' => $row['amount_paid'],
                         'exemption_amount' => $row['exemption_amount'] ?? 0,
@@ -402,6 +436,13 @@ class QuickEnroll extends Page implements HasForms
                 ->persistent()
                 ->send();
 
+            return;
+        }
+
+        // The transaction either assigned this by reference or threw, but say so
+        // out loud: everything below dereferences it, and static analysis has no
+        // way to know the closure ran.
+        if (! $student) {
             return;
         }
 

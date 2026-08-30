@@ -60,7 +60,9 @@ class PermissionCatalog
                 'registration.delete' => __('Delete'),
                 'registration.cancel' => __('Cancel & Refund'),
                 'registration.transfer' => __('Transfer Between Sections'),
-                'registration.collect' => __('Collect Session Cycle Payment'),
+                // Covers both the per-course payment and the session-cycle one.
+                'registration.collect' => __('Collect Payments'),
+                'registration.withdraw' => __('Withdraw From Section'),
             ],
             'section_session' => [
                 'section_session.index' => __('View'),

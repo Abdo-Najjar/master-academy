@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use App\Observers\RegistrationObserver;
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\LogOptions;
@@ -22,6 +25,10 @@ class Registration extends Model
     protected $fillable = [
         'student_id',
         'section_id',
+        'enrolled_at',
+        'left_at',
+        'leave_reason',
+        'leave_source',
         'payment_type_id',
         'amount_due',
         'amount_paid',
@@ -30,6 +37,7 @@ class Registration extends Model
         'trainer_amount',
         'financial_status',
         'session_offset',
+        'sessions_carried_over',
         'sessions_counted',
         'paid_through_session',
         'paused_at',
@@ -40,6 +48,8 @@ class Registration extends Model
     protected function casts(): array
     {
         return [
+            'enrolled_at' => 'date',
+            'left_at' => 'date',
             'amount_due' => 'decimal:2',
             'amount_paid' => 'decimal:2',
             'funded_amount' => 'decimal:2',
@@ -47,6 +57,7 @@ class Registration extends Model
             'trainer_amount' => 'decimal:2',
             'trainer_credited_amount' => 'decimal:2',
             'session_offset' => 'integer',
+            'sessions_carried_over' => 'integer',
             'sessions_counted' => 'integer',
             'paid_through_session' => 'integer',
             'paused_at' => 'datetime',
@@ -63,6 +74,49 @@ class Registration extends Model
     public function scopeReportable(Builder $query): Builder
     {
         return $query->whereHas('student')->whereHas('section');
+    }
+
+    /**
+     * Registrations of a section that were already running on a given day.
+     *
+     * Attendance sheets and reports for a past date must show the roster as it
+     * stood *then*, not as it stands now — otherwise a student enrolled last
+     * week appears in (and is marked absent for) lessons held months earlier.
+     * Rows with no enrolment date predate the column and are always included.
+     */
+    public function scopeEnrolledOn(Builder $query, int $sectionId, string|CarbonInterface $date): Builder
+    {
+        return $query->where('section_id', $sectionId)->enrolledBy($date);
+    }
+
+    /**
+     * Registrations that were running on a given day: started by then and not
+     * yet left. `left_at` is the first day the student is *no longer* in the
+     * section, so a lesson on that date is already past them.
+     */
+    public function scopeEnrolledBy(Builder $query, string|CarbonInterface $date): Builder
+    {
+        $day = $date instanceof CarbonInterface ? $date->toDateString() : Carbon::parse($date)->toDateString();
+
+        return $query
+            ->where(fn (Builder $q) => $q
+                ->whereNull('enrolled_at')
+                ->orWhereDate('enrolled_at', '<=', $day))
+            ->where(fn (Builder $q) => $q
+                ->whereNull('left_at')
+                ->orWhereDate('left_at', '>', $day));
+    }
+
+    /** Registrations the student has not left. */
+    public function scopeStillEnrolled(Builder $query): Builder
+    {
+        return $query->whereNull('left_at');
+    }
+
+    /** Has the student left this section? */
+    public function hasLeft(): bool
+    {
+        return $this->left_at !== null;
     }
 
     /**
@@ -134,6 +188,49 @@ class Registration extends Model
         return (bool) $this->section?->isPerSessionBilled();
     }
 
+    /**
+     * The day this student joined the section — everything before it belongs to
+     * the section's history, not to their bill. Falls back to the student's own
+     * enrolment date and then to the day the row was created, so registrations
+     * from before the column existed still answer sensibly.
+     */
+    public function enrolmentDate(): CarbonInterface
+    {
+        if ($this->enrolled_at) {
+            return $this->enrolled_at->copy()->startOfDay();
+        }
+
+        $this->loadMissing('student');
+
+        return ($this->student?->enrolled_at ?? $this->created_at ?? now())->copy()->startOfDay();
+    }
+
+    /** Was this student in the section on the given day? */
+    public function wasEnrolledOn(string|CarbonInterface $date): bool
+    {
+        $day = $date instanceof CarbonInterface ? $date->copy()->startOfDay() : Carbon::parse($date)->startOfDay();
+
+        if ($this->left_at && $day->greaterThanOrEqualTo($this->left_at->copy()->startOfDay())) {
+            return false;
+        }
+
+        return $day->greaterThanOrEqualTo($this->enrolmentDate());
+    }
+
+    /**
+     * Sessions the student paid for but will never take, because they left
+     * before using them up. The centre decides what to do about it — nothing is
+     * moved automatically.
+     */
+    public function unusedPaidSessions(): int
+    {
+        if (! $this->hasLeft() || ! $this->isPerSessionBilled()) {
+            return 0;
+        }
+
+        return max(0, $this->remainingSessions());
+    }
+
     /** Sessions still covered by what the student paid; negative once owed. */
     public function remainingSessions(): int
     {
@@ -143,7 +240,7 @@ class Registration extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['student_id', 'section_id', 'payment_type_id', 'amount_due', 'amount_paid', 'exemption_amount', 'trainer_amount', 'note'])
+            ->logOnly(['student_id', 'section_id', 'enrolled_at', 'left_at', 'leave_reason', 'payment_type_id', 'amount_due', 'amount_paid', 'exemption_amount', 'trainer_amount', 'note'])
             ->logOnlyDirty();
     }
 
@@ -165,6 +262,12 @@ class Registration extends Model
     public function exemptionType(): BelongsTo
     {
         return $this->belongsTo(ExemptionType::class);
+    }
+
+    /** Every stretch this registration spent out of the counting. */
+    public function pauses(): HasMany
+    {
+        return $this->hasMany(RegistrationPause::class);
     }
 
     /**

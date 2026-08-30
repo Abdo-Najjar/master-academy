@@ -18,6 +18,15 @@ class RegistrationObserver
      */
     public function creating(Registration $registration): void
     {
+        // Every registration needs a day it started from — attendance sheets,
+        // reports and per-session billing all read it. Fall back to the
+        // student's own enrolment date before today, so a backdated student
+        // does not silently get a today-dated registration.
+        if (! $registration->enrolled_at) {
+            $registration->loadMissing('student');
+            $registration->enrolled_at = $registration->student?->enrolled_at ?? now()->startOfDay();
+        }
+
         if (empty($registration->trainer_amount) || (float) $registration->trainer_amount === 0.0) {
             $section = $registration->section ?: Section::find($registration->section_id);
             if ($section) {
@@ -39,6 +48,24 @@ class RegistrationObserver
      */
     public function updating(Registration $registration): void
     {
+        // The trainer's share is stored as an amount but read back as a rate
+        // (`trainer_amount / amount_paid`), so it has to move with the charge.
+        // Left alone, correcting a charge downwards leaves the trainer holding
+        // more than the student ever paid, and correcting it upwards — or
+        // collecting further cycles — quietly cuts them below their percentage.
+        // A share set explicitly in the same save wins: that is a deliberate
+        // rate correction, not a side effect.
+        if ($registration->isDirty('amount_paid') && ! $registration->isDirty('trainer_amount')) {
+            $section = $registration->section ?: Section::find($registration->section_id);
+
+            if ($section) {
+                $registration->trainer_amount = round(
+                    ((float) $registration->amount_paid) * $section->effectiveTrainerRate() / 100,
+                    2
+                );
+            }
+        }
+
         if ($registration->isDirty(['amount_due', 'amount_paid', 'exemption_amount', 'sessions_counted', 'paid_through_session', 'paused_at'])) {
             $registration->financial_status = FinancialDueService::computeStatus($registration);
         }
@@ -87,6 +114,12 @@ class RegistrationObserver
      */
     public function updated(Registration $registration): void
     {
+        // Correcting the day a student joined — or the day they left — re-decides
+        // which of the section's lessons were ever theirs to pay for.
+        if ($registration->wasChanged(['enrolled_at', 'left_at'])) {
+            SessionBillingService::recount($registration);
+        }
+
         $changedPaid = $registration->wasChanged('amount_paid');
         $changedTrainer = $registration->wasChanged('trainer_amount');
 

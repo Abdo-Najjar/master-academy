@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Trainers\Schemas;
 
 use App\Filament\Admin\Resources\Trainers\Pages\CreateTrainer;
+use App\Filament\Support\TrainerRateField;
 use App\Filament\Support\TranslatableInput;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -121,14 +122,12 @@ class TrainerForm
                             ->searchable()
                             ->preload()
                             ->columnSpanFull(),
-                        TextInput::make('default_rate')
-                            ->label(__('Default Rate (%)'))
-                            ->numeric()
-                            ->suffix('%')
-                            ->minValue(0)
-                            ->maxValue(100)
-                            ->default(40)
-                            ->step(0.01),
+                        ...TrainerRateField::make(
+                            'default_rate',
+                            label: __('Default Rate (%)'),
+                            helperText: __('Used by any section that does not set its own rate.'),
+                            default: 40,
+                        ),
                         Textarea::make('bio')
                             ->label(__('Bio'))
                             ->rows(3)

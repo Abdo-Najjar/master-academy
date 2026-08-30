@@ -17,6 +17,9 @@ class RegistrationInfolist
                     ->schema([
                         TextEntry::make('student.name')->label(__('Student')),
                         TextEntry::make('section.name')->label(__('Section')),
+                        TextEntry::make('enrolled_at')->label(__('Section Enrollment Date'))->date()->placeholder('—'),
+                        TextEntry::make('left_at')->label(__('Withdrawal Date'))->date()->placeholder('—')->badge()->color('danger'),
+                        TextEntry::make('leave_reason')->label(__('Withdrawal Reason'))->placeholder('—'),
                         TextEntry::make('paymentType.name')->label(__('Payment Type'))->placeholder('—'),
                         TextEntry::make('amount_due')
                             ->label(__('Amount Due'))

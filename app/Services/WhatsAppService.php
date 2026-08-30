@@ -101,7 +101,8 @@ class WhatsAppService
     {
         $contacts = [];
 
-        foreach ($section->registrations()->with('student')->get() as $reg) {
+        // Students who left the section are not messaged about it any more.
+        foreach ($section->registrations()->stillEnrolled()->with('student')->get() as $reg) {
             $student = $reg->student;
             if (! $student) {
                 continue;

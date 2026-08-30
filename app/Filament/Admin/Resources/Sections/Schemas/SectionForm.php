@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Sections\Schemas;
 
 use App\Filament\Support\AuditReasonField;
+use App\Filament\Support\TrainerRateField;
 use App\Models\Room;
 use App\Models\Section as SectionModel;
 use App\Models\SectionTime;
@@ -13,6 +14,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -95,10 +97,21 @@ class SectionForm
                             ])
                             ->default('mixed')
                             ->required(),
-                        TextInput::make('capacity')
-                            ->label(__('Capacity'))
+                        // A section has a floor as well as a ceiling: below the
+                        // minimum it is not worth running, above the maximum
+                        // there is no seat left.
+                        TextInput::make('min_capacity')
+                            ->label(__('Minimum Capacity'))
                             ->numeric()
-                            ->minValue(1),
+                            ->minValue(1)
+                            ->helperText(__('The number of students the section needs to run. Leave empty for no minimum.'))
+                            ->lte('capacity'),
+                        TextInput::make('capacity')
+                            ->label(__('Maximum Capacity'))
+                            ->numeric()
+                            ->minValue(1)
+                            ->helperText(__('Seats available. Enrolment is blocked once they are all taken. Leave empty for no limit.'))
+                            ->gte('min_capacity'),
                         TextInput::make('training_hours')
                             ->label(__('Training Hours'))
                             ->numeric()
@@ -139,15 +152,16 @@ class SectionForm
                             ->prefix('₪')
                             ->required(fn (Get $get): bool => $get('fee_type') === SectionModel::FEE_TYPE_PER_SESSIONS)
                             ->visible(fn (Get $get): bool => $get('fee_type') === SectionModel::FEE_TYPE_PER_SESSIONS),
-                        TextInput::make('trainer_rate')
-                            ->label(__('Trainer Rate (%)'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(100)
-                            ->step(0.01)
-                            ->default(40)
-                            ->suffix('%')
-                            ->helperText(__('Leave empty to use trainer default rate')),
+                        Toggle::make('auto_charge_cycles')
+                            ->label(__('Charge the cycle automatically'))
+                            ->default(true)
+                            ->helperText(__('The cycle fee is taken from the student wallet as soon as the cycle\'s last session is recorded. Turn this off to only flag the student as due and collect by hand.'))
+                            ->visible(fn (Get $get): bool => $get('fee_type') === SectionModel::FEE_TYPE_PER_SESSIONS),
+                        ...TrainerRateField::make(
+                            'trainer_rate',
+                            helperText: __('Leave empty to use trainer default rate'),
+                            default: 40,
+                        ),
                         AuditReasonField::make(),
                     ])
                     ->columns(1),
@@ -193,6 +207,42 @@ class SectionForm
                                     $rows = is_array($value) ? $value : [];
                                     $trainerId = $get('trainer_id');
 
+                                    // A course that is over holds neither its
+                                    // trainer nor its room, and two courses that
+                                    // never run together never collide — so only
+                                    // sections overlapping this one's dates count.
+                                    $running = fn ($q) => $q->runningBetween($get('start_date'), $get('end_date'));
+
+                                    // A section cannot overlap itself: the same
+                                    // students would have to sit in two lessons
+                                    // at once, whatever rooms they are in. The
+                                    // rows are compared against each other, not
+                                    // against the database — they are still only
+                                    // form state here, and swapping two slots
+                                    // passes through a moment where the saved
+                                    // rows do hold both times.
+                                    $entered = array_values(array_filter(
+                                        $rows,
+                                        fn ($row): bool => ! empty($row['day']) && ! empty($row['start_time']) && ! empty($row['end_time']),
+                                    ));
+
+                                    foreach ($entered as $i => $row) {
+                                        foreach (array_slice($entered, $i + 1) as $other) {
+                                            if (strtolower((string) $row['day']) !== strtolower((string) $other['day'])) {
+                                                continue;
+                                            }
+
+                                            if ($row['start_time'] < $other['end_time'] && $row['end_time'] > $other['start_time']) {
+                                                $fail(__('This section already has a lesson on :day at :time', [
+                                                    'day' => __(ucfirst((string) $row['day'])),
+                                                    'time' => substr((string) $other['start_time'], 0, 5).' - '.substr((string) $other['end_time'], 0, 5),
+                                                ]));
+
+                                                return;
+                                            }
+                                        }
+                                    }
+
                                     foreach ($rows as $row) {
                                         if (empty($row['day']) || empty($row['start_time']) || empty($row['end_time'])) {
                                             continue;
@@ -203,7 +253,8 @@ class SectionForm
                                                 ->where('day', $row['day'])
                                                 ->where('start_time', '<', $row['end_time'])
                                                 ->where('end_time', '>', $row['start_time'])
-                                                ->whereHas('section', fn ($q) => $q->where('trainer_id', $trainerId)
+                                                ->whereHas('section', fn ($q) => $running($q)
+                                                    ->where('trainer_id', $trainerId)
                                                     ->when($record?->id, fn ($q2) => $q2->where('id', '!=', $record->id)))
                                                 ->with('section')
                                                 ->first();
@@ -226,6 +277,7 @@ class SectionForm
                                                 ->where('start_time', '<', $row['end_time'])
                                                 ->where('end_time', '>', $row['start_time'])
                                                 ->when($record?->id, fn ($q) => $q->where('section_id', '!=', $record->id))
+                                                ->whereHas('section', $running)
                                                 ->with('section')
                                                 ->first();
 

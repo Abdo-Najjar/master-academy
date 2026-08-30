@@ -15,8 +15,13 @@
         }
         .dark{
             --ma-as-surface:rgb(24,24,27);
-            --ma-as-stripe:rgba(255,255,255,.022);
-            --ma-as-hover:rgba(255,255,255,.055);
+            /* Opaque on purpose. These were translucent whites, which looked
+               right until the sheet scrolled sideways: the pinned name column
+               takes its background from the row, so the date columns sliding
+               underneath showed straight through it and the two sets of text
+               piled on top of each other. Same shades, pre-blended. */
+            --ma-as-stripe:rgb(29,29,32);
+            --ma-as-hover:rgb(37,37,40);
             --ma-as-head:rgb(39,39,42);
             --ma-as-foot:rgb(35,35,38);
             --ma-as-border:rgb(63,63,70);
@@ -52,7 +57,8 @@
         .ma-as-date__month{font-size:.625rem;font-weight:500;opacity:.75;}
 
         /* Sticky roster column: inherits the row's own background so striping and
-           hover stay continuous while scrolling sideways. */
+           hover stay continuous while scrolling sideways. Every colour it can
+           inherit is opaque, or the columns passing behind it would show through. */
         .ma-as-table tbody tr{background:var(--ma-as-surface);}
         .ma-as-table tbody tr:nth-child(even){background:var(--ma-as-stripe);}
         .ma-as-table tbody tr:hover{background:var(--ma-as-hover);}
@@ -61,7 +67,15 @@
             background:inherit;text-align:start;
             min-width:200px;max-width:260px;white-space:normal;
             border-inline-end:1px solid var(--ma-as-border);
+            /* A soft edge, so a sheet wide enough to scroll reads as "pinned
+               column + moving grid" rather than one table that got cut. */
+            box-shadow:2px 0 4px -2px rgba(0,0,0,.18);
         }
+        {{-- Filament puts `dir` and `dark` on the same <html> element, so the
+             dark+RTL rule has to chain them rather than nest them. --}}
+        [dir="rtl"] .ma-as-name{box-shadow:-2px 0 4px -2px rgba(0,0,0,.18);}
+        .dark .ma-as-name{box-shadow:2px 0 5px -2px rgba(0,0,0,.55);}
+        [dir="rtl"].dark .ma-as-name{box-shadow:-2px 0 5px -2px rgba(0,0,0,.55);}
         .ma-as-idx{color:var(--ma-as-muted);font-variant-numeric:tabular-nums;margin-inline-end:.25rem;}
         .ma-as-student{font-weight:600;}
         .ma-as-sub{font-size:.6875rem;color:var(--ma-as-muted);font-weight:400;}
@@ -118,6 +132,7 @@
         .dark .ma-as-fin--ok{color:rgb(134,239,172);}
         .dark .ma-as-fin--warning,.dark .ma-as-fin--due{color:rgb(253,224,71);}
         .dark .ma-as-fin--overdue{color:rgb(252,165,165);}
+        .ma-as-money{display:block;margin-top:.1875rem;font-size:.625rem;font-variant-numeric:tabular-nums;color:var(--ma-as-muted);}
 
         .ma-as-legend{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.875rem;font-size:.75rem;color:var(--ma-as-muted);}
         .ma-as-legend span.ma-as-legend__item{display:inline-flex;align-items:center;gap:.4375rem;padding:.25rem .625rem;border-radius:9999px;border:1px solid var(--ma-as-border);}
@@ -187,9 +202,10 @@
             </x-slot>
 
             <x-slot name="afterHeader">
-                <x-filament::button wire:click="exportSheet" color="success" size="sm"
-                                    icon="heroicon-o-arrow-down-tray">
-                    {{ __('Export to Excel') }}
+                {{-- Exports whatever month is on screen, never the whole course. --}}
+                <x-filament::button wire:click="exportSheetPdf" color="danger" size="sm"
+                                    icon="heroicon-o-document-arrow-down">
+                    {{ __('Export month :number to PDF', ['number' => $sheet['month']]) }}
                 </x-filament::button>
             </x-slot>
 
@@ -203,7 +219,7 @@
                     </button>
                 @endfor
                 <span class="ma-as-months__hint">
-                    {{ __('Every :count sessions count as one month.', ['count' => \App\Filament\Admin\Pages\AttendanceRecords::SESSIONS_PER_MONTH]) }}
+                    {{ __('Every :count sessions count as one month.', ['count' => $sheet['perMonth']]) }}
                     @if ($sheet['months'] === 1)
                         — {{ __('This section has :count session(s) so far.', ['count' => $sheet['allDates']]) }}
                     @endif
@@ -252,6 +268,10 @@
                                         <span class="ma-as-fin ma-as-fin--{{ $row['financial_status'] }}">
                                             {{ \App\Filament\Admin\Pages\AttendanceRecords::financialStatusLabels()[$row['financial_status']] ?? $row['financial_status'] }}
                                         </span>
+                                        {{-- The status word alone never said paid *how much*. --}}
+                                        @if ($amounts = \App\Filament\Admin\Pages\AttendanceRecords::financialAmounts($row))
+                                            <span class="ma-as-money">{{ $amounts }}</span>
+                                        @endif
                                     @else
                                         —
                                     @endif

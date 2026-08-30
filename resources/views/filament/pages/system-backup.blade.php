@@ -5,6 +5,112 @@
         $canDelete = $this->canDelete();
     @endphp
 
+    {{--
+        Styled here rather than with utility classes: this panel serves
+        Filament's own prebuilt stylesheet (no `viteTheme` on the panel), so a
+        class the framework does not already use for itself would simply not
+        exist and the page would render unstyled. Everything below leans on
+        Filament's palette variables, which carry the light and dark values, and
+        follows its own `:where(.dark, .dark *)` convention for the surfaces that
+        have to flip.
+    --}}
+    <style>
+        .ma-backup-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            border: 1px solid var(--gray-200);
+            border-radius: 0.75rem;
+            background: var(--gray-50);
+            transition: background 0.15s;
+        }
+
+        .ma-backup-card:hover {
+            background: var(--gray-100);
+        }
+
+        .ma-backup-card:where(.dark, .dark *) {
+            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .ma-backup-card:where(.dark, .dark *):hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .ma-backup-name {
+            font-family: ui-monospace, monospace;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            word-break: break-all;
+            color: var(--gray-950);
+        }
+
+        .ma-backup-name:where(.dark, .dark *) {
+            color: #fff;
+        }
+
+        .ma-backup-meta {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            margin-top: 0.25rem;
+            font-size: 0.75rem;
+            flex-wrap: wrap;
+            color: var(--gray-500);
+        }
+
+        .ma-backup-meta:where(.dark, .dark *) {
+            color: var(--gray-400);
+        }
+
+        .ma-backup-tile {
+            flex-shrink: 0;
+            width: 44px;
+            height: 44px;
+            border-radius: 0.625rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: color-mix(in oklab, var(--primary-500) 12%, transparent);
+            color: var(--primary-600);
+        }
+
+        .ma-backup-tile:where(.dark, .dark *) {
+            color: var(--primary-400);
+        }
+
+        .ma-backup-empty-tile {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 64px;
+            height: 64px;
+            border-radius: 9999px;
+            margin-bottom: 1rem;
+            background: var(--gray-100);
+            color: var(--gray-400);
+        }
+
+        .ma-backup-empty-tile:where(.dark, .dark *) {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--gray-500);
+        }
+
+        .ma-backup-empty-text {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .ma-backup-empty-text:where(.dark, .dark *) {
+            color: var(--gray-300);
+        }
+    </style>
+
     {{-- Backups list section --}}
     <x-filament::section icon="heroicon-o-folder-open">
         <x-slot name="heading">
@@ -18,13 +124,13 @@
         @if (empty($backups))
             {{-- Empty state --}}
             <div style="text-align:center; padding: 3rem 1rem;">
-                <div style="display:inline-flex; align-items:center; justify-content:center; width:64px; height:64px; border-radius:9999px; background:rgba(156,163,175,0.15); margin-bottom:1rem;">
+                <div class="ma-backup-empty-tile">
                     <x-filament::icon
                         icon="heroicon-o-archive-box"
-                        style="width:32px; height:32px; color:rgb(156,163,175);"
+                        style="width:32px; height:32px;"
                     />
                 </div>
-                <h3 style="font-size:1rem; font-weight:600; color:var(--gray-700);">
+                <h3 class="ma-backup-empty-text">
                     {{ __('No backups yet. Click "Create Backup" above to create your first backup.') }}
                 </h3>
             </div>
@@ -32,59 +138,21 @@
             {{-- Cards list --}}
             <div style="display:flex; flex-direction:column; gap:0.75rem;">
                 @foreach ($backups as $backup)
-                    <div
-                        style="
-                            display:flex;
-                            align-items:center;
-                            justify-content:space-between;
-                            flex-wrap:wrap;
-                            gap:1rem;
-                            padding:1rem 1.25rem;
-                            border:1px solid rgba(156,163,175,0.2);
-                            border-radius:0.75rem;
-                            background:rgba(249,250,251,0.5);
-                            transition: background 0.15s;
-                        "
-                        onmouseover="this.style.background='rgba(243,244,246,0.8)'"
-                        onmouseout="this.style.background='rgba(249,250,251,0.5)'"
-                    >
+                    <div class="ma-backup-card">
                         {{-- Left side: icon + file info --}}
                         <div style="display:flex; align-items:center; gap:0.875rem; min-width:0; flex:1;">
-                            <div style="
-                                flex-shrink:0;
-                                width:44px;
-                                height:44px;
-                                border-radius:0.625rem;
-                                background:rgba(59,130,246,0.1);
-                                display:flex;
-                                align-items:center;
-                                justify-content:center;
-                            ">
+                            <div class="ma-backup-tile">
                                 <x-filament::icon
                                     icon="heroicon-o-archive-box"
-                                    style="width:24px; height:24px; color:rgb(59,130,246);"
+                                    style="width:24px; height:24px;"
                                 />
                             </div>
 
                             <div style="min-width:0; flex:1;">
-                                <div style="
-                                    font-family: ui-monospace, monospace;
-                                    font-size:0.8125rem;
-                                    font-weight:600;
-                                    color:var(--gray-900);
-                                    word-break: break-all;
-                                ">
+                                <div class="ma-backup-name">
                                     {{ $backup['name'] }}
                                 </div>
-                                <div style="
-                                    display:flex;
-                                    gap:0.75rem;
-                                    align-items:center;
-                                    margin-top:0.25rem;
-                                    font-size:0.75rem;
-                                    color:var(--gray-500);
-                                    flex-wrap:wrap;
-                                ">
+                                <div class="ma-backup-meta">
                                     <span style="display:inline-flex; align-items:center; gap:0.25rem;">
                                         <x-filament::icon
                                             icon="heroicon-m-circle-stack"

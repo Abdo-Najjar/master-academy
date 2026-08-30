@@ -5,13 +5,16 @@ namespace App\Filament\Admin\Resources\Sections\Pages;
 use App\Filament\Admin\Pages\AttendanceRecords;
 use App\Filament\Admin\Resources\Sections\SectionResource;
 use App\Models\Section;
+use App\Services\SessionBillingService;
 use App\Services\WhatsAppService;
+use Carbon\CarbonInterface;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Writer;
@@ -44,10 +47,27 @@ class ViewSection extends ViewRecord
                         $html = self::buildContactsHtml($sectionName, array_values($contacts), $data['message']);
 
                         return response()->streamDownload(
-                            fn () => print($html),
+                            fn () => print ($html),
                             'whatsapp-'.\Str::slug($sectionName).'.html',
                             ['Content-Type' => 'text/html; charset=utf-8']
                         );
+                    }),
+                Action::make('recalculateSessionBilling')
+                    ->label(__('Recalculate Session Billing'))
+                    ->icon('heroicon-o-calculator')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalDescription(__('Recounts every student\'s charged sessions from the lessons on record: lessons before their enrollment date, during a break, or they were excused from are left out. Safe to run repeatedly — useful after entering a batch of past lessons.'))
+                    ->visible(fn (Section $record): bool => $record->isPerSessionBilled()
+                        && (auth()->user()?->can('registration.update') ?? false))
+                    ->action(function (Section $record): void {
+                        $count = SessionBillingService::recountSection($record->id);
+
+                        Notification::make()
+                            ->success()
+                            ->title(__('Session billing recalculated'))
+                            ->body(__(':count registrations were recounted.', ['count' => $count]))
+                            ->send();
                     }),
                 Action::make('exportAttendance')
                     ->label(__('Export Attendance'))
@@ -104,13 +124,13 @@ class ViewSection extends ViewRecord
             ->distinct()
             ->orderBy('date')
             ->pluck('date')
-            ->map(fn ($d): string => $d instanceof \Carbon\CarbonInterface ? $d->format('Y-m-d') : (string) $d)
+            ->map(fn ($d): string => $d instanceof CarbonInterface ? $d->format('Y-m-d') : (string) $d)
             ->values();
 
         // status lookup: [student_id][Y-m-d] => status
         $lookup = [];
         foreach ($section->attendances()->get() as $a) {
-            $key = $a->date instanceof \Carbon\CarbonInterface ? $a->date->format('Y-m-d') : (string) $a->date;
+            $key = $a->date instanceof CarbonInterface ? $a->date->format('Y-m-d') : (string) $a->date;
             $lookup[$a->student_id][$key] = $a->status;
         }
 
@@ -125,7 +145,7 @@ class ViewSection extends ViewRecord
         $sectionName = $section->name ?: (string) $section->id;
 
         return response()->streamDownload(function () use ($dates, $lookup, $students, $labels): void {
-            $writer = new Writer();
+            $writer = new Writer;
             $writer->openToFile('php://output');
 
             $header = [__('Student')];
@@ -181,9 +201,7 @@ class ViewSection extends ViewRecord
             ->get()
             ->keyBy('student_id');
 
-        $students = $section->registrations()
-            ->with('student')
-            ->get()
+        $students = $section->rosterOn($date)
             ->pluck('student')
             ->filter()
             ->unique('id')
@@ -193,7 +211,7 @@ class ViewSection extends ViewRecord
         $sectionName = $section->name ?: (string) $section->id;
 
         return response()->streamDownload(function () use ($students, $attendances, $labels): void {
-            $writer = new Writer();
+            $writer = new Writer;
             $writer->openToFile('php://output');
 
             $writer->addRow(Row::fromValues([

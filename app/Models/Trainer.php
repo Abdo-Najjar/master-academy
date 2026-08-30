@@ -63,7 +63,7 @@ class Trainer extends Authenticatable implements HasMedia, Wallet, WalletFloat
         return [
             'password' => 'hashed',
             'dob' => 'date',
-            'default_rate' => 'decimal:2',
+            'default_rate' => 'decimal:4',
             'is_active' => 'boolean',
             'show_on_site' => 'boolean',
             'site_sort_order' => 'integer',

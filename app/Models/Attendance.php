@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Observers\AttendanceObserver;
+use App\Services\SessionBillingService;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -79,6 +80,31 @@ class Attendance extends Model
         $actor = null,
         ?SectionSession $session = null,
     ): void {
+        // Creating the lesson and writing the rows is one unit as far as
+        // billing is concerned: an excused student must be off the bill before
+        // anything decides whether their cycle is used up.
+        SessionBillingService::withoutAutoCharge(function () use ($sectionId, $date, $statuses, $notes, $actor, $session): void {
+            static::writeDay($sectionId, $date, $statuses, $notes, $actor, $session);
+        });
+
+        SessionBillingService::chargeSectionDueCycles($sectionId);
+    }
+
+    /**
+     * The row-level half of `recordDay()`, kept separate so the whole write can
+     * be wrapped without the billing hook firing halfway through.
+     *
+     * @param  array<int, string>  $statuses  student_id => status
+     * @param  array<int, string|null>  $notes  student_id => note
+     */
+    protected static function writeDay(
+        int $sectionId,
+        string $date,
+        array $statuses,
+        array $notes = [],
+        $actor = null,
+        ?SectionSession $session = null,
+    ): void {
         $session ??= SectionSession::resolveForDay($sectionId, $date);
 
         $existing = static::query()
@@ -87,7 +113,17 @@ class Attendance extends Model
             ->get()
             ->keyBy('student_id');
 
+        $enrolled = Registration::enrolledOn($sectionId, $date)->pluck('student_id')->all();
+
         foreach ($statuses as $studentId => $status) {
+            // Recording a backlog of past lessons must not mark students who
+            // had not joined yet — they would show up as absent, feed the
+            // absence alerts, and (on per-session pricing) be charged for a
+            // lesson that happened before they existed.
+            if (! in_array((int) $studentId, $enrolled, true)) {
+                continue;
+            }
+
             $attributes = [
                 'status' => $status,
                 'note' => $notes[$studentId] ?? null,

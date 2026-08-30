@@ -25,7 +25,13 @@ beforeEach(function () {
     SectionTime::create(['section_id' => $this->section->id, 'day' => 'saturday', 'start_time' => '15:30', 'end_time' => '17:00']);
 
     $this->student = Student::create(['name' => 'طالب الحضور', 'username' => 'attendance_student', 'password' => 'password']);
-    Registration::create(['section_id' => $this->section->id, 'student_id' => $this->student->id]);
+    // The student has been in the section since it started, so the sheets for
+    // its own dates list them.
+    Registration::create([
+        'section_id' => $this->section->id,
+        'student_id' => $this->student->id,
+        'enrolled_at' => '2026-08-01',
+    ]);
 });
 
 it('confirms the save with a toast the trainer can see from anywhere on the page', function () {

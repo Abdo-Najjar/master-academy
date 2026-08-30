@@ -79,7 +79,9 @@ class Announcement extends Model
      */
     public function scopeForStudent($query, Student $student)
     {
-        $sectionIds = $student->registrations()->pluck('section_id');
+        // Announcements are current news for the group, so a student who left
+        // the section stops receiving them.
+        $sectionIds = $student->registrations()->stillEnrolled()->pluck('section_id');
 
         return $query->where(function ($q) use ($sectionIds) {
             $q->where('all_sections', true)

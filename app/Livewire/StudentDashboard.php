@@ -6,6 +6,7 @@ use App\Livewire\Concerns\InteractsWithStudentAuth;
 use App\Models\Announcement;
 use App\Models\Assignment;
 use App\Models\Complaint;
+use App\Models\Registration;
 use App\Services\ComplaintAlertService;
 use Bavix\Wallet\Models\Transaction;
 use Carbon\Carbon;
@@ -170,7 +171,9 @@ class StudentDashboard extends Component
 
         foreach ($registrations as $registration) {
             $section = $registration->section;
-            if (! $section || $section->status === 'completed') {
+            // A section the student has left stays in their history but comes
+            // off their timetable.
+            if (! $section || $section->status === 'completed' || $registration->hasLeft()) {
                 continue;
             }
             foreach ($section->times as $time) {
@@ -188,6 +191,18 @@ class StudentDashboard extends Component
         foreach ($scheduleGrid as $day => $items) {
             usort($scheduleGrid[$day], fn ($a, $b) => strcmp($a['start_time'], $b['start_time']));
         }
+
+        // The month calendar draws the same sections the weekly grid does —
+        // current ones only, so a finished course does not keep appearing on
+        // the student's dates.
+        $scheduleSectionIds = $registrations
+            ->reject(fn (Registration $registration): bool => $registration->section === null
+                || $registration->section->status === 'completed'
+                || $registration->hasLeft())
+            ->pluck('section_id')
+            ->unique()
+            ->values()
+            ->all();
 
         $transactions = collect();
         if ($student?->wallet) {
@@ -278,6 +293,7 @@ class StudentDashboard extends Component
             'registrations' => $registrations,
             'materials' => $materials,
             'schedule' => $scheduleGrid,
+            'scheduleSectionIds' => $scheduleSectionIds,
             'transactions' => $transactions,
             'complaints' => $complaints,
             'announcements' => $announcements,

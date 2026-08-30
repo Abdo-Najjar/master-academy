@@ -2,6 +2,8 @@
 
 namespace App\Filament\Admin\Resources\Sections\Tables;
 
+use App\Models\Section;
+use App\Support\TrainerRate;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -10,10 +12,12 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Colors\Color;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class SectionsTable
 {
@@ -26,18 +30,35 @@ class SectionsTable
                 TextColumn::make('subject.name')
                     ->label(__('Course'))
                     ->badge()
-                    ->color(fn ($record) => $record->subject?->color ? \Filament\Support\Colors\Color::hex($record->subject->color) : 'gray')
+                    ->color(fn ($record) => $record->subject?->color ? Color::hex($record->subject->color) : 'gray')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('branch.name')->label(__('Branch'))->badge()->placeholder('—')->searchable()->sortable(),
                 TextColumn::make('trainer.name')->label(__('Trainer'))->searchable()->sortable(),
                 TextColumn::make('start_date')->label(__('Start'))->date()->sortable(),
                 TextColumn::make('end_date')->label(__('End'))->date()->sortable(),
-                TextColumn::make('price')->label(__('Price'))->money('ILS', decimalPlaces: 0)->sortable(),
-                TextColumn::make('trainer_rate')->label(__('Trainer Rate'))->formatStateUsing(fn ($state) => $state === null ? null : rtrim(rtrim(number_format((float) $state, 2, '.', ''), '0'), '.').' %')->sortable(),
-                TextColumn::make('capacity')->label(__('Capacity'))->sortable(),
+                // Reads the fee the section is actually billed on, so a
+                // per-session section no longer shows up as ₪0.
+                TextColumn::make('price')
+                    ->label(__('Price'))
+                    ->state(fn (Section $record): string => $record->feeSummary())
+                    ->description(fn (Section $record): ?string => $record->isPerSessionBilled() ? $record->feeLabel() : null)
+                    ->sortable(query: fn ($query, string $direction) => $query
+                        ->orderByRaw("CASE WHEN fee_type = 'per_sessions' THEN cycle_fee ELSE price END {$direction}")),
+                TextColumn::make('trainer_rate')->label(__('Trainer Rate'))->formatStateUsing(fn ($state) => TrainerRate::label($state))->sortable(),
+                TextColumn::make('min_capacity')
+                    ->label(__('Minimum Capacity'))
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable(),
+                TextColumn::make('capacity')->label(__('Maximum Capacity'))->placeholder('—')->sortable(),
                 TextColumn::make('training_hours')->label(__('Training Hours'))->sortable(),
-                TextColumn::make('registrations_count')->counts('registrations')->label(__('Enrolled')),
+                // Seats currently taken, which is what "enrolled" has to mean
+                // next to the capacity column — students who withdrew gave
+                // their seat back.
+                TextColumn::make('registrations_count')
+                    ->counts(['registrations' => fn (Builder $query) => $query->stillEnrolled()])
+                    ->label(__('Enrolled')),
                 TextColumn::make('status')
                     ->label(__('Status'))
                     ->badge()
