@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Trainers\Schemas;
 
 use App\Filament\Admin\Resources\Trainers\Pages\CreateTrainer;
+use App\Filament\Support\BranchField;
 use App\Filament\Support\TrainerRateField;
 use App\Filament\Support\TranslatableInput;
 use Filament\Forms\Components\DatePicker;
@@ -110,6 +111,9 @@ class TrainerForm
                             ->searchable()
                             ->preload()
                             ->disabled(fn (callable $get) => empty($get('governorate_id'))),
+                        BranchField::multiple()
+                            ->helperText(__('The sites this trainer works at. Pick every branch they teach in.'))
+                            ->columnSpanFull(),
                     ])
                     ->columns(1),
 
@@ -127,6 +131,7 @@ class TrainerForm
                             label: __('Default Rate (%)'),
                             helperText: __('Used by any section that does not set its own rate.'),
                             default: 40,
+                            nullable: false,
                         ),
                         Textarea::make('bio')
                             ->label(__('Bio'))

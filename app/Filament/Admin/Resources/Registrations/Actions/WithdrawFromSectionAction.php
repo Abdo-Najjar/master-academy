@@ -6,8 +6,8 @@ use App\Models\Registration;
 use App\Services\SectionWithdrawalService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 
 /**
@@ -53,10 +53,10 @@ class WithdrawFromSectionAction
                     TextInput::make('leave_reason')
                         ->label(__('Withdrawal Reason'))
                         ->maxLength(255),
-                    Placeholder::make('sessions_state')
+                    TextEntry::make('sessions_state')
                         ->label(__('Sessions Counted'))
                         ->visible(fn (): bool => (bool) $record?->isPerSessionBilled())
-                        ->content(fn (): string => __(':counted of :paid paid sessions', [
+                        ->state(fn (): string => __(':counted of :paid paid sessions', [
                             'counted' => $record?->sessions_counted,
                             'paid' => $record?->paid_through_session,
                         ])),

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBranch;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,7 +20,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Section extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia, LogsActivity, SoftDeletes;
+    use BelongsToBranch, HasFactory, InteractsWithMedia, LogsActivity, SoftDeletes;
 
     /** One price for the whole course, paid up front. */
     public const FEE_TYPE_FIXED_COURSE = 'fixed_course';
@@ -205,11 +206,6 @@ class Section extends Model implements HasMedia
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);
-    }
-
-    public function branch(): BelongsTo
-    {
-        return $this->belongsTo(Branch::class);
     }
 
     public function trainer(): BelongsTo

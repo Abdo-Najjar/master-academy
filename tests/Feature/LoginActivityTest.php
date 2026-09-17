@@ -23,6 +23,19 @@ it('records a login activity when the Login event fires', function () {
     expect($activity->logged_in_at)->not->toBeNull();
 });
 
+it('records exactly one row per login', function () {
+    // The listener was once registered by hand *and* picked up by Laravel's
+    // automatic discovery, so every sign-in wrote two identical rows and the
+    // profile screen showed each login twice.
+    $user = User::factory()->create();
+
+    Event::dispatch(new Login('web', $user, false));
+
+    expect(LoginActivity::where('auth_id', $user->id)
+        ->where('auth_type', $user->getMorphClass())
+        ->count())->toBe(1);
+});
+
 it('captures browser metadata from request user-agent', function () {
     $user = User::factory()->create();
 

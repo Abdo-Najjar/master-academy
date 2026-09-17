@@ -4,15 +4,16 @@ namespace App\Filament\Support;
 
 use App\Models\PaymentType;
 use App\Models\Student;
+use App\Support\BranchContext;
+use App\Support\ReceiptAttachment;
 use Carbon\Carbon;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -38,9 +39,9 @@ class EnrollmentPayment
     public static function schema(Closure $total): array
     {
         return [
-            Placeholder::make('total_due_display')
+            TextEntry::make('total_due_display')
                 ->label(__('Total To Be Paid'))
-                ->content(fn (Get $get): string => number_format($total($get), 2).' ₪'),
+                ->state(fn (Get $get): string => number_format($total($get), 2).' ₪'),
 
             TextInput::make('payment_amount')
                 ->label(__('Amount Received'))
@@ -74,16 +75,7 @@ class EnrollmentPayment
                 ->maxDate(now())
                 ->native(false),
 
-            FileUpload::make('receipt')
-                ->label(__('Payment Receipt'))
-                ->helperText(__('Attach the transfer/notification receipt (optional).'))
-                ->disk('public')
-                ->directory('payment-receipts')
-                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
-                ->maxSize(5120)
-                ->downloadable()
-                ->openable()
-                ->columnSpanFull(),
+            ReceiptAttachment::pendingField(),
 
             Textarea::make('payment_note')
                 ->label(__('Note'))
@@ -130,7 +122,8 @@ class EnrollmentPayment
                 'description' => __('Payment received at enrollment'),
                 'note' => $data['payment_note'] ?? null,
                 'payment_type_id' => $data['payment_type_id'] ?? null,
-                'receipt_path' => $data['receipt'] ?? null,
+                'branch_id' => BranchContext::currentBranchId(),
+                'receipt_media_id' => ReceiptAttachment::attachToWallet($student, $data['receipt'] ?? null),
                 'transaction_date' => $data['payment_date'] ?? null,
             ]);
 

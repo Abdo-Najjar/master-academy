@@ -3,7 +3,10 @@
 namespace App\Filament\Admin\Resources\Sections\Pages;
 
 use App\Filament\Admin\Pages\AttendanceRecords;
+use App\Filament\Admin\Pages\QuickEnroll;
+use App\Filament\Admin\Resources\Sections\Actions\EnrollStudentAction;
 use App\Filament\Admin\Resources\Sections\SectionResource;
+use App\Filament\Admin\Resources\Sections\Widgets\SectionFinancialsWidget;
 use App\Models\Section;
 use App\Services\SessionBillingService;
 use App\Services\WhatsAppService;
@@ -27,6 +30,25 @@ class ViewSection extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            // Its own button rather than a line in the Actions menu: filling a
+            // section is what the desk opens a section to do, and both doors
+            // into it — a brand-new student, or one the centre already has —
+            // belong on the page the seats are counted on.
+            ActionGroup::make([
+                Action::make('enrollNewStudent')
+                    ->label(__('Register a New Student'))
+                    ->icon('heroicon-o-academic-cap')
+                    // Quick Enroll already knows how to take a student and
+                    // their first payment; it only ever lacked the section,
+                    // which the page it was opened from can name.
+                    ->url(fn (Section $record): string => QuickEnroll::getUrl(['section' => $record->getKey()]))
+                    ->visible(fn (): bool => QuickEnroll::canAccess()),
+                EnrollStudentAction::make(),
+            ])
+                ->label(__('Enroll a Student'))
+                ->icon('heroicon-o-user-plus')
+                ->color('success')
+                ->button(),
             ActionGroup::make([
                 EditAction::make(),
                 Action::make('notifyWhatsApp')
@@ -108,6 +130,14 @@ class ViewSection extends ViewRecord
                 ->label(__('Actions'))
                 ->icon('heroicon-o-ellipsis-vertical')
                 ->button(),
+        ];
+    }
+
+    /** The money totals read before the roster, so they sit above the record. */
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            SectionFinancialsWidget::class,
         ];
     }
 

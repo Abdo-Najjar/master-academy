@@ -45,17 +45,27 @@ beforeEach(function () {
     $this->registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->from->id,
+        // Named rather than left to default to "today": lessons dated before a
+        // student's enrolment are not theirs, which is what silently emptied
+        // the session counter below once the fixture dates fell into the past.
+        'enrolled_at' => transferDay(-30),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
 });
+
+/** A day in the term this file works in, always in the past. */
+function transferDay(int $offset = 0): string
+{
+    return Carbon::today()->subDays(90)->addDays($offset)->toDateString();
+}
 
 it('carries the session counter over instead of restarting it', function () {
     // Four lessons held in the original section.
     for ($i = 0; $i < 4; $i++) {
         SectionSession::create([
             'section_id' => $this->from->id,
-            'date' => Carbon::parse('2026-09-01')->addDays($i)->toDateString(),
+            'date' => transferDay($i),
         ]);
     }
 
@@ -69,8 +79,11 @@ it('carries the session counter over instead of restarting it', function () {
         ->and($moved->sessions_counted)->toBe(4)
         ->and($moved->paid_through_session)->toBe(6);
 
-    // The next lesson in the new section continues from 4, not from 0.
-    SectionSession::create(['section_id' => $this->to->id, 'date' => '2026-10-01']);
+    // The next lesson in the new section continues from 4, not from 0. Dated
+    // after the move rather than inside the old term: transferring re-enrols
+    // the student as of today, so the new section's earlier lessons are its own
+    // history and would not be charged to them.
+    SectionSession::create(['section_id' => $this->to->id, 'date' => Carbon::tomorrow()->toDateString()]);
 
     expect($this->registration->fresh()->sessions_counted)->toBe(5);
 });

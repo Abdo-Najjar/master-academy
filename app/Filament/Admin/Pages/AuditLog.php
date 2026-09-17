@@ -5,12 +5,16 @@ namespace App\Filament\Admin\Pages;
 use App\Filament\Support\ExportsTableRecords;
 use App\Models\Attendance;
 use App\Models\ExamGrade;
+use App\Models\Expense;
 use App\Models\Registration;
+use App\Models\RoomBooking;
+use App\Models\RoomBookingPayment;
 use App\Models\Section;
 use App\Models\SectionSession;
 use App\Models\Student;
 use App\Models\Trainer;
 use App\Models\User;
+use App\Support\BranchContext;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -58,6 +62,11 @@ class AuditLog extends Page implements HasTable
             Trainer::class => __('Trainer'),
             Section::class => __('Section'),
             SectionSession::class => __('Session'),
+            // Money leaving the centre and halls let out to outsiders are as
+            // worth tracing as money coming in from a student.
+            Expense::class => __('Expense'),
+            RoomBooking::class => __('Room Booking'),
+            RoomBookingPayment::class => __('Payments'),
             User::class => __('Administrator'),
         ];
     }
@@ -90,7 +99,9 @@ class AuditLog extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query(Activity::query()->with(['causer', 'subject']))
+            // History follows the record: an employee reads the trail of what
+            // they can see, and nothing from the branch next door.
+            ->query(BranchContext::scopeActivityLog(Activity::query()->with(['causer', 'subject'])))
             ->columns([
                 TextColumn::make('created_at')
                     ->label(__('When'))

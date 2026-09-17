@@ -663,9 +663,10 @@
                                     <td class="px-4 py-3 font-medium">{{ number_format((float) $tx->amountFloat, 2) }} ₪</td>
                                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ $tx->meta['description'] ?? '-' }}</td>
                                     <td class="px-4 py-3">
-                                        @php $rp = $tx->meta['receipt_path'] ?? null; @endphp
+                                        {{-- Media library first, then the path older receipts were filed under. --}}
+                                        @php $rp = \App\Support\ReceiptAttachment::walletUrl($tx->meta); @endphp
                                         @if ($rp)
-                                            <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($rp) }}" target="_blank"
+                                            <a href="{{ $rp }}" target="_blank"
                                                class="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs hover:bg-blue-200">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
                                                 {{ __('View') }}

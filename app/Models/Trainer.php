@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\AutoTranslatesMissing;
 use App\Observers\TrainerObserver;
+use App\Support\ReceiptAttachment;
 use Bavix\Wallet\Interfaces\Wallet;
 use Bavix\Wallet\Interfaces\WalletFloat;
 use Bavix\Wallet\Traits\HasWalletFloat;
@@ -100,6 +101,10 @@ class Trainer extends Authenticatable implements HasMedia, Wallet, WalletFloat
         $this->addMediaCollection('main')
             ->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+
+        // Receipts for money that moved through this account. Not single:
+        // every payment keeps its own voucher.
+        $this->addMediaCollection(ReceiptAttachment::WALLET_COLLECTION);
     }
 
     public function governorate(): BelongsTo
@@ -142,5 +147,17 @@ class Trainer extends Authenticatable implements HasMedia, Wallet, WalletFloat
     public function loginActivities(): MorphMany
     {
         return $this->morphMany(LoginActivity::class, 'auth');
+    }
+
+    /**
+     * The sites this trainer works at.
+     *
+     * Many-to-many rather than a `branch_id`, because one person regularly
+     * teaches at two: a trainer belongs to every branch they are available in,
+     * and it is the section that decides where a given lesson is held.
+     */
+    public function branches(): BelongsToMany
+    {
+        return $this->belongsToMany(Branch::class, 'branch_trainer')->withTimestamps();
     }
 }

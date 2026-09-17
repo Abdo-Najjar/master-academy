@@ -6,9 +6,9 @@ use App\Models\Registration;
 use App\Models\Section;
 use App\Services\StudentTransferService;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Illuminate\Validation\ValidationException;
 
@@ -30,15 +30,15 @@ class TransferSectionAction
             ->modalHeading(__('Transfer to another section'))
             ->modalSubmitActionLabel(__('Transfer'))
             ->schema(fn (Registration $record): array => [
-                Placeholder::make('current')
+                TextEntry::make('current')
                     ->label(__('Current Section'))
-                    ->content($record->section?->name ?? '#'.$record->section_id),
-                Placeholder::make('course')
+                    ->state($record->section?->name ?? '#'.$record->section_id),
+                TextEntry::make('course')
                     ->label(__('Course'))
-                    ->content($record->section?->subject?->getTranslation('name', app()->getLocale(), false) ?? '—'),
-                Placeholder::make('counter')
+                    ->state($record->section?->subject?->getTranslation('name', app()->getLocale(), false) ?? '—'),
+                TextEntry::make('counter')
                     ->label(__('Sessions Counted'))
-                    ->content(fn (): string => $record->isPerSessionBilled()
+                    ->state(fn (): string => $record->isPerSessionBilled()
                         ? __(':counted of :paid paid sessions', [
                             'counted' => $record->sessions_counted,
                             'paid' => $record->paid_through_session,

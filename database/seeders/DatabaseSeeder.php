@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             CitySeeder::class,
             BranchSeeder::class,
             PaymentTypeSeeder::class,
+            ExpenseTypeSeeder::class,
             CourseTypeSeeder::class,
             SubjectSeeder::class,
             SiteContentSeeder::class,

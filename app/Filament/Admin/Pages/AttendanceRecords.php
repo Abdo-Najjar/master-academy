@@ -2,6 +2,8 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Admin\Resources\Registrations\Actions\CollectPaymentAction;
+use App\Filament\Admin\Resources\Students\StudentResource;
 use App\Models\Attendance;
 use App\Models\Registration;
 use App\Models\Section;
@@ -9,6 +11,8 @@ use App\Models\Student;
 use App\Services\FinancialDueService;
 use App\Support\PdfFonts;
 use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -98,7 +102,7 @@ class AttendanceRecords extends Page
      * point of paging it, so a student's standing this month is not diluted by
      * a good or bad month six lessons ago.
      *
-     * @return array{dates: list<string>, rows: list<array{student: Student, phone: ?string, financial_status: ?string, paid: ?float, remaining: ?float, cells: array<string, string|null>, counts: array<string, int>, rate: float}>, columnTotals: array<string, array<string, int>>, months: int, month: int, allDates: int, perMonth: int}
+     * @return array{dates: list<string>, rows: list<array{student: Student, student_url: ?string, registration_id: ?int, phone: ?string, financial_status: ?string, paid: ?float, remaining: ?float, cells: array<string, string|null>, counts: array<string, int>, rate: float}>, columnTotals: array<string, array<string, int>>, months: int, month: int, allDates: int, perMonth: int}
      */
     #[Computed]
     public function sheet(): array
@@ -196,6 +200,11 @@ class AttendanceRecords extends Page
 
             $rows[] = [
                 'student' => $student,
+                // The sheet is where the desk actually stands when a student
+                // pays, so the row carries the two handles it needs: the page
+                // to open, and the bill to collect against.
+                'student_url' => $this->studentUrl($student),
+                'registration_id' => $registration?->getKey(),
                 'phone' => $student->phone_number ?: $student->whatsapp_number,
                 'financial_status' => $registration?->financial_status,
                 // Money actually collected against this registration, and what
@@ -219,6 +228,83 @@ class AttendanceRecords extends Page
             'allDates' => count($allDates),
             'perMonth' => $perMonth,
         ];
+    }
+
+    /**
+     * Where the student's name points, or null when there is nowhere to go —
+     * the reader has no rights on students, or the row belongs to someone
+     * soft-deleted, whose page the resource would refuse to resolve anyway.
+     */
+    private function studentUrl(Student $student): ?string
+    {
+        if ($student->trashed() || ! StudentResource::canView($student)) {
+            return null;
+        }
+
+        return StudentResource::getUrl('view', ['record' => $student->getKey()]);
+    }
+
+    /**
+     * Take money against the registration on a sheet row, without leaving the
+     * sheet. Same action the registration screens use — one deposit path, so a
+     * payment banked here is credited and audited exactly like any other.
+     */
+    public function collectPaymentAction(): Action
+    {
+        return Action::make('collectPayment')
+            ->label(__('Record Payment'))
+            ->icon('heroicon-o-banknotes')
+            ->color('success')
+            ->iconButton()
+            ->size('sm')
+            ->visible(fn (): bool => auth()->user()?->can('registration.collect') ?? false)
+            ->modalHeading(__('Record Payment'))
+            ->modalDescription(fn (array $arguments): ?string => $this->rowRegistration($arguments)?->sectionLabel())
+            ->modalSubmitActionLabel(__('Record Payment'))
+            // A row whose registration no longer resolves — deleted in another
+            // tab while the sheet sat open — says so in the modal. An empty
+            // schema would leave Filament with nothing to mount at all.
+            ->schema(fn (array $arguments): array => ($registration = $this->rowRegistration($arguments))
+                ? CollectPaymentAction::schema($registration)
+                : [TextEntry::make('missing')->hiddenLabel()->state(__('No records found'))])
+            ->action(function (array $arguments, array $data): void {
+                $registration = $this->rowRegistration($arguments);
+
+                if (! $registration) {
+                    Notification::make()
+                        ->danger()
+                        ->title(__('No records found'))
+                        ->send();
+
+                    return;
+                }
+
+                CollectPaymentAction::collect($registration, $data);
+
+                // The status pill and the paid/remaining line under it are
+                // computed in `sheet()`, so drop the cache or the row keeps
+                // showing the balance from before the payment.
+                unset($this->sheet);
+            });
+    }
+
+    /**
+     * Resolve the row's registration, pinned to the section on screen so a
+     * tampered argument cannot collect against a bill from another sheet.
+     *
+     * @param  array<string, mixed>  $arguments
+     */
+    private function rowRegistration(array $arguments): ?Registration
+    {
+        $id = $arguments['registration'] ?? null;
+
+        if (! is_numeric($id) || ! $this->sheetSectionId) {
+            return null;
+        }
+
+        return Registration::query()
+            ->where('section_id', $this->sheetSectionId)
+            ->find((int) $id);
     }
 
     /**

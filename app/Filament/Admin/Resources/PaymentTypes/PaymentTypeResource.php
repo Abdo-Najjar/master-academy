@@ -109,6 +109,8 @@ class PaymentTypeResource extends Resource
     {
         DeletionGuard::ensureUnused($record, [
             'registrations' => __('Registrations'),
+            'expenses' => __('Expenses'),
+            'bookingPayments' => __('Payments'),
         ]);
     }
 
@@ -119,6 +121,8 @@ class PaymentTypeResource extends Resource
     {
         DeletionGuard::ensureUnusedForMany($records, [
             'registrations' => __('Registrations'),
+            'expenses' => __('Expenses'),
+            'bookingPayments' => __('Payments'),
         ]);
     }
 

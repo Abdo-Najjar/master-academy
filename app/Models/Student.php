@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\AutoTranslatesMissing;
 use App\Observers\StudentObserver;
+use App\Support\ReceiptAttachment;
 use Bavix\Wallet\Interfaces\Wallet;
 use Bavix\Wallet\Interfaces\WalletFloat;
 use Bavix\Wallet\Traits\HasWalletFloat;
@@ -85,6 +86,10 @@ class Student extends Authenticatable implements HasMedia, Wallet, WalletFloat
         $this->addMediaCollection('main')
             ->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+
+        // Receipts for money that moved through this account. Not single:
+        // every payment keeps its own voucher.
+        $this->addMediaCollection(ReceiptAttachment::WALLET_COLLECTION);
     }
 
     public function sectionTransfers(): HasMany

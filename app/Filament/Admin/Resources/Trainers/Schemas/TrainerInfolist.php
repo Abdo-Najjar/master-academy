@@ -28,6 +28,10 @@ class TrainerInfolist
                         TextEntry::make('whatsapp_number')->label(__('WhatsApp'))->placeholder('—'),
                         TextEntry::make('governorate.name')->label(__('Governorate'))->placeholder('—'),
                         TextEntry::make('city.name')->label(__('City'))->placeholder('—'),
+                        TextEntry::make('branches.name')
+                            ->label(__('Branches'))
+                            ->badge()
+                            ->placeholder('—'),
                         TextEntry::make('default_rate')
                             ->label(__('Default Rate (%)'))
                             ->formatStateUsing(fn ($state) => TrainerRate::label($state) ?? '—'),

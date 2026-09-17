@@ -12,6 +12,7 @@ use App\Filament\Admin\Resources\Users\Schemas\UserInfolist;
 use App\Filament\Admin\Resources\Users\Tables\UsersTable;
 use App\Filament\Support\AuthorizesResourceActions;
 use App\Models\User;
+use App\Support\BranchContext;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -72,6 +73,24 @@ class UserResource extends Resource
         return [
             LoginActivitiesRelationManager::class,
         ];
+    }
+
+    /**
+     * Employees are walled off branch by branch here rather than by a global
+     * scope on the model: that scope would have to ask who is signed in, and
+     * asking runs a User query, which would fire the scope again. This screen
+     * is the only place the whole staff list is read, so this is the only place
+     * that has to remember.
+     *
+     * Head office (and the super admin) drop through unfiltered.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->when(
+                BranchContext::currentBranchId(),
+                fn (Builder $query, int $branchId) => $query->where('users.branch_id', $branchId),
+            );
     }
 
     public static function getPages(): array

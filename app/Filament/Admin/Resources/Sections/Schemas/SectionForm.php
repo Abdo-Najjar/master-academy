@@ -3,11 +3,13 @@
 namespace App\Filament\Admin\Resources\Sections\Schemas;
 
 use App\Filament\Support\AuditReasonField;
+use App\Filament\Support\BranchField;
 use App\Filament\Support\TrainerRateField;
 use App\Models\Room;
 use App\Models\Section as SectionModel;
 use App\Models\SectionTime;
 use App\Models\Trainer;
+use App\Services\RoomAvailabilityService;
 use Closure;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
@@ -41,11 +43,12 @@ class SectionForm
                             ->required()
                             ->live()
                             ->afterStateUpdated(fn (callable $set) => $set('trainer_id', null)),
-                        Select::make('branch_id')
-                            ->label(__('Branch'))
-                            ->relationship('branch', 'name')
-                            ->searchable()
-                            ->preload(),
+                        // Required now that branches are walls rather than
+                        // labels: a course with no branch belongs to no site,
+                        // and every employee tied to one would lose sight of it.
+                        BranchField::make()
+                            ->live()
+                            ->afterStateUpdated(fn (Set $set) => $set('times', [])),
                         Select::make('trainer_id')
                             ->label(__('Trainer'))
                             ->options(function (Get $get): array {
@@ -192,9 +195,16 @@ class SectionForm
                                     ->label(__('End Time'))
                                     ->seconds(false)
                                     ->required(),
+                                // Only rooms that stand in this course's own
+                                // branch: booking a hall at another site is not
+                                // a mistake anyone should be able to make.
                                 Select::make('room_id')
                                     ->label(__('Room'))
-                                    ->options(Room::query()->orderBy('number')->pluck('number', 'id'))
+                                    ->options(fn (Get $get): array => Room::query()
+                                        ->when($get('../../branch_id'), fn ($query, $branchId) => $query->where('branch_id', $branchId))
+                                        ->orderBy('number')
+                                        ->pluck('number', 'id')
+                                        ->all())
                                     ->searchable()
                                     ->preload(),
                             ])
@@ -232,7 +242,10 @@ class SectionForm
                                                 continue;
                                             }
 
-                                            if ($row['start_time'] < $other['end_time'] && $row['end_time'] > $other['start_time']) {
+                                            if (RoomAvailabilityService::slotsOverlap(
+                                                $row['start_time'], $row['end_time'],
+                                                $other['start_time'], $other['end_time'],
+                                            )) {
                                                 $fail(__('This section already has a lesson on :day at :time', [
                                                     'day' => __(ucfirst((string) $row['day'])),
                                                     'time' => substr((string) $other['start_time'], 0, 5).' - '.substr((string) $other['end_time'], 0, 5),
@@ -249,10 +262,12 @@ class SectionForm
                                         }
 
                                         if ($trainerId) {
-                                            $conflict = SectionTime::query()
-                                                ->where('day', $row['day'])
-                                                ->where('start_time', '<', $row['end_time'])
-                                                ->where('end_time', '>', $row['start_time'])
+                                            $conflict = RoomAvailabilityService::applyOverlap(
+                                                SectionTime::query()->where('day', $row['day']),
+                                                'section_times',
+                                                (string) $row['start_time'],
+                                                (string) $row['end_time'],
+                                            )
                                                 ->whereHas('section', fn ($q) => $running($q)
                                                     ->where('trainer_id', $trainerId)
                                                     ->when($record?->id, fn ($q2) => $q2->where('id', '!=', $record->id)))
@@ -270,23 +285,24 @@ class SectionForm
                                             }
                                         }
 
+                                        // Rooms are held by halls let out to
+                                        // outsiders as well as by lessons, and
+                                        // this has to say so *before* the save
+                                        // — the observer would only refuse the
+                                        // time rows, leaving the section behind.
                                         if (! empty($row['room_id'])) {
-                                            $conflict = SectionTime::query()
-                                                ->where('day', $row['day'])
-                                                ->where('room_id', $row['room_id'])
-                                                ->where('start_time', '<', $row['end_time'])
-                                                ->where('end_time', '>', $row['start_time'])
-                                                ->when($record?->id, fn ($q) => $q->where('section_id', '!=', $record->id))
-                                                ->whereHas('section', $running)
-                                                ->with('section')
-                                                ->first();
+                                            $occupant = RoomAvailabilityService::occupant(
+                                                roomId: (int) $row['room_id'],
+                                                day: (string) $row['day'],
+                                                startTime: (string) $row['start_time'],
+                                                endTime: (string) $row['end_time'],
+                                                from: $get('start_date'),
+                                                to: $get('end_date'),
+                                                ignoreSectionId: $record?->id,
+                                            );
 
-                                            if ($conflict) {
-                                                $fail(__('Room is already used by :name on :day at :time', [
-                                                    'name' => $conflict->section?->name ?? '#'.$conflict->section_id,
-                                                    'day' => __(ucfirst((string) $row['day'])),
-                                                    'time' => substr((string) $conflict->start_time, 0, 5).' - '.substr((string) $conflict->end_time, 0, 5),
-                                                ]));
+                                            if ($occupant) {
+                                                $fail(RoomAvailabilityService::message($occupant, (string) $row['day']));
 
                                                 return;
                                             }

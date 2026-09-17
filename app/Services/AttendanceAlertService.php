@@ -108,7 +108,20 @@ class AttendanceAlertService
             return false;
         }
 
-        $admins = User::query()->get();
+        // The alert names a student and the section they are missing, so it
+        // goes to the people who are allowed to know: the staff of that
+        // section's branch, plus head office. It runs from a queued job with
+        // nobody signed in, so the branch has to be read off the section rather
+        // than off whoever is at a screen.
+        $admins = User::query()
+            ->when(
+                $section->branch_id,
+                fn ($query, $branchId) => $query->where(fn ($q) => $q
+                    ->whereNull('users.branch_id')
+                    ->orWhere('users.branch_id', $branchId)),
+            )
+            ->get();
+
         if ($admins->isEmpty()) {
             return true;
         }

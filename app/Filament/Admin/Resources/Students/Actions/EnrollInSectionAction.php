@@ -122,6 +122,7 @@ class EnrollInSectionAction
                 ->default(0)
                 ->minValue(0)
                 ->prefix('₪')
+                ->dehydrateStateUsing(fn ($state) => blank($state) ? 0 : $state)
                 ->live(debounce: 500)
                 ->afterStateUpdated(fn (Get $get, Set $set) => $set(
                     'amount_paid',

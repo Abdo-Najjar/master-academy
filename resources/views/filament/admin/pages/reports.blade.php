@@ -15,6 +15,10 @@
         .ma-rep-card--emerald .ma-rep-card__value{color:rgb(5,150,105);}
         .ma-rep-card--red{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25);}
         .ma-rep-card--red .ma-rep-card__value{color:rgb(220,38,38);}
+        .ma-rep-card--amber{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.25);}
+        .ma-rep-card--amber .ma-rep-card__value{color:rgb(180,83,9);}
+        .ma-rep-card--purple{background:rgba(168,85,247,.08);border-color:rgba(168,85,247,.25);}
+        .ma-rep-card--purple .ma-rep-card__value{color:rgb(147,51,234);}
 
         .ma-rep-2col{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem;}
         .ma-rep-finrow{display:flex;align-items:center;justify-content:space-between;font-size:.875rem;}
@@ -56,9 +60,15 @@
         $stats = $this->stats;
         $topTrainers = $this->topTrainers;
         $levels = $this->subjectBreakdown;
-        $dueStudents = $this->dueStudents;
         $withdrawalStats = $this->withdrawalStats;
         $money = fn ($n) => number_format((float) $n, 2).' ₪';
+
+        $centreWide = ! $this->hasTrainerFilter();
+        $expenseStats = $this->expenseStats;
+        $expenseBreakdown = $this->expenseBreakdown;
+        $bookingStats = $this->bookingStats;
+        $collections = $this->collections;
+        $netResult = $this->netResult;
     @endphp
 
     {{-- Filters --}}
@@ -118,6 +128,23 @@
                     <span class="ma-rep-finrow__label" style="color:inherit;font-weight:600;">{{ __('Net Revenue') }}</span>
                     <span class="ma-rep-finrow__val">{{ $money($stats['net_revenue']) }}</span>
                 </div>
+
+                @if ($centreWide)
+                    {{-- What the courses earned is only half the ledger: the halls
+                         bring money in too, and rent and bills take it out. --}}
+                    <div class="ma-rep-finrow">
+                        <span class="ma-rep-finrow__label">{{ __('Room Booking Income') }}</span>
+                        <span class="ma-rep-finrow__val" style="color:rgb(147,51,234);">{{ $money($bookingStats['collected']) }}</span>
+                    </div>
+                    <div class="ma-rep-finrow">
+                        <span class="ma-rep-finrow__label">{{ __('Total Expenses') }}</span>
+                        <span class="ma-rep-finrow__val" style="color:rgb(220,38,38);">− {{ $money($expenseStats['total']) }}</span>
+                    </div>
+                    <div class="ma-rep-finrow ma-rep-finrow--total">
+                        <span class="ma-rep-finrow__label" style="color:inherit;font-weight:600;">{{ __('Net After Expenses') }}</span>
+                        <span class="ma-rep-finrow__val" style="{{ $netResult < 0 ? 'color:rgb(220,38,38);' : '' }}">{{ $money($netResult) }}</span>
+                    </div>
+                @endif
             </div>
         </x-filament::section>
 
@@ -138,6 +165,105 @@
             </div>
         </x-filament::section>
     </div>
+
+    @if ($centreWide)
+        {{-- Money out, and the halls let out to people who are not students --}}
+        <x-filament::section>
+            <div class="ma-rep-stats">
+                <div class="ma-rep-card ma-rep-card--red">
+                    <p class="ma-rep-card__label">{{ __('Total Expenses') }}</p>
+                    <p class="ma-rep-card__value">{{ $money($expenseStats['total']) }}</p>
+                    <p class="ma-rep-card__hint">{{ __(':count records', ['count' => number_format($expenseStats['count'])]) }}</p>
+                </div>
+                <div class="ma-rep-card ma-rep-card--purple">
+                    <p class="ma-rep-card__label">{{ __('Room Booking Income') }}</p>
+                    <p class="ma-rep-card__value">{{ $money($bookingStats['collected']) }}</p>
+                    <p class="ma-rep-card__hint">{{ __(':count records', ['count' => number_format($bookingStats['count'])]) }}</p>
+                </div>
+                <div class="ma-rep-card ma-rep-card--amber">
+                    <p class="ma-rep-card__label">{{ __('Outstanding from Bookings') }}</p>
+                    <p class="ma-rep-card__value">{{ $money($bookingStats['outstanding']) }}</p>
+                    <p class="ma-rep-card__hint">{{ __('Booking Price') }}: {{ $money($bookingStats['contracted']) }}</p>
+                </div>
+                <div class="ma-rep-card ma-rep-card--green">
+                    <p class="ma-rep-card__label">{{ __('Net After Expenses') }}</p>
+                    <p class="ma-rep-card__value">{{ $money($netResult) }}</p>
+                </div>
+            </div>
+        </x-filament::section>
+
+        {{-- Where the money came in, and where it went --}}
+        <div class="ma-rep-2col">
+            <x-filament::section icon="heroicon-o-banknotes">
+                <x-slot name="heading">{{ __('Payments Received by Method') }}</x-slot>
+                <p class="ma-rep-card__hint" style="margin:0 0 .75rem;">
+                    {{ __('Cash actually banked in the period — student payments and booking instalments together.') }}
+                </p>
+                @if ($collections['by_type']->isEmpty())
+                    <p class="ma-rep-empty">{{ __('No data for the selected period') }}</p>
+                @else
+                    <div class="ma-rep-overflow">
+                        <table class="ma-rep-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Payment Type') }}</th>
+                                    <th>{{ __('Records') }}</th>
+                                    <th class="end">{{ __('Amount') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($collections['by_type'] as $row)
+                                    <tr>
+                                        <td class="name">{{ $row['name'] }}</td>
+                                        <td>{{ number_format($row['count']) }}</td>
+                                        <td class="money">{{ $money($row['total']) }}</td>
+                                    </tr>
+                                @endforeach
+                                <tr>
+                                    <td class="name">{{ __('Total') }}</td>
+                                    <td>{{ number_format($collections['count']) }}</td>
+                                    <td class="money">{{ $money($collections['total']) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </x-filament::section>
+
+            <x-filament::section icon="heroicon-o-arrow-trending-down">
+                <x-slot name="heading">{{ __('Expenses by Type') }}</x-slot>
+                @if ($expenseBreakdown->isEmpty())
+                    <p class="ma-rep-empty">{{ __('No data for the selected period') }}</p>
+                @else
+                    <div class="ma-rep-overflow">
+                        <table class="ma-rep-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Expense Type') }}</th>
+                                    <th>{{ __('Records') }}</th>
+                                    <th class="end">{{ __('Amount') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($expenseBreakdown as $row)
+                                    <tr>
+                                        <td class="name">{{ $row['name'] }}</td>
+                                        <td>{{ number_format($row['count']) }}</td>
+                                        <td class="money" style="color:rgb(220,38,38);">{{ $money($row['total']) }}</td>
+                                    </tr>
+                                @endforeach
+                                <tr>
+                                    <td class="name">{{ __('Total Expenses') }}</td>
+                                    <td>{{ number_format($expenseStats['count']) }}</td>
+                                    <td class="money" style="color:rgb(220,38,38);">{{ $money($expenseStats['total']) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </x-filament::section>
+        </div>
+    @endif
 
     {{-- Withdrawal + certificate stats --}}
     <x-filament::section>
@@ -161,58 +287,9 @@
         </div>
     </x-filament::section>
 
-    {{-- Due/overdue students with WhatsApp links --}}
-    @if ($dueStudents->isNotEmpty())
-        <x-filament::section icon="heroicon-o-exclamation-circle">
-            <x-slot name="heading">{{ __('Students with Due / Overdue Payments') }}</x-slot>
-            <div class="ma-rep-overflow">
-                <table class="ma-rep-table">
-                    <thead>
-                        <tr>
-                            <th>{{ __('Student') }}</th>
-                            <th>{{ __('Section') }}</th>
-                            <th>{{ __('Subject') }}</th>
-                            <th>{{ __('Status') }}</th>
-                            <th>{{ __('WhatsApp') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($dueStudents as $reg)
-                            @php
-                                $student = $reg->student;
-                                $sName = $reg->section?->name;
-                                $sSubject = $reg->section?->subject?->getTranslation('name', app()->getLocale(), false);
-                                $studentName = is_array($student?->name) ? ($student->name[app()->getLocale()] ?? reset($student->name)) : $student?->name;
-                                $phone = preg_replace('/[^0-9]/', '', (string) ($student?->whatsapp_number ?: $student?->phone_number));
-                                $waMsg = urlencode(__('Payment reminder for :name in :section', ['name' => $studentName, 'section' => $sName]));
-                                $waUrl = $phone ? "https://wa.me/{$phone}?text={$waMsg}" : null;
-                            @endphp
-                            <tr>
-                                <td class="name">{{ $studentName }}</td>
-                                <td>{{ $sName }}</td>
-                                <td>{{ $sSubject }}</td>
-                                <td>
-                                    <span style="padding:.2rem .6rem;border-radius:9999px;font-size:.75rem;font-weight:600;
-                                        {{ $reg->financial_status === 'overdue' ? 'background:rgba(239,68,68,.1);color:rgb(220,38,38)' : 'background:rgba(245,158,11,.1);color:rgb(180,83,9)' }}">
-                                        {{ $reg->financial_status === 'overdue' ? __('Overdue') : __('Due') }}
-                                    </span>
-                                </td>
-                                <td>
-                                    @if ($waUrl)
-                                        <a href="{{ $waUrl }}" target="_blank" style="color:rgb(22,163,74);font-size:.875rem;font-weight:600;">
-                                            {{ __('Send') }} ↗
-                                        </a>
-                                    @else
-                                        <span class="ma-rep-empty">—</span>
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </x-filament::section>
-    @endif
+    {{-- Due/overdue students: a real table — searchable, sortable, paginated,
+         and actionable without leaving the report. --}}
+    {{ $this->table }}
 
     {{-- Top trainers + Subject breakdown --}}
     <div class="ma-rep-2col">

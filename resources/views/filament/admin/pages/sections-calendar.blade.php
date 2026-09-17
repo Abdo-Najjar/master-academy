@@ -34,12 +34,18 @@
            weekly one it sits next to. */
         .ma-cal-tag--extra{background:rgba(244,63,94,.16);color:rgb(190,18,60);}
         .ma-cal-event--extra{border-inline-start-style:dashed;}
+        /* A room let out to someone who is not a section. It sits in the same
+           cell as the lessons because the question the grid answers — "is that
+           hall free then?" — is the same either way. */
+        .ma-cal-tag--booking{background:rgba(168,85,247,.16);color:rgb(126,34,206);}
+        .ma-cal-event--booking{background:rgba(168,85,247,.08);border-inline-start-color:rgb(168,85,247);}
         .dark .ma-cal-tag--room{color:rgb(147,197,253);}
         .dark .ma-cal-tag--branch{color:rgb(216,180,254);}
         .dark .ma-cal-tag--none{color:rgb(161,161,170);}
         .dark .ma-cal-tag--subject{color:rgb(110,231,183);}
         .dark .ma-cal-tag--trainer{color:rgb(252,211,77);}
         .dark .ma-cal-tag--extra{color:rgb(253,164,175);}
+        .dark .ma-cal-tag--booking{color:rgb(216,180,254);}
         /* The overflow counter is a button: a day with four sections has to be
            able to show all four, not just admit that it has them. */
         .ma-cal-more{font-size:.6875rem;font-weight:600;color:rgb(100,116,139);padding:.1rem .3rem;border:0;background:transparent;cursor:pointer;text-align:start;border-radius:.25rem;}
@@ -110,6 +116,53 @@
                     <div class="ma-cal-daynum">{{ $date->day }}</div>
 
                     @foreach ($events as $event)
+                        @php $isBooking = \App\Filament\Admin\Pages\SectionsCalendar::isBooking($event); @endphp
+
+                        @if ($isBooking)
+                            @php
+                                $booking = $event->booking;
+                                $roomName = $booking?->room?->number;
+                                $branchName = $booking?->branch?->name;
+                                $time = \Illuminate\Support\Carbon::parse($event->start_time)->format('H:i')
+                                    .'–'.\Illuminate\Support\Carbon::parse($event->end_time)->format('H:i');
+
+                                $tooltip = collect([
+                                    $booking?->title,
+                                    $time,
+                                    __('Room Booking'),
+                                    $booking?->client_name ? __('Booked By').': '.$booking->client_name : null,
+                                    $booking?->client_phone,
+                                    $branchName ? __('Branch').': '.$branchName : null,
+                                    $roomName ? __('Room').': '.$roomName : __('No room set'),
+                                ])->filter()->implode(' · ');
+                            @endphp
+                            <span
+                                class="ma-cal-event ma-cal-event--booking"
+                                title="{{ $tooltip }}"
+                                @if ($loop->index >= $maxVisible) x-show="expanded" x-cloak @endif
+                            >
+                                <span class="ma-cal-event__name">{{ $booking?->title ?? '—' }}</span>
+                                <span class="ma-cal-event__meta">{{ $time }}</span>
+                                <span class="ma-cal-tags">
+                                    <span class="ma-cal-tag ma-cal-tag--booking">{{ __('Room Booking') }}</span>
+                                    @if ($booking?->client_name)
+                                        <span class="ma-cal-tag ma-cal-tag--trainer">{{ $booking->client_name }}</span>
+                                    @endif
+                                </span>
+                                <span class="ma-cal-tags">
+                                    @if ($branchName)
+                                        <span class="ma-cal-tag ma-cal-tag--branch">{{ $branchName }}</span>
+                                    @endif
+                                    @if ($roomName)
+                                        <span class="ma-cal-tag ma-cal-tag--room">{{ __('Room') }} {{ $roomName }}</span>
+                                    @else
+                                        <span class="ma-cal-tag ma-cal-tag--none">{{ __('No room set') }}</span>
+                                    @endif
+                                </span>
+                            </span>
+                            @continue
+                        @endif
+
                         @php
                             $section = $event->section;
                             $subjectColor = $section?->subject?->color;
@@ -189,6 +242,7 @@
             <span class="ma-cal-tag ma-cal-tag--branch">{{ __('Branch') }}</span>
             <span class="ma-cal-tag ma-cal-tag--room">{{ __('Room') }}</span>
             <span class="ma-cal-tag ma-cal-tag--extra">{{ __('Extra Session') }}</span>
+            <span class="ma-cal-tag ma-cal-tag--booking">{{ __('Room Booking') }}</span>
             <span>{{ __('Each entry shows the section, its time, its course, its trainer, its branch and its room.') }}</span>
         </div>
     </x-filament::section>

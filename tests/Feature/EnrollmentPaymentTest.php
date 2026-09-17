@@ -4,7 +4,6 @@ use App\Filament\Admin\Pages\QuickEnroll;
 use App\Filament\Admin\Resources\Registrations\Pages\CreateRegistration;
 use App\Filament\Admin\Resources\Students\StudentResource;
 use App\Filament\Admin\Resources\Students\Tables\StudentsTable;
-use App\Models\Guardian;
 use App\Models\PaymentType;
 use App\Models\Registration;
 use App\Models\Section;

@@ -7,16 +7,17 @@ use App\Models\Registration;
 use App\Models\Student;
 use App\Notifications\WalletTransaction;
 use App\Services\PaymentAllocationService;
+use App\Support\BranchContext;
+use App\Support\ReceiptAttachment;
 use Bavix\Wallet\Models\Transaction;
 use Bavix\Wallet\Models\Wallet;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Actions as ActionsComponent;
 use Filament\Schemas\Components\Section;
@@ -57,7 +58,7 @@ class WalletActions
 
                 $transaction = $record->forceWithdrawFloat(
                     (float) $data['amount'],
-                    self::buildMeta($data, __('Withdraw from student wallet'))
+                    self::buildMeta($data, __('Withdraw from student wallet'), $record)
                 );
 
                 self::applyTransactionDate($transaction, $data);
@@ -116,9 +117,9 @@ class WalletActions
                 Section::make(__('Allocate to courses'))
                     ->description(__('Choose which courses this payment settles. Anything left over stays as wallet credit.'))
                     ->schema([
-                        Placeholder::make('allocation_summary')
+                        TextEntry::make('allocation_summary')
                             ->label(__('Total Outstanding'))
-                            ->content(fn (Get $get): string => self::summary($total, $get))
+                            ->state(fn (Get $get): string => self::summary($total, $get))
                             ->columnSpanFull(),
 
                         ActionsComponent::make([
@@ -151,16 +152,7 @@ class WalletActions
                 ->maxLength(500)
                 ->columnSpanFull(),
 
-            FileUpload::make('receipt')
-                ->label(__('Payment Receipt'))
-                ->helperText(__('Attach the transfer/notification receipt (optional).'))
-                ->disk('public')
-                ->directory('payment-receipts')
-                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
-                ->maxSize(5120)
-                ->downloadable()
-                ->openable()
-                ->columnSpanFull(),
+            ReceiptAttachment::pendingField(),
         ];
     }
 
@@ -274,7 +266,7 @@ class WalletActions
         $applied = 0.0;
 
         DB::transaction(function () use ($student, $data, $amount, $allocations, &$applied): void {
-            $transaction = $student->depositFloat($amount, self::buildMeta($data, __('Deposit to student wallet')));
+            $transaction = $student->depositFloat($amount, self::buildMeta($data, __('Deposit to student wallet'), $student));
 
             self::applyTransactionDate($transaction, $data);
 
@@ -378,26 +370,29 @@ class WalletActions
                 ->rows(3)
                 ->maxLength(500)
                 ->columnSpanFull(),
-            FileUpload::make('receipt')
-                ->label(__('Payment Receipt'))
-                ->helperText(__('Attach the transfer/notification receipt (optional).'))
-                ->disk('public')
-                ->directory('payment-receipts')
-                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
-                ->maxSize(5120)
-                ->downloadable()
-                ->openable()
-                ->columnSpanFull(),
+            ReceiptAttachment::pendingField(),
         ];
     }
 
-    protected static function buildMeta(array $data, string $description): array
+    /**
+     * The movement's metadata, with the receipt filed against the student.
+     *
+     * A wallet movement is a vendor model and cannot own media, so the voucher
+     * hangs off the account whose balance moved and the movement remembers
+     * which one. Receipts taken before this are still a plain path on older
+     * rows, and are still read — see ReceiptAttachment::walletUrl().
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected static function buildMeta(array $data, string $description, Student $payable): array
     {
         return [
             'description' => $description,
             'note' => $data['note'] ?? null,
             'payment_type_id' => $data['payment_type_id'] ?? null,
-            'receipt_path' => $data['receipt'] ?? null,
+            'branch_id' => BranchContext::currentBranchId(),
+            'receipt_media_id' => ReceiptAttachment::attachToWallet($payable, $data['receipt'] ?? null),
             'transaction_date' => $data['transaction_date'] ?? null,
         ];
     }

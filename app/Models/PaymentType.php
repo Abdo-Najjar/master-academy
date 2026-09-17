@@ -23,4 +23,15 @@ class PaymentType extends Model
     {
         return $this->hasMany(Registration::class);
     }
+
+    /** Money going out is paid by a method too, and so are hall instalments. */
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
+    public function bookingPayments(): HasMany
+    {
+        return $this->hasMany(RoomBookingPayment::class);
+    }
 }

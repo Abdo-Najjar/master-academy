@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Trainers\RelationManagers;
 
 use App\Models\Trainer;
+use App\Support\ReceiptAttachment;
 use Bavix\Wallet\Models\Transaction;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -11,7 +12,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class TransactionsRelationManager extends RelationManager
 {
@@ -71,13 +71,11 @@ class TransactionsRelationManager extends RelationManager
                     ->placeholder(__('N/A')),
                 Tables\Columns\TextColumn::make('receipt')
                     ->label(__('Receipt'))
-                    ->state(fn (Transaction $record): ?string => ($record->meta['receipt_path'] ?? null) ? __('View') : null)
+                    ->state(fn (Transaction $record): ?string => ReceiptAttachment::walletUrl($record->meta) ? __('View') : null)
                     ->badge()
                     ->color('info')
                     ->icon('heroicon-o-paper-clip')
-                    ->url(fn (Transaction $record): ?string => ($p = $record->meta['receipt_path'] ?? null)
-                        ? Storage::disk('public')->url($p)
-                        : null, shouldOpenInNewTab: true)
+                    ->url(fn (Transaction $record): ?string => ReceiptAttachment::walletUrl($record->meta), shouldOpenInNewTab: true)
                     ->placeholder(__('N/A')),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label(__('Date'))

@@ -2,14 +2,11 @@
 
 namespace App\Providers;
 
-use App\Listeners\RecordLoginActivity;
 use App\Models\User;
 use App\Support\AuditReason;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Auth\Events\Login;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Activitylog\Models\Activity;
@@ -23,7 +20,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Event::listen(Login::class, RecordLoginActivity::class);
+        // Login events are recorded by App\Listeners\RecordLoginActivity, which
+        // Laravel discovers automatically from its `handle(Login $event)`
+        // signature. Registering it here as well made every sign-in write two
+        // identical rows.
 
         // Stamp the operator's stated reason for a change onto every activity
         // log entry written during this request. Done centrally (rather than

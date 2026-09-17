@@ -21,6 +21,11 @@ class TrainerRateField
 {
     /**
      * @param  string  $name  the percentage column ('trainer_rate', 'default_rate')
+     * @param  bool  $nullable  whether an emptied box may be stored as null. On
+     *                          `sections.trainer_rate` it must be — empty means
+     *                          "inherit the trainer's default". On the NOT NULL
+     *                          `trainers.default_rate` it may not: an empty box
+     *                          there means no cut, so it is written as a zero.
      * @return array<int, Field>
      */
     public static function make(
@@ -30,6 +35,7 @@ class TrainerRateField
         bool $required = false,
         ?\Closure $visible = null,
         float|int|null $default = null,
+        bool $nullable = true,
     ): array {
         $modeField = $name.'_fraction';
 
@@ -64,6 +70,7 @@ class TrainerRateField
                 ->suffix('%')
                 ->default($default)
                 ->required($required)
+                ->dehydrateStateUsing(fn ($state) => $nullable || ! blank($state) ? $state : 0)
                 ->live(onBlur: true)
                 // Typing a percentage by hand re-syncs the picker, so the two
                 // never disagree about what the rate is.

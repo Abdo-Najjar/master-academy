@@ -78,6 +78,13 @@
         [dir="rtl"].dark .ma-as-name{box-shadow:-2px 0 5px -2px rgba(0,0,0,.55);}
         .ma-as-idx{color:var(--ma-as-muted);font-variant-numeric:tabular-nums;margin-inline-end:.25rem;}
         .ma-as-student{font-weight:600;}
+        .ma-as-student--link{color:inherit;text-decoration:none;cursor:pointer;border-radius:.25rem;}
+        .ma-as-student--link:hover{color:rgb(37,99,235);text-decoration:underline;text-underline-offset:2px;}
+        .dark .ma-as-student--link:hover{color:rgb(147,197,253);}
+        .ma-as-student--link:focus-visible{outline:2px solid rgb(59,130,246);outline-offset:2px;}
+        {{-- Sits beside the paid/remaining line rather than under it: the
+             financial column is already the widest thing on the sheet. --}}
+        .ma-as-collect{display:inline-flex;vertical-align:middle;margin-inline-start:.375rem;}
         .ma-as-sub{font-size:.6875rem;color:var(--ma-as-muted);font-weight:400;}
 
         .ma-as-cell{width:1.875rem;height:1.75rem;line-height:1.75rem;border-radius:.375rem;display:inline-block;font-weight:700;font-size:.6875rem;}
@@ -255,7 +262,15 @@
                             <tr>
                                 <td class="ma-as-name">
                                     <span class="ma-as-idx">{{ $index + 1 }}.</span>
-                                    <span class="ma-as-student">{{ $student->getTranslation('name', app()->getLocale(), false) }}</span>
+                                    {{-- New tab on purpose: the sheet keeps its section and month
+                                         while the student's page is read alongside it. --}}
+                                    @if ($row['student_url'])
+                                        <a href="{{ $row['student_url'] }}" target="_blank" rel="noopener"
+                                           class="ma-as-student ma-as-student--link"
+                                           title="{{ __('View') }}">{{ $student->getTranslation('name', app()->getLocale(), false) }}</a>
+                                    @else
+                                        <span class="ma-as-student">{{ $student->getTranslation('name', app()->getLocale(), false) }}</span>
+                                    @endif
                                     @if ($student->student_number)
                                         <span class="ma-as-sub">({{ $student->student_number }})</span>
                                     @endif
@@ -271,6 +286,13 @@
                                         {{-- The status word alone never said paid *how much*. --}}
                                         @if ($amounts = \App\Filament\Admin\Pages\AttendanceRecords::financialAmounts($row))
                                             <span class="ma-as-money">{{ $amounts }}</span>
+                                        @endif
+                                        {{-- The desk is standing on this sheet when the money is
+                                             handed over, so the collect button lives here too. --}}
+                                        @if ($row['registration_id'])
+                                            <span class="ma-as-collect">
+                                                {{ ($this->collectPaymentAction)(['registration' => $row['registration_id']]) }}
+                                            </span>
                                         @endif
                                     @else
                                         —

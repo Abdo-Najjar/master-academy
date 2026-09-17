@@ -4,20 +4,22 @@ namespace App\Filament\Admin\Resources\Assignments\RelationManagers;
 
 use App\Models\AssignmentSubmission;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Model;
 
 class SubmissionsRelationManager extends RelationManager
 {
     protected static string $relationship = 'submissions';
 
-    public static function getTitle(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): string
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
         return __('Submissions');
     }
@@ -49,12 +51,12 @@ class SubmissionsRelationManager extends RelationManager
                     ->color('gray')
                     ->modalHeading(fn (AssignmentSubmission $record): string => (string) ($record->student?->getTranslation('name', app()->getLocale(), false) ?? '#'.$record->student_id))
                     ->schema(fn (AssignmentSubmission $record): array => [
-                        Placeholder::make('content')
+                        TextEntry::make('content')
                             ->label(__('Content'))
-                            ->content(fn (): string => $record->content ?: '—'),
-                        Placeholder::make('attachment')
+                            ->state(fn (): string => $record->content ?: '—'),
+                        TextEntry::make('attachment')
                             ->label(__('Attachment'))
-                            ->content(fn (): \Illuminate\Contracts\Support\Htmlable => str(($media = $record->getFirstMedia('attachment')) ? '<a href="'.e($media->getUrl()).'" target="_blank" style="color:#7c3aed;text-decoration:underline;">'.e($media->file_name).'</a>' : '—')->toHtmlString())
+                            ->state(fn (): Htmlable => str(($media = $record->getFirstMedia('attachment')) ? '<a href="'.e($media->getUrl()).'" target="_blank" style="color:#7c3aed;text-decoration:underline;">'.e($media->file_name).'</a>' : '—')->toHtmlString())
                             ->visible(fn (): bool => (bool) $record->getFirstMedia('attachment')),
                     ])
                     ->modalSubmitAction(false)

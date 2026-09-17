@@ -5,12 +5,13 @@ namespace App\Filament\Admin\Resources\Trainers\Actions;
 use App\Models\PaymentType;
 use App\Models\Trainer;
 use App\Notifications\WalletTransaction;
+use App\Support\BranchContext;
+use App\Support\ReceiptAttachment;
 use Bavix\Wallet\Models\Transaction;
 use Bavix\Wallet\Models\Wallet;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -32,7 +33,7 @@ class WalletActions
 
                 $transaction = $record->depositFloat(
                     (float) $data['amount'],
-                    self::buildMeta($data, __('Deposit to trainer wallet'))
+                    self::buildMeta($data, __('Deposit to trainer wallet'), $record)
                 );
 
                 self::applyTransactionDate($transaction, $data);
@@ -60,7 +61,7 @@ class WalletActions
 
                 $transaction = $record->forceWithdrawFloat(
                     (float) $data['amount'],
-                    self::buildMeta($data, __('Withdraw from trainer wallet'))
+                    self::buildMeta($data, __('Withdraw from trainer wallet'), $record)
                 );
 
                 self::applyTransactionDate($transaction, $data);
@@ -101,26 +102,29 @@ class WalletActions
                 ->rows(3)
                 ->maxLength(500)
                 ->columnSpanFull(),
-            FileUpload::make('receipt')
-                ->label(__('Payment Receipt'))
-                ->helperText(__('Attach the transfer/notification receipt (optional).'))
-                ->disk('public')
-                ->directory('payment-receipts')
-                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
-                ->maxSize(5120)
-                ->downloadable()
-                ->openable()
-                ->columnSpanFull(),
+            ReceiptAttachment::pendingField(),
         ];
     }
 
-    protected static function buildMeta(array $data, string $description): array
+    /**
+     * The movement's metadata, with the receipt filed against the trainer.
+     *
+     * A wallet movement is a vendor model and cannot own media, so the voucher
+     * hangs off the account whose balance moved and the movement remembers
+     * which one. Receipts taken before this are still a plain path on older
+     * rows, and are still read — see ReceiptAttachment::walletUrl().
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected static function buildMeta(array $data, string $description, Trainer $payable): array
     {
         return [
             'description' => $description,
             'note' => $data['note'] ?? null,
             'payment_type_id' => $data['payment_type_id'] ?? null,
-            'receipt_path' => $data['receipt'] ?? null,
+            'branch_id' => BranchContext::currentBranchId(),
+            'receipt_media_id' => ReceiptAttachment::attachToWallet($payable, $data['receipt'] ?? null),
             'transaction_date' => $data['transaction_date'] ?? null,
         ];
     }

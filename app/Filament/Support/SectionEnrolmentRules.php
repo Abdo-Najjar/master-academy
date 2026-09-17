@@ -5,6 +5,7 @@ namespace App\Filament\Support;
 use App\Models\Registration;
 use App\Models\Section;
 use App\Models\SectionTime;
+use App\Services\RoomAvailabilityService;
 use Closure;
 
 /**
@@ -109,7 +110,14 @@ class SectionEnrolmentRules
                         continue;
                     }
 
-                    if ($new->start_time < $other->end_time && $new->end_time > $other->start_time) {
+                    // Compared at HH:MM on both sides: the columns hold a mix of
+                    // "12:00" and "12:00:00", and as text the shorter one sorts
+                    // first — which made a course ending at noon look like it
+                    // clashed with the one starting at noon.
+                    if (RoomAvailabilityService::slotsOverlap(
+                        $new->start_time, $new->end_time,
+                        $other->start_time, $other->end_time,
+                    )) {
                         $fail(__('Schedule conflict with the student\'s other section :name on :day at :time', [
                             'name' => $other->section?->name ?? '#'.$other->section_id,
                             'day' => __(ucfirst((string) $new->day)),

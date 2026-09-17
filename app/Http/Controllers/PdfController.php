@@ -101,7 +101,23 @@ class PdfController extends Controller
             'directionality' => 'rtl',
         ]);
 
-        return $pdf->stream('receipt-'.$registration->id.'.pdf');
+        return $this->inline($pdf->output(), 'receipt-'.$registration->id.'.pdf');
+    }
+
+    /**
+     * The finished PDF as a real response.
+     *
+     * mPDF's own `stream()` echoes the bytes and returns nothing, so returning
+     * it from a controller declared `: Response` is a TypeError — these three
+     * print buttons raised a 500 for everyone rather than producing a document.
+     * Handing back the bytes is what the weekly-schedule export already does.
+     */
+    private function inline(string $pdf, string $filename): Response
+    {
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
+        ]);
     }
 
     /**
@@ -161,7 +177,7 @@ class PdfController extends Controller
             'directionality' => 'rtl',
         ]);
 
-        return $pdf->stream('student-card-'.$student->id.'.pdf');
+        return $this->inline($pdf->output(), 'student-card-'.$student->id.'.pdf');
     }
 
     /**
@@ -220,6 +236,6 @@ class PdfController extends Controller
             'directionality' => 'rtl',
         ]);
 
-        return $pdf->stream('attendance-'.Str::slug($sectionName).'-'.$date->format('Y-m-d').'.pdf');
+        return $this->inline($pdf->output(), 'attendance-'.Str::slug($sectionName).'-'.$date->format('Y-m-d').'.pdf');
     }
 }

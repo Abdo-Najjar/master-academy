@@ -142,6 +142,10 @@ class RegistrationForm
                             ->default(0)
                             ->minValue(0)
                             ->prefix('₪')
+                            // Clearing the box means "no discount", not "unknown"
+                            // — the column is NOT NULL, so an empty field has to
+                            // reach the database as a zero.
+                            ->dehydrateStateUsing(fn ($state) => blank($state) ? 0 : $state)
                             ->live(debounce: 500)
                             ->afterStateUpdated(function (Get $get, Set $set) {
                                 $due = (float) ($get('amount_due') ?? 0);

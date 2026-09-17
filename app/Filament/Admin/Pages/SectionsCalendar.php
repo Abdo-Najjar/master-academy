@@ -4,11 +4,13 @@ namespace App\Filament\Admin\Pages;
 
 use App\Models\Branch;
 use App\Models\Room;
+use App\Models\RoomBookingTime;
 use App\Models\Section;
 use App\Models\SectionSession;
 use App\Models\SectionTime;
 use App\Models\Subject;
 use App\Services\SectionScheduleService;
+use App\Support\BranchContext;
 use App\Support\PdfFonts;
 use BackedEnum;
 use Carbon\Carbon;
@@ -72,7 +74,7 @@ class SectionsCalendar extends Page implements HasForms
         $this->cursor = now()->startOfMonth()->toDateString();
 
         $this->form->fill([
-            'branch_id' => null,
+            'branch_id' => BranchContext::defaultBranchId(),
             'subject_id' => null,
             'section_id' => null,
             'room_id' => null,
@@ -85,9 +87,13 @@ class SectionsCalendar extends Page implements HasForms
             ->components([
                 FormSection::make('')
                     ->schema([
+                        // An employee tied to a branch only ever sees their own
+                        // lessons and halls here, so the filter offers what
+                        // they are allowed to ask about and nothing more.
                         Select::make('branch_id')
                             ->label(__('Branch'))
-                            ->options(fn () => Branch::query()->orderBy('name')->pluck('name', 'id'))
+                            ->options(fn (): array => BranchContext::selectableBranches())
+                            ->default(fn (): ?int => BranchContext::defaultBranchId())
                             ->searchable()
                             ->preload()
                             ->live()
@@ -167,12 +173,30 @@ class SectionsCalendar extends Page implements HasForms
      * slot room 1 before room 2 before room 10. Lessons with no room set come
      * last — they are the exception, not the top of the list.
      */
-    public static function slotKey(SectionTime $time): string
+    public static function slotKey(SectionTime|RoomBookingTime $time): string
     {
-        $number = (string) ($time->room?->number ?? '');
+        $number = (string) (self::eventRoom($time)?->number ?? '');
 
         return Carbon::parse($time->start_time)->format('H:i:s')
             .'|'.($number === '' ? '~' : '0'.self::naturalKey($number));
+    }
+
+    /**
+     * The room an entry occupies. A lesson carries its own room per weekday; a
+     * booking rents one room for its whole run, so the room lives on the
+     * booking rather than on the slot.
+     */
+    public static function eventRoom(SectionTime|RoomBookingTime $event): ?Room
+    {
+        return $event instanceof RoomBookingTime
+            ? $event->booking?->room
+            : $event->room;
+    }
+
+    /** Is this grid entry a room let out to someone rather than a lesson? */
+    public static function isBooking(SectionTime|RoomBookingTime $event): bool
+    {
+        return $event instanceof RoomBookingTime;
     }
 
     /** @return array<string, string> */
@@ -315,6 +339,52 @@ class SectionsCalendar extends Page implements HasForms
     }
 
     /**
+     * Booking slots in the period on screen, grouped by weekday name — the
+     * hours a room is held by something that is not a lesson.
+     *
+     * The course and section filters return nothing on purpose: asking the
+     * calendar about one course is asking about lessons, and a hall let out to
+     * an outside body is not one of them. Branch and room, on the other hand,
+     * are exactly the questions a booking should answer.
+     *
+     * @return array<string, Collection<int, RoomBookingTime>>
+     */
+    public function getBookingTimesByWeekdayProperty(): array
+    {
+        if (($this->filters['section_id'] ?? null) || ($this->filters['subject_id'] ?? null)) {
+            return [];
+        }
+
+        $branchId = $this->filters['branch_id'] ?? null;
+        $roomId = $this->filters['room_id'] ?? null;
+
+        return RoomBookingTime::query()
+            ->with(['booking.room', 'booking.branch'])
+            ->whereHas('booking', fn ($q) => $q
+                ->active()
+                ->overlapping($this->periodStart(), $this->periodEnd())
+                ->when($branchId, fn ($q2, $id) => $q2->where('branch_id', $id))
+                ->when($roomId, fn ($q2, $id) => $q2->where('room_id', $id)))
+            ->get()
+            ->groupBy('day')
+            ->all();
+    }
+
+    /**
+     * The bookings holding a room on the given date.
+     *
+     * @return Collection<int, RoomBookingTime>
+     */
+    public function bookingsFor(Carbon $date): Collection
+    {
+        $weekday = strtolower($date->format('l'));
+
+        return collect($this->bookingTimesByWeekday[$weekday] ?? [])
+            ->filter(fn (RoomBookingTime $time): bool => (bool) $time->booking?->runsOn($date))
+            ->values();
+    }
+
+    /**
      * The grid of dates on screen, Saturday-first. A month view is padded with
      * leading/trailing days from the adjacent months so every row is a complete
      * week; the week and fortnight views are already whole weeks.
@@ -343,11 +413,16 @@ class SectionsCalendar extends Page implements HasForms
     }
 
     /**
-     * Lessons occurring on the given date: the weekly timetable rows whose
-     * section is active (start_date/end_date range) then, plus the extra and
-     * make-up lessons entered for that exact date.
+     * Everything happening in the centre on the given date: the weekly
+     * timetable rows whose section is active (start_date/end_date range) then,
+     * the extra and make-up lessons entered for that exact date, and the rooms
+     * let out to someone who is not a section.
      *
-     * @return Collection<int, SectionTime>
+     * Bookings ride in the same collection rather than in a second list on
+     * purpose — a room is either free at 10:00 or it is not, and the grid that
+     * answers that question should not have to be read twice.
+     *
+     * @return Collection<int, SectionTime|RoomBookingTime>
      */
     public function eventsFor(Carbon $date): Collection
     {
@@ -370,8 +445,9 @@ class SectionsCalendar extends Page implements HasForms
                 return true;
             })
             ->merge($this->extraLessons[$date->toDateString()] ?? collect())
+            ->merge($this->bookingsFor($date))
             // Earliest lesson first, then room 1 through to the last one.
-            ->sortBy(fn (SectionTime $t): string => self::slotKey($t))
+            ->sortBy(fn (SectionTime|RoomBookingTime $t): string => self::slotKey($t))
             ->values();
     }
 
@@ -472,22 +548,44 @@ class SectionsCalendar extends Page implements HasForms
             $weekKey = self::weekStart($date)->toDateString();
 
             foreach ($this->eventsFor($date) as $time) {
-                $section = $time->section;
-                $label = $time->room?->number
-                    ? __('Room').' '.$time->room->number
+                $room = self::eventRoom($time);
+                $label = $room?->number
+                    ? __('Room').' '.$room->number
                     : $unassigned;
 
-                $roomsUsed[$label] = $time->room?->number !== null
-                    ? self::naturalKey((string) $time->room->number)
+                $roomsUsed[$label] = $room?->number !== null
+                    ? self::naturalKey((string) $room->number)
                     : '~';
 
-                $byWeek[$weekKey][$label][$date->toDateString()][] = [
+                $slot = [
                     // A hand-entered lesson may carry no times at all, and a
                     // null here would print as "now" rather than as unknown.
                     'time' => $time->start_time
                         ? Carbon::parse($time->start_time)->format('H:i')
                             .' – '.Carbon::parse($time->end_time ?: $time->start_time)->format('H:i')
                         : __('No time set'),
+                ];
+
+                if (self::isBooking($time)) {
+                    $booking = $time->booking;
+
+                    // A booking has no course and no trainer, so those columns
+                    // carry what the paper is actually asked for instead: that
+                    // the hall is taken, and by whom.
+                    $byWeek[$weekKey][$label][$date->toDateString()][] = $slot + [
+                        'section' => (string) ($booking?->title ?? '—'),
+                        'subject' => __('Room Booking'),
+                        'trainer' => $booking?->client_name,
+                        'branch' => $booking?->branch?->name,
+                        'color' => '#a855f7',
+                    ];
+
+                    continue;
+                }
+
+                $section = $time->section;
+
+                $byWeek[$weekKey][$label][$date->toDateString()][] = $slot + [
                     'section' => (string) ($section?->name ?? '—'),
                     'subject' => $section?->subject?->getTranslation('name', app()->getLocale(), false),
                     'trainer' => $section?->trainer?->getTranslation('name', app()->getLocale(), false),
@@ -612,14 +710,36 @@ class SectionsCalendar extends Page implements HasForms
             $date = $day['date'];
 
             foreach ($this->eventsFor($date) as $time) {
-                $section = $time->section;
+                $room = self::eventRoom($time);
 
-                $rows[] = [
+                $slot = [
                     $date->toDateString(),
                     __(ucfirst(strtolower($date->format('l')))),
                     $time->start_time
                         ? substr((string) $time->start_time, 0, 5).' - '.substr((string) ($time->end_time ?: $time->start_time), 0, 5)
                         : __('No time set'),
+                ];
+
+                $where = $room?->number ? __('Room').' '.$room->number : __('No room set');
+
+                if (self::isBooking($time)) {
+                    $booking = $time->booking;
+
+                    $rows[] = array_merge($slot, [
+                        __('Room Booking'),
+                        (string) ($booking?->title ?? '—'),
+                        __('Room Booking'),
+                        (string) ($booking?->client_name ?? '—'),
+                        (string) ($booking?->branch?->name ?? '—'),
+                        $where,
+                    ]);
+
+                    continue;
+                }
+
+                $section = $time->section;
+
+                $rows[] = array_merge($slot, [
                     $time->extra_session_type
                         ? SectionSession::extraLabelFor($time->extra_session_type)
                         : __('Regular Session'),
@@ -627,8 +747,8 @@ class SectionsCalendar extends Page implements HasForms
                     (string) ($section?->subject?->getTranslation('name', $locale, false) ?? '—'),
                     (string) ($section?->trainer?->getTranslation('name', $locale, false) ?? '—'),
                     (string) ($section?->branch?->name ?? '—'),
-                    $time->room?->number ? __('Room').' '.$time->room->number : __('No room set'),
-                ];
+                    $where,
+                ]);
             }
         }
 

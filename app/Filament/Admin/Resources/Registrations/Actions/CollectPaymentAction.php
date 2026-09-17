@@ -7,15 +7,16 @@ use App\Models\Registration;
 use App\Notifications\WalletTransaction;
 use App\Services\FinancialDueService;
 use App\Services\TrainerPayoutService;
+use App\Support\BranchContext;
+use App\Support\ReceiptAttachment;
 use Bavix\Wallet\Models\Wallet;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -53,8 +54,14 @@ class CollectPaymentAction
             });
     }
 
-    /** @return list<mixed> */
-    protected static function schema(Registration $record): array
+    /**
+     * Public so screens that hold a registration without being a registration
+     * screen — the attendance sheet collects from its own rows — put up the
+     * same form rather than a second one that drifts from it.
+     *
+     * @return list<mixed>
+     */
+    public static function schema(Registration $record): array
     {
         $record->loadMissing(['student', 'section.subject']);
 
@@ -64,14 +71,14 @@ class CollectPaymentAction
         return [
             // Which bill this is, spelled out: the same student's other courses
             // are separate rows with separate balances.
-            Placeholder::make('bill')
+            TextEntry::make('bill')
                 ->label(__('Course'))
-                ->content($record->section?->subject?->getTranslation('name', app()->getLocale(), false)
+                ->state($record->section?->subject?->getTranslation('name', app()->getLocale(), false)
                     ?? $record->sectionLabel()),
 
-            Placeholder::make('balance')
+            TextEntry::make('balance')
                 ->label(__('Financial Status'))
-                ->content(__('Charged :charged · Paid :paid · Remaining :remaining', [
+                ->state(__('Charged :charged · Paid :paid · Remaining :remaining', [
                     'charged' => $money((float) $record->amount_paid),
                     'paid' => $money((float) $record->funded_amount),
                     'remaining' => $money($remaining),
@@ -115,16 +122,7 @@ class CollectPaymentAction
                 ->maxLength(500)
                 ->columnSpanFull(),
 
-            FileUpload::make('receipt')
-                ->label(__('Payment Receipt'))
-                ->helperText(__('Attach the transfer/notification receipt (optional).'))
-                ->disk('public')
-                ->directory('payment-receipts')
-                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
-                ->maxSize(5120)
-                ->downloadable()
-                ->openable()
-                ->columnSpanFull(),
+            ReceiptAttachment::pendingField(),
         ];
     }
 
@@ -184,7 +182,10 @@ class CollectPaymentAction
                 ]),
                 'note' => $data['note'] ?? $record->contextLabel(),
                 'payment_type_id' => $data['payment_type_id'] ?? null,
-                'receipt_path' => $data['receipt'] ?? null,
+                // Whose till this went through, so it stays on their screen
+                // even for a student who is not enrolled anywhere yet.
+                'branch_id' => BranchContext::currentBranchId(),
+                'receipt_media_id' => ReceiptAttachment::attachToWallet($student, $data['receipt'] ?? null),
                 'transaction_date' => $data['transaction_date'] ?? null,
                 'registration_id' => $record->getKey(),
             ]);

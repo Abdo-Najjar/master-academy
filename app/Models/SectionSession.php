@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBranchThroughSection;
 use App\Observers\SectionSessionObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,7 +25,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 #[ObservedBy([SectionSessionObserver::class])]
 class SectionSession extends Model
 {
-    use HasFactory, LogsActivity, SoftDeletes;
+    use BelongsToBranchThroughSection, HasFactory, LogsActivity, SoftDeletes;
 
     public const TYPE_REGULAR = 'regular';
 

@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\Rooms;
 
 use App\Filament\Admin\Resources\Rooms\Pages\ManageRooms;
 use App\Filament\Support\AuthorizesResourceActions;
+use App\Filament\Support\BranchField;
 use App\Filament\Support\DeletionGuard;
 use App\Models\Room;
 use BackedEnum;
@@ -67,6 +68,9 @@ class RoomResource extends Resource
             ->components([
                 Section::make('')
                     ->schema([
+                        // A room stands in one building; it cannot be lent to
+                        // another site, so the branch comes first.
+                        BranchField::make(),
                         TextInput::make('number')
                             ->label(__('Number'))
                             ->required()
@@ -91,11 +95,13 @@ class RoomResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('id')->label('#')->sortable(),
+                TextColumn::make('branch.name')->label(__('Branch'))->placeholder('—')->sortable(),
                 TextColumn::make('number')->label(__('Number'))->searchable()->sortable(),
                 TextColumn::make('capacity')->label(__('Capacity'))->numeric()->sortable(),
                 TextColumn::make('description')->label(__('Description'))->searchable()->limit(40),
             ])
             ->filters([
+                BranchField::filter(),
                 TrashedFilter::make(),
             ])
             ->recordActions([
@@ -124,6 +130,7 @@ class RoomResource extends Resource
     {
         DeletionGuard::ensureUnused($record, [
             'sectionTimes' => __('Course Section Time'),
+            'bookings' => __('Room Bookings'),
         ]);
     }
 
@@ -134,6 +141,7 @@ class RoomResource extends Resource
     {
         DeletionGuard::ensureUnusedForMany($records, [
             'sectionTimes' => __('Course Section Time'),
+            'bookings' => __('Room Bookings'),
         ]);
     }
 

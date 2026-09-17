@@ -8,6 +8,7 @@ use App\Models\SectionSession;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Trainer;
+use Carbon\Carbon;
 use Livewire\Livewire;
 use Spatie\Activitylog\Models\Activity;
 
@@ -51,17 +52,28 @@ beforeEach(function () {
     Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
+        // Enrolled well before any sheet below: attendance for a day the
+        // student had not joined yet is refused outright, and leaving this to
+        // default to "today" is what made these fixtures rot once the dates
+        // they named fell into the past.
+        'enrolled_at' => syncDay(-30),
         'amount_due' => 0,
         'amount_paid' => 0,
     ]);
 });
+
+/** A recent day the trainer could plausibly have been offline on. */
+function syncDay(int $offset = 0): string
+{
+    return Carbon::today()->subDays(7)->addDays($offset)->toDateString();
+}
 
 it('writes queued offline sheets and stamps who recorded them', function () {
     Livewire::actingAs($this->trainer, 'trainer')
         ->test(TrainerDashboard::class)
         ->call('syncOfflineAttendance', [[
             'section_id' => $this->section->id,
-            'date' => '2026-09-01',
+            'date' => syncDay(0),
             'statuses' => [$this->student->id => 'absent'],
             'notes' => [$this->student->id => 'مرض'],
         ]]);
@@ -81,7 +93,7 @@ it('creates the matching session so the lesson counts as held', function () {
         ->test(TrainerDashboard::class)
         ->call('syncOfflineAttendance', [[
             'section_id' => $this->section->id,
-            'date' => '2026-09-01',
+            'date' => syncDay(0),
             'statuses' => [$this->student->id => 'present'],
         ]]);
 
@@ -97,7 +109,7 @@ it('rejects sheets for sections the trainer does not teach', function () {
         ->test(TrainerDashboard::class)
         ->call('syncOfflineAttendance', [[
             'section_id' => $this->foreignSection->id,
-            'date' => '2026-09-01',
+            'date' => syncDay(0),
             'statuses' => [$this->student->id => 'present'],
         ]]);
 
@@ -115,7 +127,7 @@ it('rejects malformed dates and unknown statuses', function () {
             ],
             [
                 'section_id' => $this->section->id,
-                'date' => '2026-09-02',
+                'date' => syncDay(1),
                 'statuses' => [$this->student->id => 'teleported'],
             ],
         ]);
@@ -128,7 +140,7 @@ it('records the audit reason it was synced offline', function () {
         ->test(TrainerDashboard::class)
         ->call('syncOfflineAttendance', [[
             'section_id' => $this->section->id,
-            'date' => '2026-09-01',
+            'date' => syncDay(0),
             'statuses' => [$this->student->id => 'present'],
         ]]);
 

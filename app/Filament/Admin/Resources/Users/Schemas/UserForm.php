@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Users\Schemas;
 
 use App\Filament\Admin\Resources\Users\Pages\CreateUser;
+use App\Filament\Support\BranchField;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -19,6 +20,12 @@ class UserForm
             ->components([
                 Section::make('')
                     ->schema([
+                        // Which site this employee works at, and therefore what
+                        // they can see. Required: an employee with no branch is
+                        // head office and reads the whole centre, which is not
+                        // something to hand out by leaving a field blank.
+                        BranchField::forEmployee()
+                            ->helperText(__('The employee only sees this branch — its sections, rooms, bookings and finances. Choose head office to let them see every branch. Students are shared across all branches.')),
                         TextInput::make('name')
                             ->label(__('Name'))
                             ->required()

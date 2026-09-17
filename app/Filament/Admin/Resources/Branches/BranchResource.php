@@ -7,6 +7,7 @@ use App\Filament\Support\AuthorizesResourceActions;
 use App\Filament\Support\DeletionGuard;
 use App\Filament\Support\TranslatableInput;
 use App\Models\Branch;
+use App\Support\BranchContext;
 use BackedEnum;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
@@ -97,7 +98,10 @@ class BranchResource extends Resource
                         TextInput::make('sort_order')
                             ->label(__('Sort Order'))
                             ->numeric()
-                            ->default(0),
+                            ->default(0)
+                            // NOT NULL column: an emptied box is "unsorted", so
+                            // it has to be written as a zero rather than a null.
+                            ->dehydrateStateUsing(fn ($state) => blank($state) ? 0 : $state),
                         Toggle::make('show_on_site')
                             ->label(__('Show on site'))
                             ->default(true)
@@ -174,6 +178,10 @@ class BranchResource extends Resource
     {
         DeletionGuard::ensureUnused($record, [
             'sections' => __('Sections'),
+            'employees' => __('Administrators'),
+            'rooms' => __('Rooms'),
+            'expenses' => __('Expenses'),
+            'bookings' => __('Room Bookings'),
         ]);
     }
 
@@ -184,7 +192,25 @@ class BranchResource extends Resource
     {
         DeletionGuard::ensureUnusedForMany($records, [
             'sections' => __('Sections'),
+            'employees' => __('Administrators'),
+            'rooms' => __('Rooms'),
+            'expenses' => __('Expenses'),
+            'bookings' => __('Room Bookings'),
         ]);
+    }
+
+    /**
+     * A branch is the wall itself, so it carries no `branch_id` of its own to
+     * scope on: an employee tied to a site simply sees that one row and no
+     * other, and cannot rename or delete a branch they do not work at.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->when(
+                BranchContext::currentBranchId(),
+                fn (Builder $query, int $branchId) => $query->whereKey($branchId),
+            );
     }
 
     public static function getPages(): array

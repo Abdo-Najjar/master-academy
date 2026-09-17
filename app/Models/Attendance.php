@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBranchThroughSection;
 use App\Observers\AttendanceObserver;
 use App\Services\SessionBillingService;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -16,7 +17,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 #[ObservedBy([AttendanceObserver::class])]
 class Attendance extends Model
 {
-    use HasFactory, LogsActivity;
+    use BelongsToBranchThroughSection, HasFactory, LogsActivity;
 
     /** @var list<string> */
     protected $fillable = [

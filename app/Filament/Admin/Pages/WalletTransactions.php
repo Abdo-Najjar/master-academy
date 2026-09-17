@@ -5,6 +5,8 @@ namespace App\Filament\Admin\Pages;
 use App\Models\PaymentType;
 use App\Models\Student;
 use App\Models\Trainer;
+use App\Support\BranchContext;
+use App\Support\ReceiptAttachment;
 use BackedEnum;
 use Bavix\Wallet\Models\Transaction;
 use Filament\Actions\Action;
@@ -18,7 +20,6 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Storage;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Writer;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -57,10 +58,15 @@ class WalletTransactions extends Page implements HasTable
     {
         return $table
             ->query(
-                Transaction::query()
-                    ->with(['payable'])
-                    ->whereNull('deleted_at')
-                    ->latest('created_at')
+                // Money the employee's own branch handled. Wallets have no
+                // branch of their own, so it is read through the sections the
+                // student studies at or the trainer teaches at.
+                BranchContext::scopeWalletTransactions(
+                    Transaction::query()
+                        ->with(['payable'])
+                        ->whereNull('deleted_at')
+                        ->latest('created_at')
+                )
             )
             ->columns([
                 TextColumn::make('id')
@@ -106,13 +112,11 @@ class WalletTransactions extends Page implements HasTable
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('receipt')
                     ->label(__('Receipt'))
-                    ->state(fn (Transaction $record): ?string => ($record->meta['receipt_path'] ?? null) ? __('View') : null)
+                    ->state(fn (Transaction $record): ?string => ReceiptAttachment::walletUrl($record->meta) ? __('View') : null)
                     ->badge()
                     ->color('info')
                     ->icon('heroicon-o-paper-clip')
-                    ->url(fn (Transaction $record): ?string => ($p = $record->meta['receipt_path'] ?? null)
-                        ? Storage::disk('public')->url($p)
-                        : null, shouldOpenInNewTab: true)
+                    ->url(fn (Transaction $record): ?string => ReceiptAttachment::walletUrl($record->meta), shouldOpenInNewTab: true)
                     ->placeholder(__('N/A')),
                 TextColumn::make('created_at')
                     ->label(__('Date'))

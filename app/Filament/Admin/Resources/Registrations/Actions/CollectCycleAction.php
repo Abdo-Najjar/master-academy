@@ -5,8 +5,8 @@ namespace App\Filament\Admin\Resources\Registrations\Actions;
 use App\Models\Registration;
 use App\Services\SessionBillingService;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 
 /**
@@ -33,9 +33,9 @@ class CollectCycleAction
                 && (auth()->user()?->can('registration.collect') ?? false))
             ->modalHeading(__('Collect Session Cycle Payment'))
             ->schema(fn (Registration $record): array => [
-                Placeholder::make('state')
+                TextEntry::make('state')
                     ->label(__('Sessions Counted'))
-                    ->content(__(':counted of :paid paid sessions', [
+                    ->state(__(':counted of :paid paid sessions', [
                         'counted' => $record->sessions_counted,
                         'paid' => $record->paid_through_session,
                     ])),

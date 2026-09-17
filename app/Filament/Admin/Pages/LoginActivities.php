@@ -3,6 +3,10 @@
 namespace App\Filament\Admin\Pages;
 
 use App\Models\LoginActivity;
+use App\Models\Student;
+use App\Models\Trainer;
+use App\Models\User;
+use App\Support\BranchContext;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -39,13 +43,15 @@ class LoginActivities extends Page implements HasTable
 
     public static function canAccess(): bool
     {
-        return (auth()->user()?->can('login_activity.index') ?? false);
+        return auth()->user()?->can('login_activity.index') ?? false;
     }
 
     public function table(Table $table): Table
     {
         return $table
-            ->query(LoginActivity::query()->latest('logged_in_at'))
+            // Students and trainers belong to the whole centre; employees do
+            // not, so another branch's staff stay off this list too.
+            ->query(BranchContext::scopeLoginActivities(LoginActivity::query()->latest('logged_in_at')))
             ->columns([
                 TextColumn::make('id')->label('#')->sortable(),
                 TextColumn::make('auth_type')
@@ -79,9 +85,9 @@ class LoginActivities extends Page implements HasTable
                 SelectFilter::make('auth_type')
                     ->label(__('User Type'))
                     ->options([
-                        \App\Models\User::class => __('Administrator'),
-                        \App\Models\Student::class => __('Student'),
-                        \App\Models\Trainer::class => __('Trainer'),
+                        User::class => __('Administrator'),
+                        Student::class => __('Student'),
+                        Trainer::class => __('Trainer'),
                     ]),
             ])
             ->emptyStateHeading(__('No records found'))

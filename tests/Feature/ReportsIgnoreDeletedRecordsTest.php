@@ -7,7 +7,9 @@ use App\Models\Section;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Trainer;
+use App\Models\User;
 use App\Services\FinancialDueService;
+use Livewire\Livewire;
 
 beforeEach(function () {
     $this->trainer = Trainer::create([
@@ -159,7 +161,7 @@ it('stops counting outstanding money once the section is deleted', function () {
     expect(FinancialDueService::outstandingAmount())->toBe(0.0);
 });
 
-it('drops deleted registrations out of the due students list', function () {
+it('drops deleted registrations out of the due students table', function () {
     $section = ($this->makeSection)('شعبة');
     $student = ($this->makeStudent)('طالب مدين');
 
@@ -170,9 +172,22 @@ it('drops deleted registrations out of the due students list', function () {
         'amount_paid' => 300,
     ]);
 
-    expect(reportsPage()->getDueStudentsProperty())->toHaveCount(1);
+    $admin = User::firstOrCreate(
+        ['email' => 'reports-admin@ma.test'],
+        ['name' => 'Reports Admin', 'password' => 'password', 'is_active' => true, 'email_verified_at' => now()],
+    );
+
+    // The table defers its query, so tests have to ask for the rows the way the
+    // browser does before there is anything to assert against.
+    Livewire::actingAs($admin)
+        ->test(Reports::class)
+        ->loadTable()
+        ->assertCanSeeTableRecords([$registration]);
 
     $registration->delete();
 
-    expect(reportsPage()->getDueStudentsProperty())->toHaveCount(0);
+    Livewire::actingAs($admin)
+        ->test(Reports::class)
+        ->loadTable()
+        ->assertCanNotSeeTableRecords([$registration]);
 });

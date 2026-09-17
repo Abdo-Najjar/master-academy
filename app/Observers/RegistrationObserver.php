@@ -12,6 +12,34 @@ use Illuminate\Support\Facades\DB;
 class RegistrationObserver
 {
     /**
+     * Money columns that are NOT NULL with a zero default. Every screen offers
+     * them as an optional box, and an emptied box arrives here as null — which
+     * the database rejects outright. Blank means "nothing", so it is written as
+     * a zero. Runs before `creating`/`updating`, which read these as floats.
+     *
+     * @var list<string>
+     */
+    private const ZERO_IF_BLANK = [
+        'amount_due',
+        'amount_paid',
+        'exemption_amount',
+        'trainer_amount',
+        'session_offset',
+        'sessions_carried_over',
+        'sessions_counted',
+        'paid_through_session',
+    ];
+
+    public function saving(Registration $registration): void
+    {
+        foreach (self::ZERO_IF_BLANK as $column) {
+            if ($registration->getAttribute($column) === null) {
+                $registration->setAttribute($column, 0);
+            }
+        }
+    }
+
+    /**
      * On creating: if the trainer's share wasn't provided (e.g. Quick Enroll or
      * the admin form, which don't expose the field), derive it from the
      * section's effective rate applied to the amount paid.

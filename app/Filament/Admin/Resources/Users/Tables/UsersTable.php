@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Users\Tables;
 
+use App\Filament\Support\BranchField;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -23,6 +24,10 @@ class UsersTable
         return $table
             ->columns([
                 TextColumn::make('id')->label('#')->sortable(),
+                TextColumn::make('branch.name')
+                    ->label(__('Branch'))
+                    ->placeholder(__('All Branches'))
+                    ->sortable(),
                 TextColumn::make('name')->label(__('Name'))->searchable()->sortable(),
                 TextColumn::make('email')->label(__('Email'))->searchable()->sortable(),
                 TextColumn::make('roles.name')
@@ -36,6 +41,7 @@ class UsersTable
                 TextColumn::make('created_at')->label(__('Created'))->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                BranchField::filter(),
                 TernaryFilter::make('is_active')->label(__('Active')),
                 TrashedFilter::make(),
             ])

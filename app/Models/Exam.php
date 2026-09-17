@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBranchThroughSection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Exam extends Model
 {
-    use HasFactory, SoftDeletes;
+    use BelongsToBranchThroughSection, HasFactory, SoftDeletes;
 
     protected $fillable = ['section_id', 'name', 'date', 'max_score', 'note', 'grades_published_at'];
 

@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Trainers\Pages;
 use App\Filament\Admin\Resources\Trainers\Actions\WalletActions;
 use App\Filament\Admin\Resources\Trainers\TrainerResource;
 use App\Filament\Admin\Resources\Trainers\Widgets\TrainerEarningsWidget;
+use App\Filament\Admin\Resources\Trainers\Widgets\TrainerFinancialsWidget;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -24,6 +25,14 @@ class ViewTrainer extends ViewRecord
                 ->label(__('Actions'))
                 ->icon('heroicon-o-ellipsis-vertical')
                 ->button(),
+        ];
+    }
+
+    /** The money totals read before the detail, so they sit above the record. */
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            TrainerFinancialsWidget::class,
         ];
     }
 

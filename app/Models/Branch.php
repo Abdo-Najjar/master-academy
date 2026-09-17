@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Translatable\HasTranslations;
@@ -49,5 +50,37 @@ class Branch extends Model
     public function sections(): HasMany
     {
         return $this->hasMany(Section::class);
+    }
+
+    /**
+     * Everything else a branch now owns. A branch used to be a label on a
+     * section; it is a wall now, and deleting one takes its rooms, its money
+     * and its staff out of everybody's sight along with it — so the deletion
+     * guard has to be able to see them coming.
+     */
+    public function employees(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
+
+    public function rooms(): HasMany
+    {
+        return $this->hasMany(Room::class);
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(RoomBooking::class);
+    }
+
+    /** Trainers available to teach at this branch. See Trainer::branches(). */
+    public function trainers(): BelongsToMany
+    {
+        return $this->belongsToMany(Trainer::class, 'branch_trainer')->withTimestamps();
     }
 }

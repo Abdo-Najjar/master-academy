@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBranchThroughSection;
 use App\Observers\RegistrationObserver;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -19,7 +20,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 #[ObservedBy(RegistrationObserver::class)]
 class Registration extends Model
 {
-    use HasFactory, LogsActivity, SoftDeletes;
+    use BelongsToBranchThroughSection, HasFactory, LogsActivity, SoftDeletes;
 
     /** @var list<string> */
     protected $fillable = [

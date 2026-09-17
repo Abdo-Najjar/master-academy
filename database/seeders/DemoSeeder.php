@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Attendance;
+use App\Models\Branch;
 use App\Models\City;
 use App\Models\Exam;
 use App\Models\ExamGrade;
@@ -17,6 +18,7 @@ use App\Models\Subject;
 use App\Models\Trainer;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -33,9 +35,13 @@ use Illuminate\Support\Facades\Hash;
 class DemoSeeder extends Seeder
 {
     private const ROOMS = 6;
+
     private const TRAINERS = 8;
+
     private const SECTIONS = 14;
+
     private const STUDENTS = 80;
+
     private const MAX_SESSIONS_PER_SECTION = 6;
 
     /** @var list<string> */
@@ -84,9 +90,15 @@ class DemoSeeder extends Seeder
         $cities = City::all();
         $paymentTypes = PaymentType::all();
 
-        $rooms = $this->makeRooms();
+        // Demo data with no branch is demo data an employee cannot see: they
+        // are tied to a site, and a room or a course belonging to none belongs
+        // to head office alone. Spreading it across the branches that exist is
+        // what makes the seeded centre look like a centre from every desk.
+        $branches = Branch::all();
+
+        $rooms = $this->makeRooms($branches);
         $trainers = $this->makeTrainers($subjects, $governorates, $cities);
-        $sections = $this->makeSections($subjects, $trainers, $rooms);
+        $sections = $this->makeSections($subjects, $trainers, $rooms, $branches);
         $students = $this->makeStudents($governorates, $cities);
 
         $this->makeRegistrations($sections, $students, $paymentTypes);
@@ -117,12 +129,14 @@ class DemoSeeder extends Seeder
         return '09'.str_pad((string) random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
     }
 
-    /** @return \Illuminate\Support\Collection<int,Room> */
-    private function makeRooms()
+    /** @return Collection<int,Room> */
+    private function makeRooms($branches)
     {
         $rooms = collect();
         for ($i = 1; $i <= self::ROOMS; $i++) {
             $rooms->push(Room::create([
+                // Dealt round the branches so each site has halls of its own.
+                'branch_id' => $branches->isEmpty() ? null : $branches[($i - 1) % $branches->count()]->id,
                 'number' => 'R-'.str_pad((string) $i, 2, '0', STR_PAD_LEFT),
                 'capacity' => random_int(20, 40),
                 'description' => 'قاعة رقم '.$i,
@@ -132,7 +146,7 @@ class DemoSeeder extends Seeder
         return $rooms;
     }
 
-    /** @return \Illuminate\Support\Collection<int,Trainer> */
+    /** @return Collection<int,Trainer> */
     private function makeTrainers($subjects, $governorates, $cities)
     {
         $trainers = collect();
@@ -166,8 +180,8 @@ class DemoSeeder extends Seeder
         return $trainers;
     }
 
-    /** @return \Illuminate\Support\Collection<int,Section> */
-    private function makeSections($subjects, $trainers, $rooms)
+    /** @return Collection<int,Section> */
+    private function makeSections($subjects, $trainers, $rooms, $branches)
     {
         // Globally-unique (day, start_time) slots guarantee no trainer/room
         // double-booking, satisfying the SectionTimeObserver.
@@ -192,9 +206,18 @@ class DemoSeeder extends Seeder
             $start = CarbonImmutable::now()->subDays(random_int(20, 60));
             $rate = (float) ($trainer->default_rate ?: random_int(20, 50));
 
+            // The course belongs to a branch, and it meets in that branch's own
+            // halls — a course at one site taught in another site's room is not
+            // a thing, and the section form refuses to create one.
+            $branch = $branches->isEmpty() ? null : $branches[($i - 1) % $branches->count()];
+            $branchRooms = $branch
+                ? $rooms->where('branch_id', $branch->id)->values()
+                : $rooms;
+
             $section = Section::create([
                 'name' => $subject->getTranslation('name', 'ar', false).' - شعبة '.$i,
                 'subject_id' => $subject->id,
+                'branch_id' => $branch?->id,
                 'trainer_id' => $trainer->id,
                 'start_date' => $start->toDateString(),
                 'end_date' => $start->addMonths(3)->toDateString(),
@@ -210,7 +233,7 @@ class DemoSeeder extends Seeder
                 $endTime = CarbonImmutable::createFromFormat('H:i', $startTime)->addHours(2)->format('H:i');
                 SectionTime::create([
                     'section_id' => $section->id,
-                    'room_id' => $rooms->random()->id,
+                    'room_id' => $branchRooms->isEmpty() ? null : $branchRooms->random()->id,
                     'day' => $day,
                     'start_time' => $startTime,
                     'end_time' => $endTime,
@@ -223,7 +246,7 @@ class DemoSeeder extends Seeder
         return $sections;
     }
 
-    /** @return \Illuminate\Support\Collection<int,Student> */
+    /** @return Collection<int,Student> */
     private function makeStudents($governorates, $cities)
     {
         $students = collect();

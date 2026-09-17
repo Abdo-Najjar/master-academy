@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBranchThroughSection;
 use App\Observers\CertificateObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[ObservedBy([CertificateObserver::class])]
 class Certificate extends Model
 {
-    use HasFactory, SoftDeletes;
+    use BelongsToBranchThroughSection, HasFactory, SoftDeletes;
 
     /** @var list<string> */
     protected $fillable = [

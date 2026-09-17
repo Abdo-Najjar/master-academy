@@ -24,6 +24,14 @@ class SectionsTable
     public static function configure(Table $table): Table
     {
         return $table
+            // The three money columns are sums over the section's live
+            // registrations, aggregated in the query rather than per row —
+            // "what is every section owed, and what has it collected?" is a
+            // question about the whole list, and answering it row by row would
+            // be one query per section.
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query
+                ->withSum(['registrations as expected_amount' => fn (Builder $q) => $q->reportable()], 'amount_paid')
+                ->withSum(['registrations as collected_amount' => fn (Builder $q) => $q->reportable()], 'funded_amount'))
             ->columns([
                 TextColumn::make('id')->label('#')->sortable(),
                 TextColumn::make('name')->label(__('Name'))->searchable()->sortable(),
@@ -59,6 +67,39 @@ class SectionsTable
                 TextColumn::make('registrations_count')
                     ->counts(['registrations' => fn (Builder $query) => $query->stillEnrolled()])
                     ->label(__('Enrolled')),
+                // What each section is owed, what came in, and the gap. Summed
+                // over `amount_paid` (the net charge after exemptions) rather
+                // than `amount_due` (the list price), so a discounted student
+                // is not counted at money nobody ever asked them for.
+                TextColumn::make('expected_amount')
+                    ->label(__('Expected'))
+                    ->money('ILS', decimalPlaces: 0)
+                    ->default(0)
+                    ->sortable()
+                    ->visible(fn (): bool => auth()->user()?->can('registration.index') ?? false),
+                TextColumn::make('collected_amount')
+                    ->label(__('Collected'))
+                    ->money('ILS', decimalPlaces: 0)
+                    ->default(0)
+                    ->color('success')
+                    ->sortable()
+                    ->visible(fn (): bool => auth()->user()?->can('registration.index') ?? false),
+                TextColumn::make('outstanding_amount')
+                    ->label(__('Outstanding'))
+                    // Both sums are already on the row; the difference costs
+                    // nothing more than subtracting them.
+                    ->state(fn (Section $record): float => max(
+                        0,
+                        round((float) $record->expected_amount - (float) $record->collected_amount, 2),
+                    ))
+                    ->money('ILS', decimalPlaces: 0)
+                    ->weight('bold')
+                    ->color(fn ($state): string => (float) $state > 0.009 ? 'danger' : 'gray')
+                    // Computed in PHP, so there is no column to sort on — sort
+                    // on the expression the two aggregates make instead.
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query
+                        ->orderByRaw("(COALESCE(expected_amount, 0) - COALESCE(collected_amount, 0)) {$direction}"))
+                    ->visible(fn (): bool => auth()->user()?->can('registration.index') ?? false),
                 TextColumn::make('status')
                     ->label(__('Status'))
                     ->badge()

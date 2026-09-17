@@ -43,9 +43,26 @@ beforeEach(function () {
     ]);
 });
 
-/** Mark `$count` regular sessions as held for the section. */
-function holdSessions(Section $section, int $count, string $startDate = '2026-09-01'): void
+/**
+ * A day in the term this file works in, as an offset from its first day.
+ *
+ * The fixtures used to name real dates — 2026-09-01 and its neighbours — which
+ * quietly stopped working the moment that day fell behind "today": a
+ * registration with no enrolment date starts counting from the day it was
+ * created, so every lesson dated before that went uncharged and half the file
+ * failed. Anchoring the term a few months back keeps every lesson after its
+ * student's enrolment and every date in the past, whenever the suite is run.
+ */
+function billingDay(int $offset = 0): string
 {
+    return Carbon::today()->subDays(200)->addDays($offset)->toDateString();
+}
+
+/** Mark `$count` regular sessions as held for the section. */
+function holdSessions(Section $section, int $count, ?string $startDate = null): void
+{
+    $startDate ??= billingDay(0);
+
     for ($i = 0; $i < $count; $i++) {
         SectionSession::create([
             'section_id' => $section->id,
@@ -57,12 +74,12 @@ function holdSessions(Section $section, int $count, string $startDate = '2026-09
 }
 
 it('starts counting from the session after the student joined', function () {
-    holdSessions($this->section, 3, '2026-08-01');
+    holdSessions($this->section, 3, billingDay(-31));
 
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
-        'enrolled_at' => '2026-09-01',
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
@@ -74,7 +91,7 @@ it('starts counting from the session after the student joined', function () {
         ->and($stored->sessions_counted)->toBe(0)
         ->and($stored->paid_through_session)->toBe(6);
 
-    holdSessions($this->section, 1, '2026-09-10');
+    holdSessions($this->section, 1, billingDay(9));
 
     expect($registration->fresh()->sessions_counted)->toBe(1);
 });
@@ -88,6 +105,7 @@ it('warns two sessions before the cycle ends, then marks due and overdue', funct
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
@@ -99,11 +117,11 @@ it('warns two sessions before the cycle ends, then marks due and overdue', funct
     expect($registration->fresh()->financial_status)->toBe('warning');
 
     // 6 of 6 held -> the cycle is over -> due.
-    holdSessions($this->section, 2, '2026-09-10');
+    holdSessions($this->section, 2, billingDay(9));
     expect($registration->fresh()->financial_status)->toBe('due');
 
     // Two more lessons attended without paying -> overdue.
-    holdSessions($this->section, 2, '2026-09-20');
+    holdSessions($this->section, 2, billingDay(19));
     expect($registration->fresh()->financial_status)->toBe('overdue');
 });
 
@@ -111,6 +129,7 @@ it('absence does not stop a session from being counted', function () {
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
@@ -120,7 +139,7 @@ it('absence does not stop a session from being counted', function () {
     Attendance::create([
         'section_id' => $this->section->id,
         'student_id' => $this->student->id,
-        'date' => '2026-09-01',
+        'date' => billingDay(0),
         'status' => 'absent',
     ]);
 
@@ -131,20 +150,21 @@ it('does not count cancelled or private sessions, and rolls back a cancellation'
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
 
     $held = SectionSession::create([
         'section_id' => $this->section->id,
-        'date' => '2026-09-01',
+        'date' => billingDay(0),
         'type' => SectionSession::TYPE_REGULAR,
         'status' => SectionSession::STATUS_HELD,
     ]);
 
     SectionSession::create([
         'section_id' => $this->section->id,
-        'date' => '2026-09-02',
+        'date' => billingDay(1),
         'type' => SectionSession::TYPE_REGULAR,
         'status' => SectionSession::STATUS_CANCELLED,
         'cancellation_reason' => 'عطلة',
@@ -152,7 +172,7 @@ it('does not count cancelled or private sessions, and rolls back a cancellation'
 
     SectionSession::create([
         'section_id' => $this->section->id,
-        'date' => '2026-09-03',
+        'date' => billingDay(2),
         'type' => SectionSession::TYPE_PRIVATE,
         'status' => SectionSession::STATUS_HELD,
         'fee' => 50,
@@ -170,13 +190,14 @@ it('counts a makeup session toward the cycle', function () {
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
 
     SectionSession::create([
         'section_id' => $this->section->id,
-        'date' => '2026-09-05',
+        'date' => billingDay(4),
         'type' => SectionSession::TYPE_MAKEUP,
         'status' => SectionSession::STATUS_HELD,
     ]);
@@ -188,6 +209,7 @@ it('pauses counting while the registration is paused and resumes from the same p
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
@@ -198,12 +220,12 @@ it('pauses counting while the registration is paused and resumes from the same p
     // The break is a window of dates, so lessons held inside it stay off the
     // bill for good — even once the student is back and the counter is
     // recomputed from scratch.
-    SessionBillingService::pause($registration->fresh(), '2026-09-05');
-    holdSessions($this->section, 3, '2026-09-10');
+    SessionBillingService::pause($registration->fresh(), billingDay(4));
+    holdSessions($this->section, 3, billingDay(9));
     expect($registration->fresh()->sessions_counted)->toBe(2);
 
-    SessionBillingService::resume($registration->fresh(), '2026-09-15');
-    holdSessions($this->section, 1, '2026-09-20');
+    SessionBillingService::resume($registration->fresh(), billingDay(14));
+    holdSessions($this->section, 1, billingDay(19));
     expect($registration->fresh()->sessions_counted)->toBe(3);
 });
 
@@ -215,6 +237,7 @@ it('extends the paid horizon and charges the wallet when a cycle is collected', 
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
@@ -241,6 +264,7 @@ it('will not call a collected cycle paid while the wallet has not covered it', f
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
@@ -261,13 +285,14 @@ it('charges a private session fee to the chosen students and credits the trainer
     Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
+        'enrolled_at' => billingDay(0),
         'amount_due' => 0,
         'amount_paid' => 0,
     ]);
 
     $session = SectionSession::create([
         'section_id' => $this->section->id,
-        'date' => '2026-09-01',
+        'date' => billingDay(0),
         'type' => SectionSession::TYPE_PRIVATE,
         'status' => SectionSession::STATUS_HELD,
         'fee' => 80,
@@ -313,7 +338,7 @@ it('does not charge backdated lessons to a student who joined later', function (
     $early = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
-        'enrolled_at' => '2026-06-01',
+        'enrolled_at' => billingDay(-92),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
@@ -326,15 +351,15 @@ it('does not charge backdated lessons to a student who joined later', function (
             'status' => 'active',
         ])->id,
         'section_id' => $this->section->id,
-        'enrolled_at' => '2026-08-01',
+        'enrolled_at' => billingDay(-31),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
 
     // Three months of history, entered after both students already exist.
-    holdSessions($this->section, 4, '2026-06-10');
-    holdSessions($this->section, 4, '2026-07-10');
-    holdSessions($this->section, 4, '2026-08-10');
+    holdSessions($this->section, 4, billingDay(-83));
+    holdSessions($this->section, 4, billingDay(-53));
+    holdSessions($this->section, 4, billingDay(-22));
 
     expect($early->fresh()->sessions_counted)->toBe(12)
         // Only the lessons from August — the earlier ones were not theirs.
@@ -344,12 +369,12 @@ it('does not charge backdated lessons to a student who joined later', function (
 it('charges lessons already on record to a student enrolled afterwards', function () {
     // The other entry order: the lessons go in first, then a registration
     // backdated to before some of them.
-    holdSessions($this->section, 5, '2026-07-01');
+    holdSessions($this->section, 5, billingDay(-62));
 
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
-        'enrolled_at' => '2026-07-03',
+        'enrolled_at' => billingDay(-60),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
@@ -360,19 +385,19 @@ it('charges lessons already on record to a student enrolled afterwards', functio
 });
 
 it('re-decides which lessons are charged when the enrollment date is corrected', function () {
-    holdSessions($this->section, 6, '2026-07-01');
+    holdSessions($this->section, 6, billingDay(-62));
 
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
-        'enrolled_at' => '2026-07-01',
+        'enrolled_at' => billingDay(-62),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
 
     expect($registration->fresh()->sessions_counted)->toBe(6);
 
-    $registration->update(['enrolled_at' => '2026-07-04']);
+    $registration->update(['enrolled_at' => billingDay(-59)]);
 
     expect($registration->fresh()->sessions_counted)->toBe(3);
 });
@@ -381,7 +406,7 @@ it('does not count a lesson the student was excused from', function () {
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
-        'enrolled_at' => '2026-09-01',
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
@@ -389,7 +414,7 @@ it('does not count a lesson the student was excused from', function () {
     holdSessions($this->section, 3);
     expect($registration->fresh()->sessions_counted)->toBe(3);
 
-    Attendance::recordDay($this->section->id, '2026-09-02', [
+    Attendance::recordDay($this->section->id, billingDay(1), [
         $this->student->id => 'excused',
     ]);
 
@@ -397,7 +422,7 @@ it('does not count a lesson the student was excused from', function () {
     expect($registration->fresh()->sessions_counted)->toBe(2);
 
     // …and switching the status back puts it on again.
-    Attendance::recordDay($this->section->id, '2026-09-02', [
+    Attendance::recordDay($this->section->id, billingDay(1), [
         $this->student->id => 'present',
     ]);
 
@@ -408,15 +433,15 @@ it('keeps an excused lesson off the bill when the section is recalculated', func
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
-        'enrolled_at' => '2026-09-01',
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
 
     holdSessions($this->section, 4);
 
-    Attendance::recordDay($this->section->id, '2026-09-01', [$this->student->id => 'excused']);
-    Attendance::recordDay($this->section->id, '2026-09-03', [$this->student->id => 'absent']);
+    Attendance::recordDay($this->section->id, billingDay(0), [$this->student->id => 'excused']);
+    Attendance::recordDay($this->section->id, billingDay(2), [$this->student->id => 'absent']);
 
     // An absence still counts; only the apology does not.
     expect($registration->fresh()->sessions_counted)->toBe(3);
@@ -430,12 +455,12 @@ it('does not record attendance for a student who had not joined yet', function (
     Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
-        'enrolled_at' => '2026-09-01',
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
 
-    Attendance::recordDay($this->section->id, '2026-08-20', [
+    Attendance::recordDay($this->section->id, billingDay(-12), [
         $this->student->id => 'absent',
     ]);
 
@@ -446,7 +471,7 @@ it('recalculates a whole section back to the right numbers', function () {
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
-        'enrolled_at' => '2026-09-01',
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
@@ -466,7 +491,7 @@ it('stops counting for good when a student withdraws from the section', function
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
-        'enrolled_at' => '2026-09-01',
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
@@ -475,13 +500,13 @@ it('stops counting for good when a student withdraws from the section', function
     expect($registration->fresh()->sessions_counted)->toBe(4);
 
     // Recorded after the fact: they stopped coming on the 3rd.
-    SectionWithdrawalService::withdraw($registration->fresh(), '2026-09-03', 'سافر');
+    SectionWithdrawalService::withdraw($registration->fresh(), billingDay(2), 'سافر');
 
     // The lessons on the 1st and 2nd stand; the 3rd and 4th are not theirs.
     expect($registration->fresh()->sessions_counted)->toBe(2);
 
     // Lessons held after they left never touch them again.
-    holdSessions($this->section, 5, '2026-09-20');
+    holdSessions($this->section, 5, billingDay(19));
     expect($registration->fresh()->sessions_counted)->toBe(2);
 
     // …and neither does recalculating the whole section.
@@ -493,14 +518,14 @@ it('puts the missed lessons back on the bill when a withdrawal is undone', funct
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
-        'enrolled_at' => '2026-09-01',
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
 
     holdSessions($this->section, 5);
 
-    SectionWithdrawalService::withdraw($registration->fresh(), '2026-09-03');
+    SectionWithdrawalService::withdraw($registration->fresh(), billingDay(2));
     expect($registration->fresh()->sessions_counted)->toBe(2);
 
     SectionWithdrawalService::rejoin($registration->fresh());
@@ -513,14 +538,14 @@ it('reports the paid sessions a withdrawn student will never use', function () {
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
-        'enrolled_at' => '2026-09-01',
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
 
     holdSessions($this->section, 2);
 
-    SectionWithdrawalService::withdraw($registration->fresh(), '2026-09-03');
+    SectionWithdrawalService::withdraw($registration->fresh(), billingDay(2));
 
     // Paid for 6, used 2.
     expect($registration->fresh()->unusedPaidSessions())->toBe(4);
@@ -530,15 +555,15 @@ it('closes an open break when the student leaves outright', function () {
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
-        'enrolled_at' => '2026-09-01',
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
 
     holdSessions($this->section, 6);
 
-    SessionBillingService::pause($registration->fresh(), '2026-09-03');
-    SectionWithdrawalService::withdraw($registration->fresh(), '2026-09-05');
+    SessionBillingService::pause($registration->fresh(), billingDay(2));
+    SectionWithdrawalService::withdraw($registration->fresh(), billingDay(4));
 
     $stored = $registration->fresh();
 
@@ -553,18 +578,18 @@ it('takes a withdrawn student off the attendance sheet from the day they left', 
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
-        'enrolled_at' => '2026-09-01',
+        'enrolled_at' => billingDay(0),
     ]);
 
-    SectionWithdrawalService::withdraw($registration->fresh(), '2026-09-03');
+    SectionWithdrawalService::withdraw($registration->fresh(), billingDay(2));
 
-    expect($this->section->rosterOn('2026-09-02')->pluck('student_id')->all())
+    expect($this->section->rosterOn(billingDay(1))->pluck('student_id')->all())
         ->toBe([$this->student->id])
-        ->and($this->section->rosterOn('2026-09-03')->pluck('student_id')->all())
+        ->and($this->section->rosterOn(billingDay(2))->pluck('student_id')->all())
         ->toBeEmpty();
 
     // And attendance for a day after they left is refused outright.
-    Attendance::recordDay($this->section->id, '2026-09-10', [$this->student->id => 'absent']);
+    Attendance::recordDay($this->section->id, billingDay(9), [$this->student->id => 'absent']);
 
     expect(Attendance::query()->where('student_id', $this->student->id)->count())->toBe(0);
 });
@@ -573,7 +598,7 @@ it('withdraws every section when the student leaves the centre', function () {
     $registration = Registration::create([
         'student_id' => $this->student->id,
         'section_id' => $this->section->id,
-        'enrolled_at' => '2026-09-01',
+        'enrolled_at' => billingDay(0),
         'amount_due' => 100,
         'amount_paid' => 100,
     ]);
@@ -583,13 +608,13 @@ it('withdraws every section when the student leaves the centre', function () {
 
     $this->student->update([
         'status' => 'withdrawn',
-        'withdrawal_date' => '2026-09-04',
+        'withdrawal_date' => billingDay(3),
         'withdrawal_reason' => 'انتقل لمدينة أخرى',
     ]);
 
     $stored = $registration->fresh();
 
-    expect($stored->left_at?->toDateString())->toBe('2026-09-04')
+    expect($stored->left_at?->toDateString())->toBe(billingDay(3))
         ->and($stored->sessions_counted)->toBe(3);
 
     // Coming back re-opens the sections that leaving the centre had closed.

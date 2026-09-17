@@ -12,6 +12,7 @@ use App\Models\Registration;
 use App\Models\Section;
 use App\Models\SectionTime;
 use App\Models\Student;
+use App\Services\RoomAvailabilityService;
 use BackedEnum;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
@@ -70,7 +71,38 @@ class QuickEnroll extends Page implements HasForms
             'exemption_amount' => 0,
             'payment_amount' => 0,
             'payment_date' => now(),
+            'registrations' => self::prefilledRegistrations(),
         ]);
+    }
+
+    /**
+     * The section row the form opens on.
+     *
+     * Reached from a section's own page, the section is already decided — the
+     * operator is standing on it — so it arrives as `?section=` and the first
+     * repeater row is filled in with it and its fee, exactly as picking it by
+     * hand would have. Opened from the menu there is nothing to prefill, and
+     * the repeater's own `defaultItems(1)` puts up an empty row instead.
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected static function prefilledRegistrations(): array
+    {
+        $section = request()->integer('section')
+            ? Section::find(request()->integer('section'))
+            : null;
+
+        if (! $section) {
+            return [];
+        }
+
+        return [[
+            'section_id' => $section->id,
+            'enrolled_at' => now(),
+            'amount_due' => $section->displayFee(),
+            'amount_paid' => $section->displayFee(),
+            'exemption_amount' => 0,
+        ]];
     }
 
     public function form(Schema $schema): Schema
@@ -236,6 +268,7 @@ class QuickEnroll extends Page implements HasForms
                                     ->prefix('₪')
                                     ->default(0)
                                     ->minValue(0)
+                                    ->dehydrateStateUsing(fn ($state) => blank($state) ? 0 : $state)
                                     ->live(debounce: 500)
                                     ->afterStateUpdated(function (Get $get, Set $set) {
                                         $due = (float) ($get('amount_due') ?? 0);
@@ -401,7 +434,10 @@ class QuickEnroll extends Page implements HasForms
                                 if (strtolower((string) $new->day) !== strtolower((string) $other->day)) {
                                     continue;
                                 }
-                                if ($new->start_time < $other->end_time && $new->end_time > $other->start_time) {
+                                if (RoomAvailabilityService::slotsOverlap(
+                                    $new->start_time, $new->end_time,
+                                    $other->start_time, $other->end_time,
+                                )) {
                                     throw new \RuntimeException(
                                         __('Schedule conflict between :section and :other on :day at :time', [
                                             'section' => $section->name,

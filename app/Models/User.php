@@ -7,6 +7,7 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -19,10 +20,20 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements FilamentUser, HasAvatar
 {
     /** @use HasFactory<UserFactory> */
+    /**
+     * Deliberately *not* using BelongsToBranch.
+     *
+     * That trait asks BranchContext which branch the signed-in employee is in,
+     * and BranchContext answers by asking the auth guard for the user — which
+     * runs a User query, which fires the scope again. Employees are filtered on
+     * their own screen instead (UserResource), where there is no guard to
+     * re-enter.
+     */
     use HasFactory, HasRoles, LogsActivity, Notifiable, SoftDeletes;
 
     /** @var list<string> */
     protected $fillable = [
+        'branch_id',
         'name',
         'email',
         'password',
@@ -71,6 +82,12 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         return LogOptions::defaults()
             ->logOnly(['name', 'email', 'phone_number', 'whatsapp_number', 'ssn', 'avatar_url'])
             ->logOnlyDirty();
+    }
+
+    /** The site this employee works at; empty means head office — all of them. */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function loginActivities(): MorphMany
